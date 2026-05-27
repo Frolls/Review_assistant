@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "review-bot"
+version = "0.1.0"
+description = "PR-review assistant with OpenAI tool calling and a local review knowledge base"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "jinja2>=3.1.4",
+    "openai>=1.30.0",
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.2.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]

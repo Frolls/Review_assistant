@@ -1,0 +1,38 @@
+[
+  {
+    "source": "PEP 8",
+    "topic": "Naming and readability",
+    "tags": ["python", "naming", "readability", "pep8"],
+    "content": "Use descriptive snake_case names for functions and variables, keep code readable, and prefer consistency over clever abbreviations."
+  },
+  {
+    "source": "PEP 8",
+    "topic": "Imports order",
+    "tags": ["python", "imports", "style", "pep8"],
+    "content": "Imports should be grouped into standard library, third-party, and local imports, with blank lines between groups."
+  },
+  {
+    "source": "PEP 257",
+    "topic": "Docstrings",
+    "tags": ["python", "docstrings", "documentation", "pep257"],
+    "content": "Public modules, functions, classes, and methods should have docstrings that explain intent and behavior rather than restating the signature."
+  },
+  {
+    "source": "Ansible Community Docs",
+    "topic": "Idempotence",
+    "tags": ["ansible", "idempotence", "automation", "review"],
+    "content": "Ansible tasks should be idempotent whenever possible so that repeated runs leave the target system in the same desired state."
+  },
+  {
+    "source": "Internal Review Checklist",
+    "topic": "Risk-focused review",
+    "tags": ["review", "risk", "testing", "regression"],
+    "content": "During PR review, prioritize correctness, regression risk, missing tests, and operational impact before discussing style-level nits."
+  },
+  {
+    "source": "Internal Architecture Notes",
+    "topic": "Error handling",
+    "tags": ["python", "errors", "exceptions", "logging"],
+    "content": "Raise specific exceptions, avoid silent error swallowing, and include structured logs around external calls or failure-prone branches."
+  }
+]
