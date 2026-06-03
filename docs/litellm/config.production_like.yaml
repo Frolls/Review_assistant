@@ -1,0 +1,32 @@
+model_list:
+  - model_name: review-bot-primary
+    litellm_params:
+      model: openai/gpt-4.1-mini
+      api_key: os.environ/OPENAI_API_KEY
+      timeout: 8
+      rpm: 30
+
+  - model_name: review-bot-fallback
+    litellm_params:
+      model: anthropic/claude-sonnet-4-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+      timeout: 10
+      rpm: 20
+
+  - model_name: review-bot-tertiary
+    litellm_params:
+      model: openai/qwen3:32b
+      api_base: os.environ/OLLAMA_BASE_URL
+      api_key: os.environ/OLLAMA_API_KEY
+      timeout: 20
+      rpm: 10
+
+router_settings:
+  fallbacks:
+    - {"review-bot-primary": ["review-bot-fallback"]}
+    - {"review-bot-fallback": ["review-bot-tertiary"]}
+
+litellm_settings:
+  master_key: sk-review-bot-local
+  json_logs: true
+  drop_params: true
