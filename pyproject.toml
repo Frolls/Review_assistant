@@ -9,10 +9,13 @@ description = "PR-review assistant with OpenAI tool calling and a local review k
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "fastapi>=0.115.0",
     "jinja2>=3.1.4",
     "openai>=1.30.0",
     "pydantic>=2.7.0",
     "pydantic-settings>=2.2.1",
+    "redis>=5.0.0",
+    "uvicorn>=0.30.0",
 ]
 
 [tool.setuptools.packages.find]
