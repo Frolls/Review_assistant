@@ -50,7 +50,7 @@ flowchart LR
     end
 
     subgraph SVCL["2. Service Layer"]
-        SVC["FastAPI / review-service\nprompt orchestration\ntool_call loop + bulkhead semaphores"]
+        SVC["FastAPI / review-service\nHTTP API + Redis cache\nOpenAI-compatible client to LiteLLM"]
         CALLS["Классы вызовов\nA: interactive review [latency-critical]\nB: full PR digest [cost-critical]"]
         PRFETCH["PR fetcher\nGitHub/GitLab API\ngit diff / patch loader"]
         CHUNK["Diff chunker\nsplit by file/hunk\ntoken budget per chunk"]
@@ -65,7 +65,7 @@ flowchart LR
         CB2["Circuit Breaker\nAnthropic\nfail_max=5, reset=60s"]
         AN["Anthropic claude-sonnet-4-5\nSecondary\nhigher quality fallback"]
         CB3["Circuit Breaker\nOllama\nfail_max=3, reset=30s"]
-        OL["Ollama qwen3:32b\nTertiary\ncost-critical / degraded mode"]
+        OL["Ollama gemma3:4b\nTertiary\ncost-critical / degraded mode"]
     end
 
     subgraph DL["4. Data Layer"]
@@ -226,7 +226,7 @@ flowchart LR
 
 **Status:** Accepted (2026-06-03)
 
-**Decision.** Primary-модель — `OpenAI gpt-4.1-mini`: это баланс качества, latency и цены для коротких review-ответов. Secondary fallback — `Anthropic claude-sonnet-4-5`: дороже, но полезен как качественный запасной вариант на отказах или деградации primary. Tertiary fallback — локальный `Ollama qwen3:32b`: нужен не ради качества, а ради доступности в режиме деградации и контроля бюджета. Переключение управляется через LiteLLM Proxy, а **Circuit Breaker ставится отдельно на каждого провайдера**. После серии ошибок провайдер уходит в cooldown, чтобы сервис не сжигал таймауты на заведомо больной upstream.
+**Decision.** Primary-модель — `OpenAI gpt-4.1-mini`: это баланс качества, latency и цены для коротких review-ответов. Secondary fallback — `Anthropic claude-sonnet-4-5`: дороже, но полезен как качественный запасной вариант на отказах или деградации primary. Tertiary fallback — локальный `Ollama gemma3:4b`: нужен не ради качества, а ради доступности в режиме деградации и контроля бюджета. Переключение управляется через LiteLLM Proxy, а **Circuit Breaker ставится отдельно на каждого провайдера**. После серии ошибок провайдер уходит в cooldown, чтобы сервис не сжигал таймауты на заведомо больной upstream.
 
 **Consequences.** Сервис переживает временный отказ одного облака без ручного переключения. При полном отказе облачных провайдеров остаётся ограниченный, но рабочий local-only режим через Ollama и FAQ/KB fallback. Дополнительная цена — необходимость поддерживать конфиг маршрутизации, наблюдаемость по каждому провайдеру и отдельные лимиты/таймауты.
 
@@ -262,15 +262,15 @@ flowchart LR
 
 Локальный demo-конфиг сделан так, чтобы без Docker проверить сам механизм fallback:
 
-- `review-bot-primary` -> `openai/gpt-4.1-mini` c намеренно неверным ключом;
-- `review-bot-fallback` -> локальный OpenAI-compatible mock endpoint на `http://127.0.0.1:8001/v1`;
-- в `router_settings.fallbacks` задан порядок `primary -> fallback`.
+- `gpt-4.1-mini` -> `openai/gpt-4.1-mini` c намеренно неверным ключом;
+- `gpt-4.1-mini-fallback` -> локальный OpenAI-compatible mock endpoint на `http://127.0.0.1:8001/v1`;
+- в `router_settings.fallbacks` задан порядок `gpt-4.1-mini -> gpt-4.1-mini-fallback`.
 
 Для защиты и обсуждения целевой архитектуры рядом лежит отдельный production-like конфиг:
 
-- `review-bot-primary` -> `openai/gpt-4.1-mini`
-- `review-bot-fallback` -> `anthropic/claude-sonnet-4-5`
-- `review-bot-tertiary` -> `Ollama qwen3:32b`
+- `gpt-4.1-mini` -> `openai/gpt-4.1-mini`
+- `gpt-4.1-mini-fallback` -> `anthropic/claude-sonnet-4-5`
+- `gpt-4.1-mini-local` -> `Ollama gemma3:4b`
 - порядок failover: `OpenAI -> Anthropic -> Ollama`
 
 Зачем два конфига:
@@ -298,7 +298,7 @@ FALLBACK_OPENAI_API_KEY=dummy \
 curl -s http://127.0.0.1:4000/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer sk-review-bot-local' \
-  -d '{"model":"review-bot-primary","messages":[{"role":"user","content":"Назови правило про идемпотентность"}]}'
+  -d '{"model":"gpt-4.1-mini","messages":[{"role":"user","content":"Назови правило про идемпотентность"}]}'
 ```
 
 Фактический локальный прогон от `2026-06-03`:
@@ -314,6 +314,17 @@ curl -s http://127.0.0.1:4000/v1/chat/completions \
 1. Primary был намеренно сконфигурирован с `PRIMARY_OPENAI_API_KEY=bad-key`.
 2. Все три запроса прошли через единый endpoint `http://127.0.0.1:4000/v1/chat/completions`.
 3. LiteLLM debug-лог зафиксировал `fallback detected (attempted_fallbacks=1)`, а клиент получил ответ уже от `model=demo-fallback`.
+
+## Текущее состояние HTTP-сервиса
+
+На текущем этапе FastAPI приложение больше не держит app-level fallback между провайдерами. Оно работает как тонкий HTTP-слой поверх LiteLLM Proxy:
+
+- `POST /chat` и `POST /chat/stream` идут в LiteLLM через `AsyncOpenAI(base_url=OPENAI_BASE_URL)`;
+- fallback chain целиком живёт в `docs/litellm/config.production_like.yaml`;
+- Redis используется только для cache-aside слоя на `/chat`;
+- приложению достаточно OpenAI-совместимого контракта: `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `DEFAULT_MODEL`.
+
+То есть провайдерная маршрутизация теперь описывается конфигом proxy, а не Python-кодом FastAPI сервиса.
 
 Итог: для дипломного проекта LiteLLM закрывает ключевую задачу LLM gateway без написания собственного маршрутизатора, а локальный demo-стенд воспроизводимо показывает ordered fallback при ошибке primary.
 

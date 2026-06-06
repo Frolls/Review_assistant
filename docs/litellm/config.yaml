@@ -1,12 +1,12 @@
 model_list:
-  - model_name: review-bot-primary
+  - model_name: gpt-4.1-mini
     litellm_params:
       model: openai/gpt-4.1-mini
       api_key: os.environ/PRIMARY_OPENAI_API_KEY
       timeout: 8
       rpm: 30
 
-  - model_name: review-bot-fallback
+  - model_name: gpt-4.1-mini-fallback
     litellm_params:
       model: openai/demo-fallback
       api_base: os.environ/FALLBACK_OPENAI_BASE_URL
@@ -16,7 +16,7 @@ model_list:
 
 router_settings:
   fallbacks:
-    - {"review-bot-primary": ["review-bot-fallback"]}
+    - {"gpt-4.1-mini": ["gpt-4.1-mini-fallback"]}
 
 litellm_settings:
   master_key: sk-review-bot-local
