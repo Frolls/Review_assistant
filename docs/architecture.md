@@ -1,12 +1,12 @@
 # Архитектурный паспорт PR Review Bot
 
-Документ фиксирует целевую архитектуру дипломного PR Review Assistant и текущее состояние реализованного HTTP-ядра для интерактивного PR-review.
+Документ фиксирует целевую архитектуру дипломного PR Review Assistant и текущее состояние реализованного HTTP-ядра. Целевая схема развивается по Варианту 2: единый orchestrator с режимами `chat | review | full_pr_review`.
 
 ## Нагрузочный профиль и ограничения
 
 | Метрика | Целевое значение |
 | --- | --- |
-| Сценарий | 1) interactive review Q&A, 2) full PR review с итоговым списком замечаний |
+| Сценарий | 1) chat, 2) interactive review Q&A, 3) full PR review с итоговым списком замечаний |
 | Пиковая нагрузка | interactive: 30 RPM; full PR review: до 10 PR/час |
 | Пиковый токен-поток | interactive: 90k TPM; full PR review: до 250k TPM на batch-контур |
 | Средний вход | interactive: 1.5k-3k токенов; full PR review: 20k-120k токенов суммарно по чанкам diff |
@@ -17,7 +17,18 @@
 
 ## Поддерживаемые сценарии
 
-### 1. Interactive Review
+### 1. Chat
+
+Пользователь отправляет обычный вопрос без review-orchestration:
+
+- короткий LLM-запрос;
+- без retrieval;
+- без server-side tools;
+- с Redis cache-aside для повторяющихся запросов.
+
+Этот режим нужен как самый простой и дешёвый путь для UI, smoke-check и интеграций.
+
+### 2. Interactive Review
 
 Пользователь задаёт точечный вопрос:
 
@@ -25,9 +36,9 @@
 - какие правила применимы к этому куску diff;
 - что проверить в импортах, idempotence, логировании и т.д.
 
-Здесь главный приоритет — быстрый ответ, поэтому используется `Request-Response`.
+Здесь главный приоритет — быстрый ответ, но уже с возможностью orchestration: retrieval по правилам ревью, ограниченные tools и policy-управление.
 
-### 2. Full PR Review
+### 3. Full PR Review
 
 Сервис получает целый PR и должен:
 
@@ -50,8 +61,11 @@ flowchart LR
     end
 
     subgraph SVCL["2. Service Layer"]
-        SVC["FastAPI / review-service\nHTTP API + Redis cache\nOpenAI-compatible client to LiteLLM"]
-        CALLS["Классы вызовов\nA: interactive review [latency-critical]\nB: full PR digest [cost-critical]"]
+        API["FastAPI / review-service\nHTTP API + validation + cache access"]
+        ORCH["Unified Orchestrator\nmode = chat | review | full_pr_review"]
+        CHAT["Chat mode\nsimple completion / stream"]
+        REVIEW["Review mode\nretrieval + tool policy + tool loop"]
+        FULL["Full PR Review mode\nasync job orchestration"]
         PRFETCH["PR fetcher\nGitHub/GitLab API\ngit diff / patch loader"]
         CHUNK["Diff chunker\nsplit by file/hunk\ntoken budget per chunk"]
         QUEUE["Queue + workers\nasync full PR review jobs"]
@@ -75,22 +89,27 @@ flowchart LR
         S3["S3 / MinIO optional\nlarge diff snapshots, prompt artifacts"]
     end
 
-    USER --> GW --> SVC
-    SVC --> CALLS
-    SVC -->|"full PR review request"| PRFETCH --> CHUNK --> QUEUE
+    USER --> GW --> API --> ORCH
+    ORCH --> CHAT
+    ORCH --> REVIEW
+    ORCH --> FULL
+    FULL -->|"full PR review request"| PRFETCH --> CHUNK --> QUEUE
     QUEUE -->|"chunk analysis jobs"| PROXY
-    PROXY -->|"per-chunk findings"| AGG --> SVC
-    SVC -->|"KB lookup"| KB
-    SVC -->|"metrics / history"| PG
-    SVC -->|"large diff snapshots (optional)"| S3
-    SVC -->|"cache lookup"| CACHE
-    CACHE -.->|"hit"| SVC
+    PROXY -->|"per-chunk findings"| AGG --> FULL
+    REVIEW -->|"KB lookup / retrieval"| KB
+    FULL -->|"KB lookup / retrieval"| KB
+    ORCH -->|"metrics / history"| PG
+    FULL -->|"large diff snapshots (optional)"| S3
+    API -->|"cache lookup"| CACHE
+    CACHE -.->|"hit"| API
     CACHE -.->|"miss"| PROXY
-    SVC -.->|"full PR digest\ncost-critical, lower priority"| PROXY
+    CHAT -.->|"simple completion"| PROXY
+    REVIEW -.->|"interactive review"| PROXY
+    FULL -.->|"full PR digest\ncost-critical, lower priority"| PROXY
     PROXY --> CB1 --> OA
     PROXY -.->|"fallback #1"| CB2 --> AN
     PROXY -.->|"fallback #2"| CB3 --> OL
-    PROXY -->|"answer"| SVC --> GW --> USER
+    PROXY -->|"answer"| ORCH --> API --> GW --> USER
 
     classDef gateway fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px;
     classDef service fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
@@ -98,7 +117,7 @@ flowchart LR
     classDef data fill:#fff8e1,stroke:#ef6c00,stroke-width:2px;
 
     class GW gateway;
-    class SVC,CALLS,PRFETCH,CHUNK,QUEUE,AGG service;
+    class API,ORCH,CHAT,REVIEW,FULL,PRFETCH,CHUNK,QUEUE,AGG service;
     class PROXY,CB1,OA,CB2,AN,CB3,OL llm;
     class CACHE,PG,KB,S3 data;
 ```
@@ -107,13 +126,38 @@ flowchart LR
 
 **Status:** Accepted (2026-06-03)
 
-**Context.** Проект поддерживает два режима. Первый — интерактивный PR-review ассистент: пользователь задаёт вопрос по diff или просит объяснить замечание, а сервис при необходимости может использовать retrieval по базе правил ревью и затем формирует финальный ответ. Второй — полный просмотр PR: сервис забирает diff целиком, режет его на чанки, прогоняет через review pipeline и возвращает агрегированный список замечаний. Ожидаемая нагрузка: interactive — около 30 RPM и до 90k TPM; full PR review — до 10 PR/час с суммарным объёмом до 250k TPM на batch-контур. Ограничение по стоимости — до $3-5 в день, поэтому важны кеширование, лимиты на `max_tokens` и отдельная политика для тяжёлых задач.
+**Context.** Проект поддерживает три режима. `chat` — простой completion/stream без orchestration. `review` — интерактивный PR-review ассистент: пользователь задаёт вопрос по diff или просит объяснить замечание, а сервис при необходимости использует retrieval по базе правил ревью и ограниченные tools. `full_pr_review` — полный просмотр PR: сервис забирает diff целиком, режет его на чанки, прогоняет через review pipeline и возвращает агрегированный список замечаний. Ожидаемая нагрузка: interactive — около 30 RPM и до 90k TPM; full PR review — до 10 PR/час с суммарным объёмом до 250k TPM на batch-контур. Ограничение по стоимости — до $3-5 в день, поэтому важны кеширование, лимиты на `max_tokens` и отдельная политика для тяжёлых задач.
 
-**Decision.** Основной паттерн для interactive-режима — **Request-Response**. Один пользовательский запрос обрабатывается как одна синхронная HTTP-операция: gateway принимает запрос, service собирает контекст, при необходимости использует retrieval и возвращает готовый ответ. Для сценария **Full PR Review** выбран дополнительный **Queue-based** контур: API принимает задачу, кладёт её в очередь, worker-ы анализируют diff по чанкам, а агрегатор собирает финальный review-report. Такой гибрид разделяет latency-critical и cost-critical нагрузку и не заставляет тяжёлый полный анализ блокировать интерактивные ответы.
+**Decision.** Поверх HTTP API вводится **единый orchestrator с режимами `chat | review | full_pr_review`**. Режим `chat` идёт кратчайшим путём и использует только completion/stream + cache. Режим `review` остаётся **Request-Response**: gateway принимает запрос, orchestrator собирает контекст, при необходимости запускает retrieval и tool loop, затем возвращает готовый ответ. Для сценария `full_pr_review` orchestrator переключается в **Queue-based** контур: API принимает задачу, кладёт её в очередь, worker-ы анализируют diff по чанкам, а агрегатор собирает финальный review-report. Такой гибрид разделяет `latency-critical` и `cost-critical` нагрузку и не заставляет тяжёлый полный анализ блокировать интерактивные ответы.
 
-**Consequences.** Для interactive-запросов сохраняется простая схема API, предсказуемая трассировка одного запроса и меньше инфраструктурных требований на gateway. Не нужно поднимать SSE/WebSocket и отключать `proxy_buffering` в nginx. Для полного обзора PR появляется дополнительная сложность: нужен fetch diff, chunking, очередь, worker-ы, хранение статуса джобы и агрегатор результатов. Зато heavy review не душит основной сервис, а длинные PR можно обрабатывать с ограничением параллелизма и отдельным бюджетом.
+**Consequences.** Для коротких `chat`-запросов сохраняется простая схема API и предсказуемая трассировка одного запроса. Для `review` появляется управляемая orchestration-логика без смешивания её с транспортным слоем. Для полного обзора PR сохраняется более тяжёлый async pipeline: нужен fetch diff, chunking, очередь, worker-ы, хранение статуса джобы и агрегатор результатов. Зато heavy review не душит основной сервис, а длинные PR можно обрабатывать с ограничением параллелизма и отдельным бюджетом.
 
-**Alternatives considered.** **Streaming** отвергнут как основной паттерн: пользователь увидит токены раньше, но в интерактивном сценарии финальный текст часто появляется только после завершения retrieval/анализа контекста, а для full PR review streaming вообще не решает главную проблему длинной обработки. **Queue-based** отвергнут как единственный глобальный паттерн: polling/webhook completion избыточны для короткого интерактивного вопроса по PR. **Fan-out** отвергнут из-за лишней стоимости: параллельный запуск нескольких провайдеров ради каждого chunk review быстро съест бюджет.
+**Alternatives considered.** **Streaming** отвергнут как основной паттерн: пользователь увидит токены раньше, но в интерактивном `review`-сценарии финальный текст часто появляется только после завершения retrieval/анализа контекста, а для `full_pr_review` streaming вообще не решает главную проблему длинной обработки. **Queue-based** отвергнут как единственный глобальный паттерн: polling/webhook completion избыточны для `chat` и короткого review-вопроса по PR. **Fan-out** отвергнут из-за лишней стоимости: параллельный запуск нескольких провайдеров ради каждого chunk review быстро съест бюджет.
+
+## Unified Orchestrator
+
+Вариант 2 вводит единый application-layer orchestrator, который управляет сценариями, а не перекладывает orchestration на `LLMService`.
+
+Роли слоёв:
+
+- `API layer` принимает HTTP, валидирует запрос, отдаёт SSE/JSON и управляет cache-aside.
+- `Application layer` выбирает режим `chat | review | full_pr_review`, применяет policy, orchestrates retrieval/tools/queue.
+- `Infrastructure layer` предоставляет OpenAI-compatible LLM gateway, Redis, LiteLLM, GitHub/GitLab adapters, queue и storage.
+
+Режимы orchestrator:
+
+- `chat`
+  Простой путь: `messages -> LLM -> response`.
+- `review`
+  Interactive review: `messages -> retrieval -> tool policy -> tool loop -> LLM -> response`.
+- `full_pr_review`
+  Async pipeline: `PR fetch -> chunking -> queue/workers -> findings aggregation -> report`.
+
+Ключевой принцип:
+
+- `LLMService` не знает про tools, PR fetch, KB policy и review workflow.
+- model может предложить `tool_calls`, но решение об исполнении принимает orchestrator.
+- transport, orchestration и integrations разделены по слоям.
 
 ## Full PR Review Pipeline
 
@@ -317,14 +361,16 @@ curl -s http://127.0.0.1:4000/v1/chat/completions \
 
 ## Текущее состояние HTTP-сервиса
 
-На текущем этапе FastAPI приложение больше не держит app-level fallback между провайдерами. Оно работает как тонкий HTTP-слой поверх LiteLLM Proxy:
+На текущем этапе FastAPI приложение больше не держит app-level fallback между провайдерами. Оно работает как тонкий HTTP-слой поверх LiteLLM Proxy и фактически реализует `chat`-режим из целевой схемы:
 
 - `POST /chat` и `POST /chat/stream` идут в LiteLLM через `AsyncOpenAI(base_url=OPENAI_BASE_URL)`;
 - fallback chain целиком живёт в `docs/litellm/config.production_like.yaml`;
 - Redis используется только для cache-aside слоя на `/chat`;
 - приложению достаточно OpenAI-совместимого контракта: `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `DEFAULT_MODEL`.
 
-То есть провайдерная маршрутизация теперь описывается конфигом proxy, а не Python-кодом FastAPI сервиса.
+Следующие режимы — `review` и `full_pr_review` — остаются следующими этапами эволюции и должны быть реализованы уже в application-layer orchestrator, а не внутри `LLMService`.
+
+То есть провайдерная маршрутизация теперь описывается конфигом proxy, а не Python-кодом FastAPI сервиса, а orchestration должна подниматься отдельным слоем поверх текущего HTTP-ядра.
 
 Итог: для дипломного проекта LiteLLM закрывает ключевую задачу LLM gateway без написания собственного маршрутизатора, а локальный demo-стенд воспроизводимо показывает ordered fallback при ошибке primary.
 
