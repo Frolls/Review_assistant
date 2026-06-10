@@ -1,7 +1,11 @@
 import unittest
+from json import loads
 from types import SimpleNamespace
 
+from redis.exceptions import RedisError
+
 from app.core.config import Settings
+from app.routers.health import healthcheck, readiness_check
 from app.schemas.chat import ChatRequest
 from app.services.llm import LLMService
 
@@ -15,6 +19,14 @@ class FakeRedis:
 
     async def setex(self, key, ttl, value):
         self.data[key] = value
+
+    async def ping(self):
+        return True
+
+
+class FailingRedis:
+    async def ping(self):
+        raise RedisError("redis unavailable")
 
 
 class FakeOpenAIResponse:
@@ -91,6 +103,32 @@ class SettingsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(settings.openai_api_key.get_secret_value(), "proxy-key")
         self.assertEqual(settings.openai_base_url, "http://localhost:4000")
         self.assertEqual(settings.default_model, "gpt-4.1-mini")
+
+    async def test_env_example_defaults_are_valid(self):
+        settings = Settings(OPENAI_API_KEY="proxy-key")
+        self.assertEqual(settings.redis_url, "redis://localhost:6379/0")
+
+
+class HealthEndpointTests(unittest.IsolatedAsyncioTestCase):
+    async def test_healthcheck_returns_ok(self):
+        response = await healthcheck()
+
+        self.assertEqual(response.status, "ok")
+
+    async def test_readiness_returns_ok_when_redis_is_available(self):
+        response = await readiness_check(FakeRedis())
+
+        self.assertEqual(response.status, "ok")
+        self.assertEqual(response.redis, "up")
+
+    async def test_readiness_returns_503_when_redis_is_unavailable(self):
+        response = await readiness_check(FailingRedis())
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            loads(response.body),
+            {"status": "degraded", "redis": "down"},
+        )
 
 
 class LLMServiceTests(unittest.IsolatedAsyncioTestCase):

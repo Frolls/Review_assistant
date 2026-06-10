@@ -7,27 +7,18 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from app.deps.providers import LLMServiceDep
-from app.schemas.chat import ChatRequest, ChatResponse, ErrorResponse
+from app.routers.responses import CHAT_RESPONSES, CHAT_STREAM_RESPONSES
+from app.schemas.chat import ChatRequest, ChatResponse
 
 
 router = APIRouter(tags=["chat"])
-
-COMMON_RESPONSES = {
-    422: {"model": ErrorResponse, "description": "Request validation error."},
-    429: {"model": ErrorResponse, "description": "LLM provider rate limit."},
-    502: {"model": ErrorResponse, "description": "LLM provider authentication or upstream error."},
-    504: {"model": ErrorResponse, "description": "LLM provider timeout."},
-}
 
 
 @router.post(
     "/chat",
     response_model=ChatResponse,
     summary="Create a chat completion",
-    responses={
-        200: {"model": ChatResponse, "description": "Chat completion generated successfully."},
-        **COMMON_RESPONSES,
-    },
+    responses=CHAT_RESPONSES,
 )
 async def chat(payload: ChatRequest, llm_service: LLMServiceDep) -> ChatResponse:
     return await llm_service.complete(payload)
@@ -36,10 +27,7 @@ async def chat(payload: ChatRequest, llm_service: LLMServiceDep) -> ChatResponse
 @router.post(
     "/chat/stream",
     summary="Stream a chat completion",
-    responses={
-        200: {"description": "Server-sent event stream with content chunks and final usage."},
-        **COMMON_RESPONSES,
-    },
+    responses=CHAT_STREAM_RESPONSES,
 )
 async def chat_stream(payload: ChatRequest, llm_service: LLMServiceDep) -> StreamingResponse:
     async def event_stream() -> AsyncIterator[str]:

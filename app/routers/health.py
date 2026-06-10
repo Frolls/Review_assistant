@@ -1,29 +1,43 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
-from pydantic import BaseModel
+import asyncio
 
-from app.schemas.chat import ErrorResponse
+from fastapi import APIRouter, status
+from fastapi.responses import JSONResponse
+from redis.exceptions import RedisError
+
+from app.deps.providers import CacheDep
+from app.routers.responses import HEALTH_RESPONSES, READINESS_RESPONSES
+from app.schemas.health import HealthResponse, ReadinessResponse
 
 
 router = APIRouter(tags=["health"])
-
-
-class HealthResponse(BaseModel):
-    status: str
+REDIS_READY_TIMEOUT_SECONDS = 1.5
 
 
 @router.get(
     "/health",
     response_model=HealthResponse,
     summary="Check service liveness",
-    responses={
-        200: {"model": HealthResponse, "description": "Service is alive."},
-        422: {"model": ErrorResponse, "description": "Request validation error."},
-        429: {"model": ErrorResponse, "description": "LLM provider rate limit."},
-        502: {"model": ErrorResponse, "description": "LLM provider authentication or upstream error."},
-        504: {"model": ErrorResponse, "description": "LLM provider timeout."},
-    },
+    responses=HEALTH_RESPONSES,
 )
 async def healthcheck() -> HealthResponse:
     return HealthResponse(status="ok")
+
+
+@router.get(
+    "/ready",
+    response_model=ReadinessResponse,
+    summary="Check service readiness",
+    responses=READINESS_RESPONSES,
+)
+async def readiness_check(cache: CacheDep) -> ReadinessResponse | JSONResponse:
+    try:
+        await asyncio.wait_for(cache.ping(), timeout=REDIS_READY_TIMEOUT_SECONDS)
+    except (TimeoutError, asyncio.TimeoutError, RedisError):
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content=ReadinessResponse(status="degraded", redis="down").model_dump(),
+        )
+
+    return ReadinessResponse(status="ok", redis="up")
