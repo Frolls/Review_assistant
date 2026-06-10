@@ -104,8 +104,12 @@ class SettingsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(settings.openai_base_url, "http://localhost:4000")
         self.assertEqual(settings.default_model, "gpt-4.1-mini")
 
-    async def test_env_example_defaults_are_valid(self):
-        settings = Settings(OPENAI_API_KEY="proxy-key")
+    async def test_local_env_example_is_valid(self):
+        settings = Settings(
+            OPENAI_API_KEY="proxy-key",
+            OPENAI_BASE_URL="http://localhost:4000",
+            REDIS_URL="redis://localhost:6379/0",
+        )
         self.assertEqual(settings.redis_url, "redis://localhost:6379/0")
 
 

@@ -22,6 +22,10 @@
 - Expanded `README.md` with Docker Compose setup, self-check commands, and local development notes.
 - Updated project dependencies: removed `jinja2`, constrained `openai` to `>=2.38.0,<3`, and added `ruff` to the `dev` dependency group.
 
+### Fixed
+
+- Updated the local settings example test to use explicit `.env`-style values so it no longer depends on whether the test process runs inside a container.
+
 ### Refactored
 
 - Deduplicated repeated FastAPI `responses={...}` metadata across the `chat`, `models`, and `health` routers.
