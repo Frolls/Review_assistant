@@ -1,20 +1,21 @@
 # PR Review Assistant HTTP Service
 
-HTTP-сервис на `FastAPI`, который является ядром дипломного **review-ассистента для PR и code review**. Он поднимает `app.main:app`, принимает запросы на `POST /chat` и `POST /chat/stream`, кеширует обычные ответы в `Redis` и может работать как с OpenAI напрямую, так и через **LiteLLM Proxy** по OpenAI-совместимому API.
+HTTP-сервис на `FastAPI` для транспортного слоя дипломного PR Review Assistant. Сервис поднимает `app.main:app`, принимает запросы на `POST /chat` и `POST /chat/stream`, кеширует обычные ответы в `Redis` и работает с OpenAI-совместимым backend через `AsyncOpenAI`.
 
-На текущем этапе это именно транспортный и orchestration-слой review-ассистента:
+На текущем этапе сервис отвечает за HTTP API и интеграцию с LLM backend:
 
-- фронтенд, CLI или IDE-клиент отправляют вопрос по ревью в `/chat` или `/chat/stream`
-- сервис валидирует запрос, добавляет observability, кеш и единый формат ошибок
-- OpenAI-compatible backend отвечает уже за генерацию review-ответа
+- фронтенд, CLI или IDE-клиент отправляют запрос в `/chat` или `/chat/stream`
+- сервис валидирует входные данные, выполняет логирование, читает и записывает кеш, нормализует ошибки
+- OpenAI-совместимый backend выполняет генерацию ответа
 
-То есть речь не про абстрактный “чат-сервис”, а про HTTP-обёртку вокруг LLM-слоя дипломного PR Review Assistant.
+Сервис не реализует собственную LLM-логику. Его зона ответственности: HTTP-контракт, вызов backend, кеширование и служебные endpoint'ы.
 
 ## Что реализовано
 
 - `POST /chat` — обычный completion-ответ с `cached: true/false`
 - `POST /chat/stream` — SSE-поток с `data: ...` и финальным `data: [DONE]`
 - `GET /health` — liveness без зависимостей
+- `GET /ready` — readiness с проверкой `Redis`
 - `GET /models` — статический каталог OpenAI-моделей с ценами
 - `X-Request-ID`, request logging, CORS и единый формат ошибок
 
@@ -24,8 +25,8 @@ HTTP-сервис на `FastAPI`, который является ядром д�
 Client
   -> FastAPI app.main:app
   -> OpenAI-compatible backend
-     -> OpenAI напрямую
-     -> или LiteLLM Proxy
+     -> OpenAI API
+     -> LiteLLM Proxy
 ```
 
 Для режима с LiteLLM приложение по-прежнему использует `AsyncOpenAI`, но:
@@ -83,7 +84,7 @@ tests/
 
 Дополнительно:
 
-- `OPENAI_BASE_URL` — полезен для LiteLLM или другого OpenAI-compatible backend
+- `OPENAI_BASE_URL` — адрес LiteLLM или другого OpenAI-compatible backend
 - `LLM_MAX_CONCURRENCY` — ограничение параллелизма
 
 ## Быстрый старт через LiteLLM
@@ -133,6 +134,66 @@ uv run uvicorn app.main:app --reload
 http://localhost:8000/docs
 ```
 
+## Запуск через Docker Compose
+
+1. Подготовить `.env`:
+
+```bash
+cp .env.example .env
+```
+
+2. Заполнить в `.env` как минимум `OPENAI_API_KEY` и при необходимости `OPENAI_BASE_URL`.
+
+3. Поднять стек:
+
+```bash
+docker compose up -d --build
+```
+
+4. Проверить сервис:
+
+```bash
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/ready
+curl http://127.0.0.1:8000/docs
+```
+
+`/health` всегда отвечает `200`, пока жив процесс FastAPI. `/ready` отвечает `200`, только когда доступен `Redis`; если Redis недоступен, endpoint вернёт `503`.
+
+`compose.override.yaml` используется для локальной разработки: при обычном `docker compose up` он включает `uvicorn --reload` и bind mount только для каталога `app/`, чтобы изменения Python-кода подхватывались без пересборки образа.
+
+## Самопроверка контейнеризации
+
+После `docker compose up -d --build` можно проверить стек так:
+
+```bash
+docker compose ps
+curl -s http://127.0.0.1:8000/health
+curl -s http://127.0.0.1:8000/ready
+curl -s http://127.0.0.1:8000/docs > /dev/null
+docker compose exec -T app id
+docker compose exec -T redis redis-cli ping
+docker images llm-service:v1
+docker run --rm --entrypoint ls llm-service:v1 -la /app
+git ls-files | grep -E '\.env$'
+```
+
+Ожидаемый результат:
+
+- `app` и `redis` в статусе `healthy`
+- `/health` -> `200` и `{"status":"ok"}`
+- `/ready` -> `200` и `{"status":"ok","redis":"up"}`
+- `docker compose exec -T app id` показывает `uid=1000(appuser)`
+- `docker compose exec -T redis redis-cli ping` возвращает `PONG`
+- в `/app` внутри образа нет `.env`, `.git`, `tests/`
+- `git ls-files | grep -E '\.env$'` ничего не выводит
+
+Проверка на локальной машине показала:
+
+- `docker compose up -d --build` поднимает стек одной командой
+- размер итогового образа `llm-service:v1` — `163 MB`
+- при остановке `redis` endpoint `/health` остаётся `200`, а `/ready` становится `503`
+
 ## Быстрый старт через Ollama
 
 1. Поднять `Ollama` и убедиться, что нужная модель уже скачана, например `qwen3`.
@@ -158,7 +219,7 @@ CORS_ORIGINS=[]
 uv run uvicorn app.main:app --reload
 ```
 
-Этот сценарий был проверен живьём: `GET /health`, `GET /models`, `POST /chat`, `POST /chat/stream` и Redis cache hit работают на локальном `Ollama + Redis`.
+Проверка на локальном стенде показала, что `GET /health`, `GET /models`, `POST /chat`, `POST /chat/stream` и кеширование через `Redis` работают с локальным `Ollama`.
 
 ## Примеры запросов
 
@@ -185,7 +246,7 @@ curl http://127.0.0.1:8000/models
 ## LiteLLM конфиги
 
 - [docs/litellm/config.production_like.yaml](/workspaces/Review_bot/docs/litellm/config.production_like.yaml:1) — production-like fallback `OpenAI -> Anthropic -> Ollama`
-- [docs/litellm/config.yaml](/workspaces/Review_bot/docs/litellm/config.yaml:1) — локальный demo fallback через mock upstream
+- [docs/litellm/config.yaml](/workspaces/Review_bot/docs/litellm/config.yaml:1) — локальная конфигурация fallback через mock upstream
 
 ## Тесты
 
@@ -195,12 +256,12 @@ uv run python -m unittest tests.test_llm_service -v
 
 ## Проверенный e2e сценарий
 
-На локальном стенде с `Ollama qwen3` и `Redis` сервис показал:
+На локальном стенде с `Ollama qwen3` и `Redis` проверка показала:
 
 - `GET /health` -> `200`
 - `GET /models` -> `200`
 - первый `POST /chat` -> `cached: false`
-- второй такой же `POST /chat` -> `cached: true` и заметно быстрее
+- второй такой же `POST /chat` -> `cached: true`
 - `POST /chat/stream` -> SSE-чанки, затем `usage`, затем `[DONE]`
 
-Нюанс: `qwen3` может стримить reasoning-текст перед финальным ответом. Для текущего ТЗ это не мешает, потому что протокол SSE и финальные события работают корректно.
+`qwen3` может передавать reasoning-текст до финального ответа. Для текущего API это допустимо: SSE-поток и завершающие события обрабатываются корректно.
