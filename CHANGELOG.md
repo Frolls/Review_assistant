@@ -20,6 +20,7 @@
 
 - Updated `.env.example` with Docker-friendly defaults and clearer placeholder values.
 - Expanded `README.md` with Docker Compose setup, self-check commands, and local development notes.
+- Updated project dependencies: removed `jinja2`, constrained `openai` to `>=2.38.0,<3`, and added `ruff` to the `dev` dependency group.
 
 ### Refactored
 
