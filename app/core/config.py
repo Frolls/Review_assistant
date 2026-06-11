@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     redis_url: str = Field(default="redis://localhost:6379/0", validation_alias="REDIS_URL")
     cache_ttl_seconds: int = Field(default=300, validation_alias="CACHE_TTL_SECONDS")
     max_concurrency: int = Field(default=5, validation_alias="LLM_MAX_CONCURRENCY")
+    log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
     cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=list,
         validation_alias="CORS_ORIGINS",
@@ -157,6 +158,20 @@ class Settings(BaseSettings):
         if value <= 0:
             raise ValueError("LLM_MAX_CONCURRENCY must be greater than zero")
         return value
+
+    @field_validator("log_level", mode="before")
+    @classmethod
+    def default_log_level(cls, value: object) -> object:
+        if value is None or value == "":
+            return "INFO"
+        return value
+
+    @field_validator("log_level")
+    @classmethod
+    def validate_log_level(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("LOG_LEVEL must not be blank")
+        return value.upper()
 
     @field_validator("cors_origins", mode="before")
     @classmethod

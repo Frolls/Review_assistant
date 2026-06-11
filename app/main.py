@@ -52,8 +52,8 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
-    setup_logging()
     settings = get_settings()
+    setup_logging(settings.log_level)
     app = FastAPI(
         title="LLM HTTP Service",
         version="1.0.0",

@@ -1,6 +1,6 @@
 # PR Review Assistant HTTP Service
 
-HTTP-сервис на `FastAPI` для транспортного слоя дипломного PR Review Assistant. Сервис поднимает `app.main:app`, принимает запросы на `POST /chat` и `POST /chat/stream`, кеширует обычные ответы в `Redis` и работает с OpenAI-совместимым backend через `AsyncOpenAI`.
+HTTP-сервис на `FastAPI` для транспортного слоя дипломного PR Review Assistant. Сервис поднимает `app.main:app`, принимает запросы на `POST /chat` и `POST /chat/stream`, кеширует обычные ответы в `Redis`, работает с OpenAI-совместимым backend через `AsyncOpenAI` и экспортирует trace/span-данные в Phoenix.
 
 На текущем этапе сервис отвечает за HTTP API и интеграцию с LLM backend:
 
@@ -18,12 +18,16 @@ HTTP-сервис на `FastAPI` для транспортного слоя ди
 - `GET /ready` — readiness с проверкой `Redis`
 - `GET /models` — статический каталог OpenAI-моделей с ценами
 - `X-Request-ID`, request logging, CORS и единый формат ошибок
+- structured JSON logs с `request_id`, latency, token usage, finish reason, `prompt_hash` и безопасным `prompt_preview`
+- OpenInference/Phoenix tracing для `/chat` и LLM-вызовов с `gen_ai.*` атрибутами
+- PII-redaction для email, российских телефонов, карт, ИНН и паспортов перед записью превью в логи
 
 ## Архитектура
 
 ```text
 Client
   -> FastAPI app.main:app
+  -> Phoenix collector/UI
   -> OpenAI-compatible backend
      -> OpenAI API
      -> LiteLLM Proxy
@@ -49,6 +53,10 @@ app/
   core/
     config.py
     exceptions.py
+  observability/
+    logging.py
+    pii.py
+    tracing.py
   deps/
     providers.py
   routers/
@@ -62,16 +70,20 @@ app/
     llm.py
 docs/
   architecture.md
+  observability/
+    README.md
+    phoenix-trace.png
   litellm/
     config.yaml
     config.production_like.yaml
 tests/
+  test_observability_pii.py
   test_llm_service.py
 ```
 
 ## Переменные окружения
 
-Шаблон лежит в [.env.example](/workspaces/Review_bot/.env.example:1).
+Шаблон лежит в `.env.example`.
 
 Обязательные ключи приложения:
 
@@ -86,6 +98,24 @@ tests/
 
 - `OPENAI_BASE_URL` — адрес LiteLLM или другого OpenAI-compatible backend
 - `LLM_MAX_CONCURRENCY` — ограничение параллелизма
+- `LOG_LEVEL` — уровень логирования приложения, по умолчанию `INFO`
+- `PHOENIX_COLLECTOR_ENDPOINT` — OTLP HTTP endpoint Phoenix, по умолчанию `http://localhost:6006`
+
+`PHOENIX_COLLECTOR_ENDPOINT`, если указывает только на хост Phoenix UI, автоматически нормализуется до `/v1/traces`. Например, `http://localhost:6006` будет использован как `http://localhost:6006/v1/traces`.
+
+## Observability
+
+Сервис включает две линии наблюдаемости:
+
+- `structlog` пишет JSON-логи в stdout с контекстом запроса: `request_id`, `user_id`, `path`, `method`, HTTP status и latency
+- Phoenix/OpenInference создаёт trace для HTTP/LLM-вызовов, включая модель и usage-метрики токенов
+
+Чтобы не утекали чувствительные данные, в логи пишется не исходный prompt, а:
+
+- `prompt_hash` — короткий стабильный SHA-256 digest для корреляции похожих запросов
+- `prompt_preview` — редактированная версия prompt с маскированием email, телефона, карты, ИНН, паспорта и, для длинных текстов, опциональной anonymization имён через Presidio + spaCy
+
+Подробности и пример trace-скриншота лежат в `docs/observability/README.md`.
 
 ## Быстрый старт через LiteLLM
 
@@ -108,6 +138,7 @@ REDIS_URL=redis://localhost:6379/0
 CACHE_TTL_SECONDS=300
 LLM_MAX_CONCURRENCY=5
 CORS_ORIGINS=[]
+LOG_LEVEL=INFO
 
 OPENAI_UPSTREAM_API_KEY=
 ANTHROPIC_API_KEY=
@@ -115,20 +146,28 @@ OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
 OLLAMA_API_KEY=ollama
 ```
 
-4. Поднять LiteLLM Proxy:
+4. При необходимости поднять Phoenix UI для локального просмотра trace:
+
+```bash
+docker compose up -d phoenix
+```
+
+Phoenix UI будет доступен на `http://127.0.0.1:6006`.
+
+5. Поднять LiteLLM Proxy:
 
 ```bash
 uv tool install 'litellm[proxy]'
 litellm --config docs/litellm/config.production_like.yaml --port 4000
 ```
 
-5. Поднять FastAPI:
+6. Поднять FastAPI:
 
 ```bash
 uv run uvicorn app.main:app --reload
 ```
 
-6. Открыть Swagger:
+7. Открыть Swagger:
 
 ```text
 http://localhost:8000/docs
@@ -150,6 +189,8 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
+Команда поднимет три сервиса: `app`, `redis`, `phoenix`.
+
 4. Проверить сервис:
 
 ```bash
@@ -159,6 +200,8 @@ curl http://127.0.0.1:8000/docs
 ```
 
 `/health` всегда отвечает `200`, пока жив процесс FastAPI. `/ready` отвечает `200`, только когда доступен `Redis`; если Redis недоступен, endpoint вернёт `503`.
+
+Phoenix UI после старта доступен на `http://127.0.0.1:6006`. Для появления trace достаточно выполнить любой запрос в `/chat` или `/chat/stream`.
 
 `compose.override.yaml` используется для локальной разработки: при обычном `docker compose up` он включает `uvicorn --reload` и bind mount только для каталога `app/`, чтобы изменения Python-кода подхватывались без пересборки образа.
 
@@ -173,6 +216,7 @@ curl -s http://127.0.0.1:8000/ready
 curl -s http://127.0.0.1:8000/docs > /dev/null
 docker compose exec -T app id
 docker compose exec -T redis redis-cli ping
+curl -s http://127.0.0.1:6006 > /dev/null
 docker images llm-service:v1
 docker run --rm --entrypoint ls llm-service:v1 -la /app
 git ls-files | grep -E '\.env$'
@@ -181,8 +225,10 @@ git ls-files | grep -E '\.env$'
 Ожидаемый результат:
 
 - `app` и `redis` в статусе `healthy`
+- `phoenix` в статусе `running`
 - `/health` -> `200` и `{"status":"ok"}`
 - `/ready` -> `200` и `{"status":"ok","redis":"up"}`
+- UI Phoenix открывается на `http://127.0.0.1:6006`
 - `docker compose exec -T app id` показывает `uid=1000(appuser)`
 - `docker compose exec -T redis redis-cli ping` возвращает `PONG`
 - в `/app` внутри образа нет `.env`, `.git`, `tests/`
@@ -211,6 +257,7 @@ REDIS_URL=redis://host.docker.internal:6379/0
 CACHE_TTL_SECONDS=300
 LLM_MAX_CONCURRENCY=5
 CORS_ORIGINS=[]
+LOG_LEVEL=INFO
 ```
 
 4. Поднять FastAPI:

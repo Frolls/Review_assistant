@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [2026-06-11]
+
+### Added
+
+- Added a Phoenix observability stack to Docker Compose with persisted Phoenix data and collector wiring for the FastAPI app.
+- Added OpenAI auto-instrumentation through Phoenix/OpenInference and explicit `gen_ai.*` span attributes for `/chat` requests.
+- Added structured JSON logging with request-scoped context, `X-Request-ID` propagation, LLM token usage, latency, finish reason, prompt hash, and redacted prompt previews.
+- Added PII masking helpers for email, Russian phone numbers, cards, INN, passport numbers, and optional Presidio-based Russian person-name anonymization.
+- Added `docs/observability/phoenix-trace.png` and a short observability note describing what the trace screenshot shows.
+- Added unit tests that guard against raw PII leaking into `prompt_preview`.
+
+### Changed
+
+- Limited supported Python versions to `>=3.11,<3.14` to match the current Presidio dependency range.
+- Extended the Docker image build to include the `ru_core_news_md` spaCy model used by Presidio.
+
+### Fixed
+
+- Normalized Phoenix collector URLs to `/v1/traces` so spans export successfully when `PHOENIX_COLLECTOR_ENDPOINT` points at the Phoenix UI host.
+- Updated Russian phone-number redaction to cover formats such as `+7 (999) 123-45-67` and `+7 999 123 45 67`.
+
 ## [2026-06-10]
 
 ### Added
