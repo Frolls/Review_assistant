@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import time
 from contextlib import asynccontextmanager
 from uuid import uuid4
@@ -12,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from openai import AsyncOpenAI
 from redis.asyncio import Redis
+from structlog.contextvars import bind_contextvars, clear_contextvars
 
 from app.core.config import get_settings
 from app.core.exceptions import (
@@ -21,17 +21,20 @@ from app.core.exceptions import (
     LLMRateLimitError,
     LLMTimeoutError,
 )
+from app.observability.logging import get_logger, setup_logging
+from app.observability.tracing import setup_tracing
 from app.routers.chat import router as chat_router
 from app.routers.health import router as health_router
 from app.routers.models import router as models_router
 
 
-logger = logging.getLogger("llm-service")
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = app.state.settings
+    setup_tracing()
     openai_client = AsyncOpenAI(
         api_key=settings.openai_api_key.get_secret_value(),
         base_url=settings.openai_base_url,
@@ -49,6 +52,7 @@ async def lifespan(app: FastAPI):
 
 
 def create_app() -> FastAPI:
+    setup_logging()
     settings = get_settings()
     app = FastAPI(
         title="LLM HTTP Service",
@@ -78,23 +82,31 @@ def create_app() -> FastAPI:
 
 
 async def request_context_middleware(request: Request, call_next):
-    request_id = request.headers.get("X-Request-ID") or str(uuid4())
+    clear_contextvars()
+    request_id = request.headers.get("X-Request-ID") or uuid4().hex[:12]
+    user_id = request.headers.get("X-User-ID")
     request.state.request_id = request_id
     started_at = time.perf_counter()
 
-    response = await call_next(request)
-
-    duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
-    response.headers["X-Request-ID"] = request_id
-    logger.info(
-        "request_id=%s method=%s path=%s status=%s duration_ms=%.2f",
-        request_id,
-        request.method,
-        request.url.path,
-        response.status_code,
-        duration_ms,
+    bind_contextvars(
+        request_id=request_id,
+        user_id=user_id,
+        path=request.url.path,
+        method=request.method,
     )
-    return response
+
+    try:
+        response = await call_next(request)
+        duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+        response.headers["X-Request-ID"] = request_id
+        logger.info(
+            "http_request_completed",
+            status=response.status_code,
+            latency_ms=duration_ms,
+        )
+        return response
+    finally:
+        clear_contextvars()
 
 
 async def llm_error_handler(_: Request, exc: LLMError) -> JSONResponse:

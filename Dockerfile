@@ -23,6 +23,8 @@ COPY app ./app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
+RUN /app/.venv/bin/python -m spacy download ru_core_news_md
+
 FROM python:3.13-slim-bookworm AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \

@@ -3,11 +3,12 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-import logging
 import time
 from collections.abc import AsyncIterator
 
 from openai import APITimeoutError, AsyncOpenAI, AuthenticationError, OpenAIError, RateLimitError
+from opentelemetry import trace
+from opentelemetry.trace import Status, StatusCode
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
@@ -19,10 +20,13 @@ from app.core.exceptions import (
     LLMRateLimitError,
     LLMTimeoutError,
 )
+from app.observability.logging import get_logger
+from app.observability.pii import prompt_hash, redact_pii_for_log
 from app.schemas.chat import ChatDelta, ChatRequest, ChatResponse, Usage
 
 
-logger = logging.getLogger("llm-service")
+logger = get_logger(__name__)
+tracer = trace.get_tracer(__name__)
 
 
 class LLMService:
@@ -43,51 +47,86 @@ class LLMService:
         normalized_request = req.with_default_model(self.settings.default_model)
         cache_key = self._build_cache_key(normalized_request)
         started_at = time.perf_counter()
-
-        cached_response = await self._read_cache(cache_key)
-        if cached_response is not None:
-            self._log_completion(
-                model=normalized_request.model or self.settings.default_model,
-                message_count=len(normalized_request.messages),
-                status="cache_hit",
-                duration_ms=round((time.perf_counter() - started_at) * 1000, 2),
-            )
-            return cached_response.model_copy(update={"cached": True})
-
-        try:
-            async with self._sem:
-                async with asyncio.timeout(self.settings.request_timeout):
-                    response = await self.openai.chat.completions.create(
-                        model=normalized_request.model,
-                        messages=[
-                            message.model_dump(mode="json")
-                            for message in normalized_request.messages
-                        ],
-                        temperature=normalized_request.temperature,
-                        max_tokens=normalized_request.max_tokens,
+        with tracer.start_as_current_span("chat.request") as span:
+            self._set_request_span_attributes(span, normalized_request)
+            try:
+                cached_response = await self._read_cache(cache_key)
+                if cached_response is not None:
+                    duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+                    cached_chat_response = cached_response.model_copy(update={"cached": True})
+                    self._set_response_span_attributes(
+                        span=span,
+                        response=cached_chat_response,
+                        duration_ms=duration_ms,
+                        status="cache_hit",
                     )
-        except TimeoutError as exc:
-            raise LLMTimeoutError("LLM provider request timed out.") from exc
-        except (RateLimitError, APITimeoutError, AuthenticationError, OpenAIError) as exc:
-            self._log_completion(
-                model=normalized_request.model or self.settings.default_model,
-                message_count=len(normalized_request.messages),
-                status="provider_error",
-                duration_ms=round((time.perf_counter() - started_at) * 1000, 2),
-            )
-            raise self._translate_error(exc) from exc
+                    await self._log_completion(
+                        model=normalized_request.model or self.settings.default_model,
+                        req=normalized_request,
+                        response=cached_response,
+                        message_count=len(normalized_request.messages),
+                        status="cache_hit",
+                        duration_ms=duration_ms,
+                    )
+                    return cached_chat_response
 
-        chat_response = ChatResponse.from_openai(response, cached=False)
-        if not chat_response.content.strip():
-            raise LLMEmptyResponseError()
-        await self._write_cache(cache_key, chat_response)
-        self._log_completion(
-            model=chat_response.model,
-            message_count=len(normalized_request.messages),
-            status="ok",
-            duration_ms=round((time.perf_counter() - started_at) * 1000, 2),
-        )
-        return chat_response
+                try:
+                    async with self._sem:
+                        async with asyncio.timeout(self.settings.request_timeout):
+                            response = await self.openai.chat.completions.create(
+                                model=normalized_request.model,
+                                messages=[
+                                    message.model_dump(mode="json")
+                                    for message in normalized_request.messages
+                                ],
+                                temperature=normalized_request.temperature,
+                                max_tokens=normalized_request.max_tokens,
+                            )
+                except TimeoutError as exc:
+                    translated = LLMTimeoutError("LLM provider request timed out.")
+                    self._set_error_span_attributes(span, translated)
+                    raise translated from exc
+                except (RateLimitError, APITimeoutError, AuthenticationError, OpenAIError) as exc:
+                    duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+                    await self._log_completion(
+                        model=normalized_request.model or self.settings.default_model,
+                        req=normalized_request,
+                        response=None,
+                        message_count=len(normalized_request.messages),
+                        status="provider_error",
+                        duration_ms=duration_ms,
+                    )
+                    translated = self._translate_error(exc)
+                    self._set_error_span_attributes(span, translated)
+                    raise translated from exc
+
+                chat_response = ChatResponse.from_openai(response, cached=False)
+                if not chat_response.content.strip():
+                    error = LLMEmptyResponseError()
+                    self._set_error_span_attributes(span, error)
+                    raise error
+                await self._write_cache(cache_key, chat_response)
+                duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+                self._set_response_span_attributes(
+                    span=span,
+                    response=chat_response,
+                    duration_ms=duration_ms,
+                    status="ok",
+                )
+                await self._log_completion(
+                    model=chat_response.model,
+                    req=normalized_request,
+                    response=chat_response,
+                    message_count=len(normalized_request.messages),
+                    status="ok",
+                    duration_ms=duration_ms,
+                )
+                return chat_response
+            except LLMError:
+                raise
+            except Exception as exc:
+                self._set_error_span_attributes(span, exc)
+                raise
 
     async def stream(self, req: ChatRequest) -> AsyncIterator[ChatDelta]:
         normalized_request = req.with_default_model(self.settings.default_model)
@@ -183,20 +222,30 @@ class LLMService:
                 return text
         return self._coerce_text(delta)
 
-    def _log_completion(
+    async def _log_completion(
         self,
         *,
         model: str,
+        req: ChatRequest,
+        response: ChatResponse | None,
         message_count: int,
         status: str,
         duration_ms: float,
     ) -> None:
+        raw_prompt = self._prompt_text(req)
+        prompt_preview = (await redact_pii_for_log(raw_prompt))[:120]
+        usage = response.usage if response is not None else None
         logger.info(
-            "llm.complete model=%s messages=%s status=%s duration_ms=%.2f",
-            model,
-            message_count,
-            status,
-            duration_ms,
+            "llm_request_completed",
+            model=model,
+            input_tokens=usage.prompt_tokens if usage is not None else 0,
+            output_tokens=usage.completion_tokens if usage is not None else 0,
+            latency_ms=duration_ms,
+            finish_reason=response.finish_reason if response is not None else None,
+            status=status,
+            message_count=message_count,
+            prompt_hash=prompt_hash(raw_prompt),
+            prompt_preview=prompt_preview,
         )
 
     def _log_stream(
@@ -208,12 +257,15 @@ class LLMService:
         ttft_ms: float | None,
     ) -> None:
         logger.info(
-            "llm.stream model=%s messages=%s duration_ms=%.2f ttft_ms=%s",
-            model,
-            message_count,
-            duration_ms,
-            ttft_ms,
+            "llm_stream_completed",
+            model=model,
+            message_count=message_count,
+            latency_ms=duration_ms,
+            ttft_ms=ttft_ms,
         )
+
+    def _prompt_text(self, req: ChatRequest) -> str:
+        return "\n".join(f"{message.role}: {message.content}" for message in req.messages)
 
     def _coerce_text(self, value: object) -> str:
         if value is None:
@@ -234,3 +286,35 @@ class LLMService:
                 if text:
                     return text
         return ""
+
+    def _set_request_span_attributes(self, span: trace.Span, req: ChatRequest) -> None:
+        prompt_text = self._prompt_text(req)
+        span.set_attribute("gen_ai.operation.name", "chat.completions")
+        span.set_attribute("gen_ai.system", "openai")
+        span.set_attribute("gen_ai.request.model", req.model or self.settings.default_model)
+        span.set_attribute("input.value", prompt_text)
+
+    def _set_response_span_attributes(
+        self,
+        *,
+        span: trace.Span,
+        response: ChatResponse,
+        duration_ms: float,
+        status: str,
+    ) -> None:
+        span.set_attribute("gen_ai.response.model", response.model)
+        span.set_attribute("gen_ai.response.finish_reason", response.finish_reason or "")
+        span.set_attribute("gen_ai.usage.input_tokens", response.usage.prompt_tokens)
+        span.set_attribute("gen_ai.usage.output_tokens", response.usage.completion_tokens)
+        span.set_attribute("gen_ai.usage.total_tokens", response.usage.total_tokens)
+        span.set_attribute("output.value", response.content)
+        span.set_attribute("llm.cache_status", status)
+        span.set_attribute("llm.latency_ms", duration_ms)
+        span.set_status(Status(StatusCode.OK))
+
+    def _set_error_span_attributes(self, span: trace.Span, exc: Exception) -> None:
+        error_code = exc.code if isinstance(exc, LLMError) else exc.__class__.__name__
+        error_message = exc.message if isinstance(exc, LLMError) else str(exc)
+        span.set_attribute("error.type", error_code)
+        span.set_attribute("error.message", error_message)
+        span.set_status(Status(StatusCode.ERROR, error_message))

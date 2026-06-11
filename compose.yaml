@@ -1,4 +1,15 @@
 services:
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    ports:
+      - "6006:6006"
+      - "4317:4317"
+    environment:
+      PHOENIX_WORKING_DIR: /data
+    volumes:
+      - phoenix-data:/data
+    restart: unless-stopped
+
   app:
     image: llm-service:v1
     build:
@@ -8,7 +19,10 @@ services:
       - .env
     environment:
       REDIS_URL: redis://redis:6379/0
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
     depends_on:
+      phoenix:
+        condition: service_started
       redis:
         condition: service_healthy
     ports:
@@ -37,4 +51,5 @@ services:
     restart: unless-stopped
 
 volumes:
+  phoenix-data: {}
   redis_data: {}
