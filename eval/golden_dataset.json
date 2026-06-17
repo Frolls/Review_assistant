@@ -1,0 +1,682 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "review_001",
+      "question": "В PR добавили функцию `def load(path): return open(path).read()`. Какой комментарий должен оставить ассистент на ревью?",
+      "expected_answer": "Нужно указать на утечку файлового дескриптора и предложить использовать context manager: `with open(path, encoding=\"utf-8\") as fh: return fh.read()`. Также стоит попросить явно задать encoding, потому что это соответствует устойчивому Python style и снижает различия между окружениями.",
+      "expected_keywords": [
+        "context manager",
+        "with open",
+        "encoding",
+        "файловый дескриптор",
+        "PEP 8"
+      ],
+      "must_not_contain": [
+        "оставить как есть"
+      ],
+      "category": "code_review",
+      "difficulty": "easy",
+      "source": "synthetic",
+      "deprecated": false
+    },
+    {
+      "id": "review_002",
+      "question": "В Python-коде PR появился bare `except:` вокруг сетевого вызова. Как сформулировать замечание?",
+      "expected_answer": "Ассистент должен попросить не перехватывать все исключения без разбора: bare except скрывает KeyboardInterrupt/SystemExit и реальные ошибки. Лучше ловить конкретные исключения, логировать контекст и явно решать, можно ли повторить операцию или вернуть ошибку.",
+      "expected_keywords": [
+        "bare except",
+        "конкретные исключения",
+        "логировать",
+        "KeyboardInterrupt",
+        "SystemExit",
+        "PEP 8"
+      ],
+      "must_not_contain": [
+        "except: pass"
+      ],
+      "category": "code_review",
+      "difficulty": "medium",
+      "source": "pep",
+      "deprecated": false
+    },
+    {
+      "id": "review_003",
+      "question": "PR меняет публичную функцию и добавляет параметр без type hints. Что ответить ревьюеру?",
+      "expected_answer": "Нужно попросить добавить аннотации типов для нового параметра и возвращаемого значения, если проект следует typed Python. Сослаться на PEP 484 и внутренний style guide: публичные функции должны быть понятны IDE, mypy/pyright и будущим ревьюерам.",
+      "expected_keywords": [
+        "type hints",
+        "PEP 484",
+        "возвращаемое значение",
+        "публичная функция",
+        "mypy",
+        "pyright"
+      ],
+      "must_not_contain": [
+        "типы не нужны"
+      ],
+      "category": "style",
+      "difficulty": "easy",
+      "source": "pep",
+      "deprecated": false
+    },
+    {
+      "id": "review_004",
+      "question": "В diff есть функция на 90 строк с тремя вложенными циклами и несколькими `if`. Какой полезный review comment должен дать ассистент?",
+      "expected_answer": "Нужно указать на слишком высокую сложность и предложить разбить функцию на небольшие именованные шаги, вынести проверяемые части в helpers и добавить unit-тесты на ветвления. Комментарий должен объяснять риск: такую функцию трудно читать, менять и покрывать тестами.",
+      "expected_keywords": [
+        "сложность",
+        "разбить функцию",
+        "helpers",
+        "unit-тесты",
+        "ветвления",
+        "читаемость"
+      ],
+      "must_not_contain": [
+        "переписать всё с нуля"
+      ],
+      "category": "maintainability",
+      "difficulty": "medium",
+      "source": "internal_style",
+      "deprecated": false
+    },
+    {
+      "id": "review_005",
+      "question": "В Ansible task используют `shell: useradd app` без `creates`, `changed_when` или модуля `user`. Что важно отметить?",
+      "expected_answer": "Нужно указать на нарушение идемпотентности. Для управления пользователем следует использовать Ansible module `ansible.builtin.user`, а не shell-команду. Если shell неизбежен, нужно явно задать условия изменения через `creates`, `changed_when` или проверки состояния.",
+      "expected_keywords": [
+        "Ansible",
+        "идемпотентность",
+        "ansible.builtin.user",
+        "shell",
+        "changed_when",
+        "creates"
+      ],
+      "must_not_contain": [
+        "shell всегда нормально"
+      ],
+      "category": "ansible",
+      "difficulty": "medium",
+      "source": "ansible_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_006",
+      "question": "В Ansible role добавили `command: systemctl restart nginx` после template task. Как улучшить ревью-комментарий?",
+      "expected_answer": "Ассистент должен предложить handler: template task уведомляет handler через `notify`, а restart выполняется только при изменении шаблона. Это уменьшает лишние рестарты и соответствует обычной практике Ansible community documentation.",
+      "expected_keywords": [
+        "handler",
+        "notify",
+        "template",
+        "restart",
+        "только при изменении",
+        "Ansible"
+      ],
+      "must_not_contain": [
+        "рестарт на каждом запуске"
+      ],
+      "category": "ansible",
+      "difficulty": "easy",
+      "source": "ansible_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_007",
+      "question": "В playbook появился `ignore_errors: yes` на task, который деплоит конфигурацию. Что должен сказать ассистент?",
+      "expected_answer": "Нужно предупредить, что `ignore_errors` может скрыть неуспешный деплой и привести систему в неизвестное состояние. Лучше обработать ожидаемую ошибку явно через `failed_when`, `block/rescue` или отдельную проверку, а для критичных конфигураций не подавлять сбой.",
+      "expected_keywords": [
+        "ignore_errors",
+        "failed_when",
+        "block",
+        "rescue",
+        "критичная конфигурация",
+        "скрыть ошибку"
+      ],
+      "must_not_contain": [
+        "игнорировать безопасно"
+      ],
+      "category": "ansible",
+      "difficulty": "hard",
+      "source": "ansible_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_008",
+      "question": "В PR добавили секрет `api_token = \"prod-123\"` прямо в Python-файл. Какой ответ ожидается?",
+      "expected_answer": "Ассистент должен заблокировать изменение как security issue: секрет нельзя хранить в коде и git history. Нужно вынести значение в secret manager или переменные окружения, удалить секрет из истории при необходимости и добавить проверку, чтобы подобное не повторялось.",
+      "expected_keywords": [
+        "секрет",
+        "git history",
+        "secret manager",
+        "переменные окружения",
+        "security",
+        "удалить из истории"
+      ],
+      "must_not_contain": [
+        "оставить токен"
+      ],
+      "category": "security",
+      "difficulty": "easy",
+      "source": "internal_style",
+      "deprecated": false
+    },
+    {
+      "id": "review_009",
+      "question": "В лог добавили `logger.info('payload=%s', request.json())`, где payload может содержать email и token. Что написать на ревью?",
+      "expected_answer": "Нужно указать на риск утечки PII и секретов в логи. Следует логировать минимальный безопасный контекст, маскировать email/token и избегать полного payload. Если нужен debug, он должен быть защищён уровнем логирования и redaction.",
+      "expected_keywords": [
+        "PII",
+        "секреты",
+        "redaction",
+        "маскировать",
+        "payload",
+        "логи"
+      ],
+      "must_not_contain": [
+        "логировать всё"
+      ],
+      "category": "security",
+      "difficulty": "medium",
+      "source": "internal_style",
+      "deprecated": false
+    },
+    {
+      "id": "review_010",
+      "question": "PR добавляет синхронный `requests.get()` внутри async FastAPI endpoint. Какой комментарий должен дать ассистент?",
+      "expected_answer": "Нужно отметить, что синхронный I/O блокирует event loop и ухудшает latency. Следует использовать async-клиент, например httpx.AsyncClient, вынести blocking I/O в отдельный executor или изменить архитектуру вызова.",
+      "expected_keywords": [
+        "async",
+        "event loop",
+        "blocking I/O",
+        "httpx.AsyncClient",
+        "latency",
+        "FastAPI"
+      ],
+      "must_not_contain": [
+        "requests.get нормально в async"
+      ],
+      "category": "architecture",
+      "difficulty": "hard",
+      "source": "architecture_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_011",
+      "question": "В модуле domain layer появился импорт `from app.routers.chat import router`. Почему это проблема?",
+      "expected_answer": "Это нарушение направления зависимостей: доменная логика не должна зависеть от транспортного слоя. Нужно вынести общий контракт или сервис в нижний слой и оставить router тонким адаптером, который вызывает application/domain service.",
+      "expected_keywords": [
+        "направление зависимостей",
+        "domain",
+        "transport",
+        "router",
+        "service",
+        "адаптер"
+      ],
+      "must_not_contain": [
+        "циклические импорты можно игнорировать"
+      ],
+      "category": "architecture",
+      "difficulty": "hard",
+      "source": "architecture_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_012",
+      "question": "В PR добавили новый public API без тестов и без обновления docs. Как должен ответить ассистент?",
+      "expected_answer": "Нужно попросить добавить тесты на основной сценарий и ошибки, а также обновить документацию или changelog. Public API меняет контракт пользователей, поэтому ревью должно проверить совместимость, примеры использования и миграционные заметки.",
+      "expected_keywords": [
+        "public API",
+        "тесты",
+        "документация",
+        "changelog",
+        "контракт",
+        "совместимость"
+      ],
+      "must_not_contain": [
+        "тесты необязательны"
+      ],
+      "category": "support",
+      "difficulty": "medium",
+      "source": "internal_style",
+      "deprecated": false
+    },
+    {
+      "id": "review_013",
+      "question": "Как ассистент должен оценить PR, где переменная называется `data2`, а функция `do_stuff`?",
+      "expected_answer": "Нужно попросить заменить неинформативные имена на доменные: имя должно раскрывать назначение данных и действия. Комментарий должен быть конкретным: предложить названия исходя из контекста, а не просто написать 'переименовать'.",
+      "expected_keywords": [
+        "имена",
+        "доменные",
+        "назначение",
+        "конкретное предложение",
+        "читаемость",
+        "PEP 8"
+      ],
+      "must_not_contain": [
+        "нормальные имена"
+      ],
+      "category": "style",
+      "difficulty": "easy",
+      "source": "pep",
+      "deprecated": false
+    },
+    {
+      "id": "review_014",
+      "question": "В Python PR добавили mutable default argument: `def add(item, bucket=[]): ...`. Что должен заметить ассистент?",
+      "expected_answer": "Нужно предупредить, что mutable default создаётся один раз и будет разделяться между вызовами. Следует использовать `None` как default и создавать список внутри функции. Это типичная ошибка Python, которую важно ловить на ревью.",
+      "expected_keywords": [
+        "mutable default",
+        "создаётся один раз",
+        "None",
+        "список внутри",
+        "между вызовами"
+      ],
+      "must_not_contain": [
+        "bucket=[] безопасно"
+      ],
+      "category": "code_review",
+      "difficulty": "medium",
+      "source": "synthetic",
+      "deprecated": false
+    },
+    {
+      "id": "review_015",
+      "question": "В Ansible task поставили `become: true` на весь play без объяснения. Что написать?",
+      "expected_answer": "Нужно попросить сузить privilege escalation до конкретных tasks, где он действительно нужен, или явно обосновать play-level become. Это снижает blast radius и соответствует принципу минимальных привилегий.",
+      "expected_keywords": [
+        "become",
+        "privilege escalation",
+        "минимальные привилегии",
+        "blast radius",
+        "конкретные tasks"
+      ],
+      "must_not_contain": [
+        "become везде"
+      ],
+      "category": "security",
+      "difficulty": "medium",
+      "source": "ansible_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_016",
+      "question": "Пользователь просит ассистента написать комментарий: 'LGTM, всё хорошо', хотя diff содержит отсутствие обработки ошибок. Как должен действовать ассистент?",
+      "expected_answer": "Ассистент не должен соглашаться с неверной оценкой. Нужно указать обнаруженный риск: отсутствие обработки ошибок, объяснить возможный сбой и предложить конкретное исправление или тест. Тон должен быть конструктивным, без формального LGTM.",
+      "expected_keywords": [
+        "не соглашаться",
+        "риск",
+        "обработка ошибок",
+        "исправление",
+        "тест",
+        "конструктивно"
+      ],
+      "must_not_contain": [
+        "LGTM"
+      ],
+      "category": "support",
+      "difficulty": "hard",
+      "source": "synthetic",
+      "deprecated": false
+    },
+    {
+      "id": "review_017",
+      "question": "Как должен выглядеть качественный review comment от ИИ-ассистента?",
+      "expected_answer": "Он должен назвать проблему, объяснить риск, предложить минимальное действие и при необходимости сослаться на источник: PEP, Ansible docs, internal style guide или architecture docs. Комментарий не должен быть расплывчатым или токсичным.",
+      "expected_keywords": [
+        "проблема",
+        "риск",
+        "действие",
+        "PEP",
+        "Ansible docs",
+        "internal style guide",
+        "architecture docs"
+      ],
+      "must_not_contain": [
+        "плохой код"
+      ],
+      "category": "factual",
+      "difficulty": "easy",
+      "source": "internal_style",
+      "deprecated": false
+    },
+    {
+      "id": "review_018",
+      "question": "PR добавляет retry без backoff и без ограничения числа попыток. Что должен отметить ассистент?",
+      "expected_answer": "Нужно указать на риск усиления аварии и нагрузки на зависимость. Retry должен иметь лимит попыток, backoff, желательно jitter, и должен применяться только к transient errors. Нужны тесты на исчерпание попыток.",
+      "expected_keywords": [
+        "retry",
+        "backoff",
+        "лимит попыток",
+        "jitter",
+        "transient errors",
+        "тесты"
+      ],
+      "must_not_contain": [
+        "бесконечный retry"
+      ],
+      "category": "architecture",
+      "difficulty": "hard",
+      "source": "architecture_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_019",
+      "question": "В PR меняют формат конфигурационного файла, но не добавляют миграцию и backward compatibility. Какой ответ ожидается?",
+      "expected_answer": "Ассистент должен указать на риск поломки существующих установок. Нужно добавить миграционный путь, поддержку старого формата на переходный период или явную release note с breaking change, если совместимость невозможна.",
+      "expected_keywords": [
+        "миграция",
+        "backward compatibility",
+        "breaking change",
+        "release note",
+        "существующие установки"
+      ],
+      "must_not_contain": [
+        "просто удалить старый формат"
+      ],
+      "category": "architecture",
+      "difficulty": "hard",
+      "source": "architecture_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_020",
+      "question": "Сгенерируй пример pytest для функции, которая валидирует, что имя Ansible role не пустое и содержит только допустимые символы.",
+      "expected_answer": "Ответ должен показать параметризованный pytest с валидными и невалидными именами, проверкой исключения для пустой строки и запрещённых символов. Тест должен быть локальным, без сети и без реального Ansible запуска.",
+      "expected_keywords": [
+        "pytest",
+        "parametrize",
+        "валидные",
+        "невалидные",
+        "исключение",
+        "без сети"
+      ],
+      "must_not_contain": [
+        "ansible-playbook"
+      ],
+      "category": "code_gen",
+      "difficulty": "medium",
+      "source": "synthetic",
+      "deprecated": false
+    },
+    {
+      "id": "review_021",
+      "question": "В PR добавили список `# TODO fix later` без issue и без владельца. Как ассистент должен отреагировать?",
+      "expected_answer": "Нужно попросить сделать TODO actionable: указать issue, владельца или конкретное условие удаления. Иначе технический долг теряется и не попадает в планирование.",
+      "expected_keywords": [
+        "TODO",
+        "issue",
+        "владелец",
+        "условие удаления",
+        "технический долг",
+        "планирование"
+      ],
+      "must_not_contain": [
+        "TODO без контекста нормален"
+      ],
+      "category": "maintainability",
+      "difficulty": "easy",
+      "source": "internal_style",
+      "deprecated": false
+    },
+    {
+      "id": "review_022",
+      "question": "PR добавляет кэширование результата проверки прав пользователя, но не учитывает tenant_id. Что должен сказать ассистент?",
+      "expected_answer": "Нужно указать на критический риск смешивания данных между tenant'ами. Ключ кеша должен включать все параметры, влияющие на результат авторизации, включая user_id, tenant_id, роль/права и версию политики, либо кэширование нужно убрать.",
+      "expected_keywords": [
+        "tenant_id",
+        "ключ кеша",
+        "авторизация",
+        "user_id",
+        "роль",
+        "версия политики",
+        "security"
+      ],
+      "must_not_contain": [
+        "tenant_id не нужен"
+      ],
+      "category": "security",
+      "difficulty": "hard",
+      "source": "bugfix_auth_cache",
+      "deprecated": false
+    },
+    {
+      "id": "review_023",
+      "question": "Как ассистент должен использовать источники данных, если PEP и внутренний style guide расходятся?",
+      "expected_answer": "Нужно объяснить конфликт и отдать приоритет внутреннему style guide для локальных правил проекта, если он не нарушает безопасность и совместимость. При этом полезно сослаться на PEP как общий стандарт и предложить зафиксировать исключение в документации.",
+      "expected_keywords": [
+        "конфликт",
+        "internal style guide",
+        "PEP",
+        "приоритет",
+        "исключение",
+        "документация"
+      ],
+      "must_not_contain": [
+        "игнорировать внутренние правила"
+      ],
+      "category": "factual",
+      "difficulty": "medium",
+      "source": "internal_style",
+      "deprecated": false
+    },
+    {
+      "id": "review_024",
+      "question": "В diff ассистент видит только фрагмент файла и не уверен, используется ли helper где-то ещё. Как правильно сформулировать замечание?",
+      "expected_answer": "Нужно явно отметить неопределённость и попросить проверить callers или добавить контекст, вместо уверенного заявления. Допустимо написать: 'Если helper используется публично, изменение может быть breaking; проверьте callers и добавьте тест'.",
+      "expected_keywords": [
+        "неопределённость",
+        "callers",
+        "контекст",
+        "если",
+        "breaking",
+        "тест"
+      ],
+      "must_not_contain": [
+        "точно ломает всё"
+      ],
+      "category": "support",
+      "difficulty": "medium",
+      "source": "synthetic",
+      "deprecated": false
+    },
+    {
+      "id": "review_025",
+      "question": "В PR добавили list comprehension с побочным эффектом: `[send_event(x) for x in items]`. Что должен заметить ассистент?",
+      "expected_answer": "Нужно указать, что list comprehension не стоит использовать только ради побочных эффектов: создаётся ненужный список и снижается читаемость. Лучше заменить на обычный `for` loop, где намерение отправить события явно видно.",
+      "expected_keywords": [
+        "list comprehension",
+        "побочный эффект",
+        "ненужный список",
+        "for loop",
+        "читаемость",
+        "PEP 8"
+      ],
+      "must_not_contain": [
+        "это оптимальнее"
+      ],
+      "category": "style",
+      "difficulty": "easy",
+      "source": "pep",
+      "deprecated": false
+    },
+    {
+      "id": "review_026",
+      "question": "В Ansible task используют `copy` для конфигурации с паролем в plain text. Какой review comment ожидается?",
+      "expected_answer": "Ассистент должен отметить риск хранения секрета в playbook/repository и предложить использовать Ansible Vault, внешний secret manager или безопасную передачу переменной через CI/CD. В комментарии нужно попросить не выводить секрет в логи и проверить `no_log` для чувствительных tasks.",
+      "expected_keywords": [
+        "Ansible Vault",
+        "secret manager",
+        "plain text",
+        "no_log",
+        "CI/CD",
+        "секрет"
+      ],
+      "must_not_contain": [
+        "пароль можно хранить в YAML"
+      ],
+      "category": "security",
+      "difficulty": "hard",
+      "source": "ansible_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_027",
+      "question": "PR добавляет `assert user.is_admin` для runtime-проверки прав доступа. Как должен ответить ассистент?",
+      "expected_answer": "Нужно указать, что `assert` не подходит для runtime security checks: проверки могут быть отключены оптимизацией Python. Следует использовать явную проверку с понятной ошибкой/HTTP status и тестами на отказ в доступе.",
+      "expected_keywords": [
+        "assert",
+        "security checks",
+        "оптимизация Python",
+        "явная проверка",
+        "ошибка",
+        "тесты"
+      ],
+      "must_not_contain": [
+        "assert достаточно"
+      ],
+      "category": "security",
+      "difficulty": "hard",
+      "source": "pep",
+      "deprecated": false
+    },
+    {
+      "id": "review_028",
+      "question": "В PR появилась новая зависимость на тяжёлую библиотеку ради одной простой функции. Что должен оценить ассистент?",
+      "expected_answer": "Нужно попросить обосновать зависимость: размер, license, security surface, transitive dependencies, поддерживаемость и возможность заменить небольшой локальной реализацией или уже существующим helper. Решение должно учитывать архитектурные документы проекта.",
+      "expected_keywords": [
+        "зависимость",
+        "license",
+        "security surface",
+        "transitive dependencies",
+        "поддерживаемость",
+        "architecture docs"
+      ],
+      "must_not_contain": [
+        "добавлять любую библиотеку"
+      ],
+      "category": "architecture",
+      "difficulty": "medium",
+      "source": "architecture_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_029",
+      "question": "В Python PR тесты используют `time.sleep(5)` для ожидания async-операции. Какой комментарий нужен?",
+      "expected_answer": "Ассистент должен указать на медленные и flaky tests. Лучше ждать конкретного состояния, использовать event/fixture, mock clock или polling с коротким timeout. Комментарий должен попросить убрать фиксированный sleep и сделать тест детерминированным.",
+      "expected_keywords": [
+        "time.sleep",
+        "flaky",
+        "детерминированный",
+        "timeout",
+        "mock clock",
+        "polling"
+      ],
+      "must_not_contain": [
+        "увеличить sleep"
+      ],
+      "category": "testing",
+      "difficulty": "medium",
+      "source": "internal_style",
+      "deprecated": false
+    },
+    {
+      "id": "review_030",
+      "question": "В PR добавили SQL-запрос через f-string: `f\"select * from users where name = '{name}'\"`. Что должен сказать ассистент?",
+      "expected_answer": "Нужно отметить SQL injection risk и попросить использовать параметризованный запрос или query builder. Также стоит добавить тест на malicious input и убедиться, что логирование не раскрывает чувствительные параметры.",
+      "expected_keywords": [
+        "SQL injection",
+        "параметризованный запрос",
+        "query builder",
+        "malicious input",
+        "тест"
+      ],
+      "must_not_contain": [
+        "экранировать вручную достаточно"
+      ],
+      "category": "security",
+      "difficulty": "hard",
+      "source": "bugfix_sql_injection",
+      "deprecated": false
+    },
+    {
+      "id": "review_031",
+      "question": "В Ansible role task называется `Do stuff` и содержит несколько unrelated действий. Что предложить на ревью?",
+      "expected_answer": "Нужно попросить дать task понятное имя и разделить unrelated действия на отдельные tasks. В Ansible имена задач являются документацией выполнения, поэтому они должны описывать конкретное состояние или действие.",
+      "expected_keywords": [
+        "Ansible",
+        "task name",
+        "разделить",
+        "unrelated",
+        "документация выполнения",
+        "конкретное действие"
+      ],
+      "must_not_contain": [
+        "Do stuff нормально"
+      ],
+      "category": "ansible",
+      "difficulty": "easy",
+      "source": "ansible_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_032",
+      "question": "PR добавляет глобальный singleton с изменяемым состоянием для хранения текущего request_id. Чем это плохо?",
+      "expected_answer": "Ассистент должен указать на риск race conditions и утечки контекста между запросами. Для request-scoped данных лучше использовать contextvars, dependency injection или явную передачу контекста, особенно в async-приложении.",
+      "expected_keywords": [
+        "singleton",
+        "изменяемое состояние",
+        "race conditions",
+        "request_id",
+        "contextvars",
+        "async"
+      ],
+      "must_not_contain": [
+        "глобальное состояние безопасно"
+      ],
+      "category": "architecture",
+      "difficulty": "hard",
+      "source": "architecture_docs",
+      "deprecated": false
+    },
+    {
+      "id": "review_033",
+      "question": "В PR меняют сообщение ошибки с подробного на `Something went wrong`. Какой комментарий должен дать ассистент?",
+      "expected_answer": "Нужно попросить сохранить диагностическую ценность ошибки без утечки секретов: сообщение должно объяснять, что пошло не так и что может сделать пользователь или оператор. Для внутренних деталей нужен structured log с безопасной redaction.",
+      "expected_keywords": [
+        "сообщение ошибки",
+        "диагностика",
+        "без секретов",
+        "пользователь",
+        "structured log",
+        "redaction"
+      ],
+      "must_not_contain": [
+        "Something went wrong достаточно"
+      ],
+      "category": "support",
+      "difficulty": "medium",
+      "source": "internal_style",
+      "deprecated": false
+    },
+    {
+      "id": "review_034",
+      "question": "В PR добавили `# noqa` на весь файл, чтобы отключить lint warnings. Как должен отреагировать ассистент?",
+      "expected_answer": "Ассистент должен попросить не отключать lint на весь файл. Нужно исправить предупреждения или поставить точечное подавление на конкретную строку с объяснением причины. Массовое подавление ухудшает качество кода и скрывает будущие проблемы.",
+      "expected_keywords": [
+        "noqa",
+        "lint",
+        "точечное подавление",
+        "объяснение",
+        "качество кода",
+        "предупреждения"
+      ],
+      "must_not_contain": [
+        "отключить lint везде"
+      ],
+      "category": "style",
+      "difficulty": "medium",
+      "source": "internal_style",
+      "deprecated": false
+    }
+  ]
+}

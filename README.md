@@ -1,14 +1,16 @@
-# PR Review Assistant HTTP Service
+# AI PR Review Assistant HTTP Service
 
-HTTP-сервис на `FastAPI` для транспортного слоя дипломного PR Review Assistant. Сервис поднимает `app.main:app`, принимает запросы на `POST /chat` и `POST /chat/stream`, кеширует обычные ответы в `Redis`, работает с OpenAI-совместимым backend через `AsyncOpenAI` и экспортирует trace/span-данные в Phoenix.
+HTTP-сервис на `FastAPI` для дипломного проекта «ИИ-ассистент для ревью кода». Цель ассистента — улучшать качество кода и сокращать время ревью pull request'ов. В качестве источников рекомендаций используются Python Enhancement Proposals (PEP), Ansible community documentation, внутренние руководства по стилю кода и архитектурные документы.
 
-На текущем этапе сервис отвечает за HTTP API и интеграцию с LLM backend:
+Сервис поднимает `app.main:app`, принимает запросы на `POST /chat` и `POST /chat/stream`, кеширует обычные ответы в `Redis`, работает с OpenAI-совместимым backend через `AsyncOpenAI` и экспортирует trace/span-данные в Phoenix.
 
-- фронтенд, CLI или IDE-клиент отправляют запрос в `/chat` или `/chat/stream`
+На текущем этапе сервис отвечает за HTTP API, eval/testing слой и интеграцию с LLM backend:
+
+- фронтенд, CLI или IDE-клиент отправляют вопросы по ревью PR в `/chat` или `/chat/stream`
 - сервис валидирует входные данные, выполняет логирование, читает и записывает кеш, нормализует ошибки
 - OpenAI-совместимый backend выполняет генерацию ответа
 
-Сервис не реализует собственную LLM-логику. Его зона ответственности: HTTP-контракт, вызов backend, кеширование и служебные endpoint'ы.
+Сервис не реализует собственную модель. Его зона ответственности: HTTP-контракт, вызов backend, кеширование, служебные endpoint'ы и инфраструктура проверки качества ответов.
 
 ## Что реализовано
 
@@ -21,6 +23,7 @@ HTTP-сервис на `FastAPI` для транспортного слоя ди
 - structured JSON logs с `request_id`, latency, token usage, finish reason, `prompt_hash` и безопасным `prompt_preview`
 - OpenInference/Phoenix tracing для `/chat` и LLM-вызовов с `gen_ai.*` атрибутами
 - PII-redaction для email, российских телефонов, карт, ИНН и паспортов перед записью превью в логи
+- быстрый unit testing layer вокруг LLM-adjacent логики и отдельный offline evaluation layer в `eval/`
 
 ## Архитектура
 
@@ -77,8 +80,14 @@ docs/
     config.yaml
     config.production_like.yaml
 tests/
+  unit/
   test_observability_pii.py
   test_llm_service.py
+eval/
+  golden_dataset.json
+  run_evaluation.py
+  check_thresholds.py
+  thresholds.yaml
 ```
 
 ## Переменные окружения
@@ -116,6 +125,46 @@ tests/
 - `prompt_preview` — редактированная версия prompt с маскированием email, телефона, карты, ИНН, паспорта и, для длинных текстов, опциональной anonymization имён через Presidio + spaCy
 
 Подробности и пример trace-скриншота лежат в `docs/observability/README.md`.
+
+## Testing и evaluation
+
+Быстрые unit-тесты запускаются без API-ключей и без сети:
+
+```bash
+uv run pytest tests/unit/ -m "not llm"
+```
+
+Evaluation живёт отдельно от `tests/`, потому что это медленный ручной прогон с production model и judge model:
+
+```bash
+uv run python eval/run_evaluation.py --golden eval/golden_dataset.json --judge gpt-5.2 --out eval/runs/$(date +%F).json
+uv run python eval/check_thresholds.py
+```
+
+Для локального smoke/full-прогона через Ollama можно использовать проверенную пару `qwen2.5:14b` + `qwen2.5:14b`:
+
+```bash
+OPENAI_API_KEY=ollama \
+OPENAI_BASE_URL=http://host.docker.internal:11434/v1 \
+DEFAULT_MODEL=qwen2.5:14b \
+REQUEST_TIMEOUT=180 \
+uv run python eval/run_evaluation.py \
+  --golden eval/golden_dataset.json \
+  --judge qwen2.5:14b \
+  --out eval/runs/$(date +%F)-ollama.json \
+  --max-tokens 550 \
+  --judge-max-tokens 700
+uv run python eval/check_thresholds.py
+```
+
+Если для доступа к LLM API нужен proxy, задайте его локально через переменную окружения, не записывая URL с логином/паролем в репозиторий:
+
+```bash
+EVAL_PROXY='http://user:password@proxy.example.com:8888' \
+  uv run python eval/run_evaluation.py --golden eval/golden_dataset.json --judge gpt-5.2
+```
+
+`eval/golden_dataset.json` содержит версионированный golden dataset по ревью Python/Ansible/архитектурных изменений, а `eval/check_thresholds.py` сверяет последний run с порогами из `eval/thresholds.yaml`.
 
 ## Быстрый старт через LiteLLM
 

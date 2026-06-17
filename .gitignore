@@ -8,3 +8,5 @@ __pycache__/
 logs/*.log
 logs/*.json
 logs/*.md
+eval/runs/*.json
+!eval/runs/.gitkeep

@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+## [2026-06-17]
+
+### Added
+
+- Added review-assistant prompt helpers grounded in PEP, Ansible community documentation, internal style guides, and architecture documents.
+- Added LLM response parsing and cost estimation helpers for LLM-adjacent application logic.
+- Added an offline evaluation workflow with a versioned golden dataset, G-Eval-style judge script, threshold checks, and ignored local run artifacts.
+- Added unit coverage for prompt construction, LLM parsing, schema validation, cost calculation, cache behavior, retry handling, and eval dataset helpers.
+
+### Changed
+
+- Expanded the README with the diploma project framing, testing workflow, offline evaluation commands, Ollama examples, and proxy guidance.
+- Added pytest async/mock tooling and HTTPX to the development dependency group.
+
+### Fixed
+
+- Added explicit LLM quota error handling and retry-on-rate-limit behavior.
+- Limited chat message length and masked PII in `ChatMessage` representations.
+
 ## [2026-06-11]
 
 ### Added
