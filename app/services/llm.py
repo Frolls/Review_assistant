@@ -17,6 +17,7 @@ from app.core.exceptions import (
     LLMAuthError,
     LLMEmptyResponseError,
     LLMError,
+    LLMQuotaError,
     LLMRateLimitError,
     LLMTimeoutError,
 )
@@ -73,7 +74,7 @@ class LLMService:
                 try:
                     async with self._sem:
                         async with asyncio.timeout(self.settings.request_timeout):
-                            response = await self.openai.chat.completions.create(
+                            response = await self._create_chat_completion_with_retry(
                                 model=normalized_request.model,
                                 messages=[
                                     message.model_dump(mode="json")
@@ -87,6 +88,21 @@ class LLMService:
                     self._set_error_span_attributes(span, translated)
                     raise translated from exc
                 except (RateLimitError, APITimeoutError, AuthenticationError, OpenAIError) as exc:
+                    duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+                    await self._log_completion(
+                        model=normalized_request.model or self.settings.default_model,
+                        req=normalized_request,
+                        response=None,
+                        message_count=len(normalized_request.messages),
+                        status="provider_error",
+                        duration_ms=duration_ms,
+                    )
+                    translated = self._translate_error(exc)
+                    self._set_error_span_attributes(span, translated)
+                    raise translated from exc
+                except Exception as exc:
+                    if not self._is_rate_limit_error(exc):
+                        raise
                     duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
                     await self._log_completion(
                         model=normalized_request.model or self.settings.default_model,
@@ -205,13 +221,47 @@ class LLMService:
             logger.warning("cache.write_failed", extra={"cache_key": cache_key}, exc_info=True)
 
     def _translate_error(self, exc: Exception) -> LLMError:
-        if isinstance(exc, RateLimitError):
+        if self._is_quota_error(exc):
+            return LLMQuotaError(str(exc))
+        if self._is_rate_limit_error(exc):
             return LLMRateLimitError(str(exc))
         if isinstance(exc, APITimeoutError):
             return LLMTimeoutError(str(exc))
         if isinstance(exc, AuthenticationError):
             return LLMAuthError(str(exc))
         return LLMError(str(exc))
+
+    async def _create_chat_completion_with_retry(self, **kwargs):
+        max_attempts = 2
+        for attempt in range(max_attempts):
+            try:
+                return await self.openai.chat.completions.create(**kwargs)
+            except Exception as exc:
+                if (
+                    self._is_quota_error(exc)
+                    or not self._is_rate_limit_error(exc)
+                    or attempt == max_attempts - 1
+                ):
+                    raise
+                await asyncio.sleep(0.25 * (attempt + 1))
+
+        raise LLMRateLimitError("LLM provider rate limit exceeded.")
+
+    def _is_rate_limit_error(self, exc: Exception) -> bool:
+        return isinstance(exc, RateLimitError) or getattr(exc, "status_code", None) == 429
+
+    def _is_quota_error(self, exc: Exception) -> bool:
+        code = getattr(exc, "code", None)
+        if code == "insufficient_quota":
+            return True
+
+        body = getattr(exc, "body", None)
+        if isinstance(body, dict):
+            error = body.get("error", body)
+            if isinstance(error, dict) and error.get("code") == "insufficient_quota":
+                return True
+
+        return "insufficient_quota" in str(exc)
 
     def _extract_delta_text(self, delta: object) -> str:
         if delta is None:

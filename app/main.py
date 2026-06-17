@@ -18,6 +18,7 @@ from app.core.exceptions import (
     LLMAuthError,
     LLMEmptyResponseError,
     LLMError,
+    LLMQuotaError,
     LLMRateLimitError,
     LLMTimeoutError,
 )
@@ -111,6 +112,8 @@ async def request_context_middleware(request: Request, call_next):
 
 async def llm_error_handler(_: Request, exc: LLMError) -> JSONResponse:
     if isinstance(exc, LLMRateLimitError):
+        status_code = 429
+    elif isinstance(exc, LLMQuotaError):
         status_code = 429
     elif isinstance(exc, LLMTimeoutError):
         status_code = 504

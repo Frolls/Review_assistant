@@ -1,13 +1,35 @@
 from __future__ import annotations
 
+import re
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+MAX_MESSAGE_CONTENT_LENGTH = 12_000
+_REPR_PII_PATTERNS = (
+    re.compile(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b"),
+    re.compile(
+        r"(?<!\w)(?:\+7|8)[\s\-]*\(?\d{3}\)?[\s\-]*"
+        r"\d{3}[\s\-]?\d{2}[\s\-]?\d{2}(?!\w)"
+    ),
+    re.compile(r"\b(?:\d{4}[\s\-]?){3}\d{4}\b"),
+    re.compile(r"\b(?:\d{10}|\d{12})\b"),
+    re.compile(r"\b\d{2}\s?\d{2}\s?\d{6}\b"),
+)
+_REPR_PII_LABELS = ("[EMAIL]", "[PHONE_RU]", "[CARD]", "[INN]", "[PASSPORT]")
+
+
 class ChatMessage(BaseModel):
     role: Literal["system", "user", "assistant", "tool"]
-    content: str = Field(min_length=1)
+    content: str = Field(min_length=1, max_length=MAX_MESSAGE_CONTENT_LENGTH, repr=False)
+
+    def __repr_args__(self):
+        preview = _redact_pii_preview(self.content)
+        if len(preview) > 120:
+            preview = preview[:117] + "..."
+        yield "role", self.role
+        yield "content", preview
 
 
 class Usage(BaseModel):
@@ -173,3 +195,10 @@ def _coerce_text(value: Any) -> str:
             if text:
                 return text
     return ""
+
+
+def _redact_pii_preview(text: str) -> str:
+    redacted = text
+    for pattern, label in zip(_REPR_PII_PATTERNS, _REPR_PII_LABELS, strict=True):
+        redacted = pattern.sub(label, redacted)
+    return redacted

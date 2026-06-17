@@ -16,6 +16,13 @@ class LLMRateLimitError(LLMError):
         super().__init__(message)
 
 
+class LLMQuotaError(LLMError):
+    code = "llm_quota_exceeded"
+
+    def __init__(self, message: str = "LLM provider quota exceeded.") -> None:
+        super().__init__(message)
+
+
 class LLMTimeoutError(LLMError):
     code = "llm_timeout"
 
