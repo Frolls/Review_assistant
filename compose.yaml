@@ -25,6 +25,10 @@ services:
         condition: service_started
       redis:
         condition: service_healthy
+    # Required on Linux when the backend runs on the host, for example local Ollama.
+    # Harmless for remote OpenAI-compatible backends because the alias is unused unless referenced.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
     healthcheck:
