@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     cache_ttl_seconds: int = Field(default=300, validation_alias="CACHE_TTL_SECONDS")
     max_concurrency: int = Field(default=5, validation_alias="LLM_MAX_CONCURRENCY")
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
+    observability_include_content: bool = Field(
+        default=False,
+        validation_alias="OBSERVABILITY_INCLUDE_CONTENT",
+    )
     cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=list,
         validation_alias="CORS_ORIGINS",

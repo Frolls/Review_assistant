@@ -8,7 +8,7 @@ from collections.abc import AsyncIterator
 
 from openai import APITimeoutError, AsyncOpenAI, AuthenticationError, OpenAIError, RateLimitError
 from opentelemetry import trace
-from opentelemetry.trace import Status, StatusCode
+from opentelemetry.trace import SpanKind, Status, StatusCode
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
@@ -22,12 +22,13 @@ from app.core.exceptions import (
     LLMTimeoutError,
 )
 from app.observability.logging import get_logger
-from app.observability.pii import prompt_hash, redact_pii_for_log
+from app.observability.pii import prompt_hash, redact_pii, redact_pii_for_log
 from app.schemas.chat import ChatDelta, ChatRequest, ChatResponse, Usage
 
 
 logger = get_logger(__name__)
 tracer = trace.get_tracer(__name__)
+_SPAN_PREVIEW_LIMIT = 120
 
 
 class LLMService:
@@ -48,7 +49,8 @@ class LLMService:
         normalized_request = req.with_default_model(self.settings.default_model)
         cache_key = self._build_cache_key(normalized_request)
         started_at = time.perf_counter()
-        with tracer.start_as_current_span("chat.request") as span:
+        with tracer.start_as_current_span("chat.request", kind=SpanKind.SERVER) as span:
+            span.set_attribute("openinference.span.kind", "CHAIN")
             self._set_request_span_attributes(span, normalized_request)
             try:
                 cached_response = await self._read_cache(cache_key)
@@ -339,10 +341,15 @@ class LLMService:
 
     def _set_request_span_attributes(self, span: trace.Span, req: ChatRequest) -> None:
         prompt_text = self._prompt_text(req)
+        prompt_preview = self._redacted_span_preview(prompt_text)
         span.set_attribute("gen_ai.operation.name", "chat.completions")
         span.set_attribute("gen_ai.system", "openai")
         span.set_attribute("gen_ai.request.model", req.model or self.settings.default_model)
-        span.set_attribute("input.value", prompt_text)
+        span.set_attribute("llm.prompt_hash", prompt_hash(prompt_text))
+        span.set_attribute("llm.prompt_preview", prompt_preview)
+        span.set_attribute("llm.prompt_length", len(prompt_text))
+        span.set_attribute("llm.content_included", self.settings.observability_include_content)
+        span.set_attribute("input.value", self._span_content_value(prompt_text))
 
     def _set_response_span_attributes(
         self,
@@ -352,12 +359,15 @@ class LLMService:
         duration_ms: float,
         status: str,
     ) -> None:
+        output_preview = self._redacted_span_preview(response.content)
         span.set_attribute("gen_ai.response.model", response.model)
         span.set_attribute("gen_ai.response.finish_reason", response.finish_reason or "")
         span.set_attribute("gen_ai.usage.input_tokens", response.usage.prompt_tokens)
         span.set_attribute("gen_ai.usage.output_tokens", response.usage.completion_tokens)
         span.set_attribute("gen_ai.usage.total_tokens", response.usage.total_tokens)
-        span.set_attribute("output.value", response.content)
+        span.set_attribute("llm.output_preview", output_preview)
+        span.set_attribute("llm.output_length", len(response.content))
+        span.set_attribute("output.value", self._span_content_value(response.content))
         span.set_attribute("llm.cache_status", status)
         span.set_attribute("llm.latency_ms", duration_ms)
         span.set_status(Status(StatusCode.OK))
@@ -368,3 +378,14 @@ class LLMService:
         span.set_attribute("error.type", error_code)
         span.set_attribute("error.message", error_message)
         span.set_status(Status(StatusCode.ERROR, error_message))
+
+    def _redacted_span_preview(self, text: str) -> str:
+        preview = redact_pii(text)
+        if len(preview) > _SPAN_PREVIEW_LIMIT:
+            return preview[:_SPAN_PREVIEW_LIMIT]
+        return preview
+
+    def _span_content_value(self, text: str) -> str:
+        if self.settings.observability_include_content:
+            return text
+        return "[redacted]"

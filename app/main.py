@@ -35,7 +35,7 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = app.state.settings
-    setup_tracing()
+    setup_tracing(observability_include_content=settings.observability_include_content)
     openai_client = AsyncOpenAI(
         api_key=settings.openai_api_key.get_secret_value(),
         base_url=settings.openai_base_url,
