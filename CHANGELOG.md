@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added `OBSERVABILITY_INCLUDE_CONTENT` to control whether raw prompt/response content is emitted into observability spans.
+- Added `PHOENIX_PROJECT_NAME` to configure the project label shown in Phoenix UI.
+- Added a Linux-friendly `host.docker.internal:host-gateway` alias to Docker Compose for host-based backends such as local Ollama.
+
+### Changed
+
+- Renamed the default Phoenix project from `diploma-fastapi` to `ai-pr-review-assistant`.
+- Updated `chat.request` spans to expose safe prompt/output previews, prompt hashes, lengths, cache status, and explicit span kind metadata.
+- Configured OpenInference `ChatCompletion` spans to redact raw `LLM Input` and `LLM Output` when `OBSERVABILITY_INCLUDE_CONTENT=false`.
+- Expanded observability documentation in `README.md`, `docs/observability/README.md`, and `docs/architecture.md` to describe safe-mode tracing, data storage, and expected Phoenix behavior.
+- Refreshed the Phoenix trace screenshot to match the current observability configuration.
+
 ## [2026-06-17]
 
 ### Added

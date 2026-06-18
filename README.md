@@ -108,23 +108,42 @@ eval/
 - `OPENAI_BASE_URL` — адрес LiteLLM или другого OpenAI-compatible backend
 - `LLM_MAX_CONCURRENCY` — ограничение параллелизма
 - `LOG_LEVEL` — уровень логирования приложения, по умолчанию `INFO`
+- `OBSERVABILITY_INCLUDE_CONTENT` — включает сырой `input/output` в span-атрибутах; по умолчанию `false`
 - `PHOENIX_COLLECTOR_ENDPOINT` — OTLP HTTP endpoint Phoenix, по умолчанию `http://localhost:6006`
+- `PHOENIX_PROJECT_NAME` — имя проекта в Phoenix UI, по умолчанию `ai-pr-review-assistant`
 
 `PHOENIX_COLLECTOR_ENDPOINT`, если указывает только на хост Phoenix UI, автоматически нормализуется до `/v1/traces`. Например, `http://localhost:6006` будет использован как `http://localhost:6006/v1/traces`.
 
+В production-like режиме рекомендуется оставлять `OBSERVABILITY_INCLUDE_CONTENT=false`: тогда в span'ы пишутся безопасные метаданные вроде `llm.prompt_hash`, `llm.prompt_preview`, `llm.output_preview`, длины текста и usage-метрик, а `input.value`/`output.value` заменяются на `[redacted]`.
+
 ## Observability
 
-Сервис включает две линии наблюдаемости:
+Подсистема observability включает:
 
-- `structlog` пишет JSON-логи в stdout с контекстом запроса: `request_id`, `user_id`, `path`, `method`, HTTP status и latency
-- Phoenix/OpenInference создаёт trace для HTTP/LLM-вызовов, включая модель и usage-метрики токенов
+- structured JSON logs на базе `structlog`;
+- trace и span-данные Phoenix/OpenInference для HTTP- и LLM-вызовов;
+- группировку trace в Phoenix по имени проекта из `PHOENIX_PROJECT_NAME`, по умолчанию `ai-pr-review-assistant`.
 
-Чтобы не утекали чувствительные данные, в логи пишется не исходный prompt, а:
+Structured logs сохраняют контекст запроса и выполнения, включая `request_id`,
+`user_id`, `path`, `method`, HTTP status и latency. Исходный prompt целиком в
+логи не записывается. Вместо него используются:
 
-- `prompt_hash` — короткий стабильный SHA-256 digest для корреляции похожих запросов
-- `prompt_preview` — редактированная версия prompt с маскированием email, телефона, карты, ИНН, паспорта и, для длинных текстов, опциональной anonymization имён через Presidio + spaCy
+- `prompt_hash` — короткий стабильный SHA-256 digest для корреляции похожих запросов;
+- `prompt_preview` — редактированное preview с маскированием email, телефона, карты, ИНН, паспорта и, для длинных текстов, опциональной anonymization имён через Presidio + spaCy.
 
-Подробности и пример trace-скриншота лежат в `docs/observability/README.md`.
+Для trace-данных рекомендуется production-like конфигурация с
+`OBSERVABILITY_INCLUDE_CONTENT=false`. В этом режиме:
+
+- span `chat.request` сохраняет только безопасные атрибуты, включая `llm.prompt_hash`, `llm.prompt_preview`, `llm.output_preview`, длины текста, cache status и usage-метрики;
+- `input.value` и `output.value` в `chat.request` заменяются на `[redacted]`;
+- auto-instrumented span `ChatCompletion` скрывает сырой `LLM Input` и `LLM Output`; в Phoenix эти поля отображаются как `__REDACTED__`.
+
+Trace Phoenix хранятся в docker volume `phoenix-data` в базе `/data/phoenix.db`.
+Structured logs сохраняются в stdout контейнера `app`. Кеш ответов хранится
+отдельно в `Redis`.
+
+Подробное описание конфигурации и ожидаемого поведения приведено в
+`docs/observability/README.md`.
 
 ## Testing и evaluation
 
@@ -239,6 +258,8 @@ docker compose up -d --build
 ```
 
 Команда поднимет три сервиса: `app`, `redis`, `phoenix`.
+
+В `compose.yaml` для сервиса `app` добавлен alias `host.docker.internal:host-gateway`. Он нужен в Linux-сценарии, когда OpenAI-compatible backend работает на хосте, например локальная `Ollama`. Для удалённых backend'ов или контейнерных endpoint'ов эта запись не влияет на работу, если `host.docker.internal` не используется в `OPENAI_BASE_URL`.
 
 4. Проверить сервис:
 

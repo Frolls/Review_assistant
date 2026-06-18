@@ -374,6 +374,92 @@ curl -s http://127.0.0.1:4000/v1/chat/completions \
 
 Итог: для дипломного проекта LiteLLM закрывает ключевую задачу LLM gateway без написания собственного маршрутизатора, а локальный demo-стенд воспроизводимо показывает ordered fallback при ошибке primary.
 
+## Observability и защита данных
+
+Текущая реализация HTTP-сервиса использует две независимые линии observability:
+
+- structured JSON logs на базе `structlog`;
+- trace и span-данные Phoenix/OpenInference.
+
+### Structured logs
+
+Structured logs фиксируют:
+
+- `request_id`;
+- `user_id`;
+- `path`;
+- `method`;
+- HTTP status;
+- latency;
+- usage-метрики LLM-вызова;
+- `prompt_hash`;
+- `prompt_preview`.
+
+Полный prompt в логи не записывается. Вместо него используется `prompt_preview`
+с маскированием чувствительных данных. Regex-редакция покрывает:
+
+- email;
+- российские телефоны;
+- номера банковских карт;
+- ИНН;
+- паспортные данные.
+
+Для длинных prompt дополнительно запускается фоновая anonymization имён через
+Presidio и spaCy. Результат отражается отдельным событием
+`pii_redaction_completed`.
+
+### Trace в Phoenix
+
+При обработке одного запроса `POST /chat` формируются как минимум два span:
+
+- `chat.request` — прикладной span сервиса;
+- `ChatCompletion` — span auto-instrumentation OpenInference для вызова LLM backend.
+
+Span `chat.request` используется для прикладной диагностики и хранит безопасные
+атрибуты:
+
+- `llm.prompt_hash`;
+- `llm.prompt_preview`;
+- `llm.prompt_length`;
+- `llm.output_preview`;
+- `llm.output_length`;
+- `llm.cache_status`;
+- `llm.latency_ms`;
+- `gen_ai.request.model`;
+- `gen_ai.response.model`;
+- `gen_ai.usage.input_tokens`;
+- `gen_ai.usage.output_tokens`;
+- `gen_ai.usage.total_tokens`.
+
+### Production-like режим trace
+
+Рекомендуемая конфигурация:
+
+```env
+OBSERVABILITY_INCLUDE_CONTENT=false
+```
+
+При таком значении применяются следующие правила:
+
+- `chat.request` не сохраняет сырой prompt и сырой response в `input.value` и `output.value`;
+- `input.value` и `output.value` заменяются на `[redacted]`;
+- `ChatCompletion` скрывает `LLM Input` и `LLM Output` на уровне OpenInference `TraceConfig`;
+- в Phoenix `LLM Input` и `LLM Output` для `ChatCompletion` отображаются как `__REDACTED__`.
+
+Изменение конфигурации влияет только на новые trace. Ранее записанные span
+сохраняются в исходном виде.
+
+### Хранение данных observability
+
+- trace Phoenix хранятся в docker volume `phoenix-data`;
+- база Phoenix расположена внутри контейнера по пути `/data/phoenix.db`;
+- structured logs сохраняются в stdout контейнера `app`;
+- кеш ответов хранится отдельно в `Redis`.
+
+Следствие для эксплуатации: traces, записанные до включения безопасного режима,
+могут содержать сырой контент; после включения redaction новые trace должны
+содержать только безопасные preview и метаданные.
+
 ## Источники для решения по LiteLLM
 
 - README / getting started: <https://docs.litellm.ai/>
