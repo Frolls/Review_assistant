@@ -365,6 +365,14 @@ curl http://127.0.0.1:8000/models
 - [docs/litellm/config.production_like.yaml](/workspaces/Review_bot/docs/litellm/config.production_like.yaml:1) — production-like fallback `OpenAI -> Anthropic -> Ollama`
 - [docs/litellm/config.yaml](/workspaces/Review_bot/docs/litellm/config.yaml:1) — локальная конфигурация fallback через mock upstream
 
+В обоих конфигах для deployment заданы `rpm` и `tpm`. Эти параметры описывают
+плановую пропускную способность backend для LiteLLM Router и не являются
+пользовательскими квотами. HTTP rate limiting относится к API Gateway/nginx,
+локальный параллелизм FastAPI ограничивается `LLM_MAX_CONCURRENCY`, а
+пользовательские LLM-квоты должны задаваться через LiteLLM virtual keys/teams.
+Решение и границы ответственности зафиксированы в
+[архитектурном паспорте](docs/architecture.md#adr-004-управление-нагрузкой-и-квотами).
+
 ## Тесты
 
 ```bash

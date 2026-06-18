@@ -1,12 +1,15 @@
 # Changelog
 
-## [Unreleased]
+## [2026-06-18]
 
 ### Added
 
 - Added `OBSERVABILITY_INCLUDE_CONTENT` to control whether raw prompt/response content is emitted into observability spans.
 - Added `PHOENIX_PROJECT_NAME` to configure the project label shown in Phoenix UI.
 - Added a Linux-friendly `host.docker.internal:host-gateway` alias to Docker Compose for host-based backends such as local Ollama.
+- Added ADR-004 defining ownership of HTTP rate limiting, FastAPI concurrency control, LiteLLM quotas, and future batch workload isolation.
+- Added initial TPM capacity values to the local and production-like LiteLLM deployment examples.
+- Documented the target `full_pr_review` queue policy with a separate two-worker pool and dedicated LiteLLM quota and budget controls.
 
 ### Changed
 
@@ -15,6 +18,10 @@
 - Configured OpenInference `ChatCompletion` spans to redact raw `LLM Input` and `LLM Output` when `OBSERVABILITY_INCLUDE_CONTENT=false`.
 - Expanded observability documentation in `README.md`, `docs/observability/README.md`, and `docs/architecture.md` to describe safe-mode tracing, data storage, and expected Phoenix behavior.
 - Refreshed the Phoenix trace screenshot to match the current observability configuration.
+- Clarified that `LLM_MAX_CONCURRENCY` is a per-process FastAPI bulkhead rather than an HTTP or distributed rate limit.
+- Clarified that LiteLLM deployment-level `rpm` and `tpm` values are router capacity metadata, not per-user quotas.
+- Assigned external HTTP rate limiting to nginx/API Gateway in the target deployment architecture; no application-level rate limiter was added to FastAPI.
+- Marked LiteLLM virtual keys, PostgreSQL-backed user quotas, nginx deployment configuration, and the `full_pr_review` worker pool as planned rather than currently implemented.
 
 ## [2026-06-17]
 

@@ -57,11 +57,11 @@ flowchart LR
     USER["Клиент\nCLI / IDE / GitHub webhook"]
 
     subgraph GWL["1. Gateway Layer"]
-        GW["API Gateway\nnginx / auth / rate limit\n429/503 в JSON"]
+        GW["API Gateway\nHTTP auth + per-client rate limit\n429/503 в JSON"]
     end
 
     subgraph SVCL["2. Service Layer"]
-        API["FastAPI / review-service\nHTTP API + validation + cache access"]
+        API["FastAPI / review-service\nHTTP API + validation + cache access\nper-process LLM concurrency bulkhead"]
         ORCH["Unified Orchestrator\nmode = chat | review | full_pr_review"]
         CHAT["Chat mode\nsimple completion / stream"]
         REVIEW["Review mode\nretrieval + tool policy + tool loop"]
@@ -73,7 +73,7 @@ flowchart LR
     end
 
     subgraph LLML["3. LLM Layer"]
-        PROXY["LiteLLM Proxy\nrouting + retries + spend caps\nfallback chain orchestration"]
+        PROXY["LiteLLM Proxy\nrouting + retries + LLM quotas\nRPM / TPM / parallelism / budget"]
         CB1["Circuit Breaker\nOpenAI\nfail_max=5, reset=60s"]
         OA["OpenAI gpt-4.1-mini\nPrimary\nlow latency / balanced quality"]
         CB2["Circuit Breaker\nAnthropic\nfail_max=5, reset=60s"]
@@ -121,6 +121,165 @@ flowchart LR
     class PROXY,CB1,OA,CB2,AN,CB3,OL llm;
     class CACHE,PG,KB,S3 data;
 ```
+
+## Управление нагрузкой и квотами
+
+В системе применяются три независимых механизма: HTTP rate limiting,
+ограничение параллелизма LLM-вызовов и LLM-квоты. Они решают разные задачи и не
+должны подменять друг друга.
+
+| Механизм | Слой | Единица ограничения | Назначение | Реакция при превышении |
+| --- | --- | --- | --- | --- |
+| HTTP rate limit | API Gateway / nginx | запросы клиента за интервал времени | защита публичного HTTP-контура от злоупотребления и всплесков нагрузки | `429 Too Many Requests`, `Retry-After` |
+| Concurrency bulkhead | FastAPI service | одновременно выполняемые LLM-вызовы | ограничение числа занятых соединений, корутин и запросов к downstream-сервисам | ожидание свободного слота; в целевой схеме — ограниченное ожидание и `503` при перегрузке |
+| LLM quota | LiteLLM Proxy | RPM, TPM, число параллельных запросов, денежный бюджет | контроль пропускной способности LLM-слоя и стоимости использования провайдеров | ошибка превышения квоты; на внешней границе нормализуется в `429` |
+
+### HTTP rate limit
+
+HTTP rate limit относится к внешнему транспортному контуру. Он применяется до
+передачи запроса в FastAPI и использует идентификатор, доступный доверенному
+gateway: подтверждённый `user_id`, API key, tenant либо IP-адрес для
+неаутентифицированного трафика.
+
+FastAPI не реализует собственный HTTP rate limiter. Такое решение принято по
+следующим причинам:
+
+- rate limiting является политикой ingress-слоя, а не предметной логикой
+  PR-review сервиса;
+- gateway располагает данными аутентификации и может применять лимит до
+  расходования ресурсов приложения;
+- nginx/API Gateway применяет лимит независимо от количества экземпляров
+  FastAPI за ним;
+- дублирование limiter в FastAPI создаёт две независимые политики и усложняет
+  диагностику ответов `429`.
+
+Отсутствие app-level limiter допустимо только при закрытом прямом доступе к
+FastAPI. В целевом развёртывании порт приложения должен быть доступен только из
+внутренней сети gateway. Публикация порта `8000` в текущем `compose.yaml`
+предназначена для локальной разработки и не является production-конфигурацией.
+
+### Concurrency bulkhead в FastAPI
+
+Параметр `LLM_MAX_CONCURRENCY` ограничивает количество одновременно выполняемых
+LLM-вызовов посредством `asyncio.Semaphore`. Это ограничение защищает ресурсы
+процесса приложения и downstream-соединения, но не задаёт число запросов в
+минуту и не ограничивает стоимость.
+
+Текущая реализация имеет следующие свойства:
+
+- семафор общий для `/chat` и `/chat/stream` внутри одного процесса;
+- cache hit в `/chat` не занимает LLM-слот;
+- лимит действует отдельно в каждом worker-процессе и экземпляре приложения;
+- при `W` workers и значении `C = LLM_MAX_CONCURRENCY` верхняя граница
+  параллелизма одного экземпляра равна `W × C`;
+- ожидающие запросы не отклоняются по таймауту очереди и могут накапливаться до
+  завершения HTTP-запроса или срабатывания внешнего timeout.
+
+Следовательно, `LLM_MAX_CONCURRENCY` является локальным bulkhead, а не
+распределённой квотой. Для целевого production-развёртывания требуется
+согласовать число workers, timeout gateway и предел параллелизма LiteLLM.
+
+### LLM-квоты в LiteLLM
+
+LiteLLM отвечает за ограничения, для которых требуется информация о модели,
+токенах, ключе и стоимости:
+
+- `rpm_limit` — запросы в минуту;
+- `tpm_limit` — токены в минуту;
+- `max_parallel_requests` — одновременные запросы;
+- `max_budget` и `budget_duration` — денежный лимит и период его сброса.
+
+Пользовательские, командные и key-level квоты задаются через virtual keys,
+users или teams LiteLLM. Для их постоянного хранения и распределённого учёта
+LiteLLM требует PostgreSQL.
+
+Параметры `rpm` и `tpm` внутри `model_list[].litellm_params` имеют другое
+назначение: они описывают пропускную способность конкретного deployment и
+используются router-ом при выборе backend. В production-like конфигурации
+приняты следующие начальные planning values:
+
+| Deployment | RPM | TPM | Основание |
+| --- | ---: | ---: | --- |
+| OpenAI primary | 30 | 90 000 | целевой агрегированный interactive-профиль |
+| Anthropic fallback | 20 | 60 000 | пропорционально сниженная резервная пропускная способность |
+| Ollama degraded mode | 10 | 30 000 | ограниченная локальная пропускная способность |
+
+Эти значения не являются пользовательскими квотами и не заменяют ограничения
+провайдера. Перед production-развёртыванием они должны быть согласованы с
+фактическими provider limits и подтверждены нагрузочным тестом. Наличие
+`rpm: 30` и `tpm: 90000` в `config.production_like.yaml` не означает, что для
+конкретного клиента настроены соответствующие лимиты.
+
+### Текущее и целевое состояние
+
+| Контроль | Текущее состояние | Целевое состояние |
+| --- | --- | --- |
+| HTTP rate limit | не реализован; FastAPI доступен напрямую на локальном порту `8000` | nginx/API Gateway, лимит по подтверждённому субъекту, прямой доступ к FastAPI закрыт |
+| Service concurrency | `LLM_MAX_CONCURRENCY`, локальный семафор на процесс | сохраняется; параметры согласованы с workers и gateway timeout |
+| Deployment capacity | `rpm`/`tpm` заданы как начальные planning values для backend-ов LiteLLM | значения согласованы с квотами провайдеров и результатами нагрузочного теста |
+| LLM user quotas | virtual keys и постоянный учёт не настроены | LiteLLM virtual keys/teams с RPM, TPM, parallel limit и budget; PostgreSQL |
+| Full PR review | отдельный batch-контур не реализован | очередь и ограниченное число workers с отдельным бюджетом и приоритетом |
+
+Принцип конфигурации: gateway ограничивает входящий HTTP-трафик, FastAPI
+ограничивает локальную конкуренцию за ресурсы, LiteLLM ограничивает потребление
+LLM. Ответ `429` должен формироваться слоем, квота которого была превышена;
+`503` используется для временной недоступности или перегрузки сервиса, не
+связанной с квотой конкретного клиента.
+
+## ADR-004: Управление нагрузкой и квотами
+
+**Status:** Accepted (2026-06-18)
+
+**Context.** Система обрабатывает интерактивные HTTP-запросы и в целевой
+архитектуре должна выполнять ресурсоёмкий `full_pr_review`. Для этих потоков
+требуются разные ограничения: защита публичного endpoint, ограничение локальных
+ресурсов FastAPI, контроль токенов и стоимости LLM, а также изоляция
+batch-нагрузки. Один универсальный limiter в приложении не покрывает все
+перечисленные задачи и смешивает ответственности инфраструктурного,
+транспортного и прикладного слоёв.
+
+**Decision.**
+
+1. HTTP rate limit реализуется в nginx/API Gateway как часть
+   deployment-конфигурации. Gateway применяет лимит по аутентифицированному
+   субъекту или, для неаутентифицированного трафика, по IP-адресу. Прямой
+   внешний доступ к FastAPI в production запрещается сетевой политикой.
+2. FastAPI сохраняет `LLM_MAX_CONCURRENCY` как локальный concurrency bulkhead.
+   Собственный Redis/IP rate limiter в приложении не реализуется.
+3. В LiteLLM для каждого deployment задаются `rpm` и `tpm`, используемые
+   router-ом при планировании нагрузки. Пользовательские RPM/TPM,
+   `max_parallel_requests` и бюджеты вводятся через virtual keys или teams
+   после подключения PostgreSQL.
+4. `full_pr_review` выполняется отдельным worker pool и не использует
+   интерактивный request-response контур. Начальная конфигурация worker pool:
+   два worker-а, не более одного активного LLM-вызова на worker и суммарный
+   batch concurrency, равный двум. Значение уточняется нагрузочным тестом.
+5. Для batch-контура предусматриваются отдельные LiteLLM key/team, TPM-бюджет,
+   денежный бюджет и приоритет ниже интерактивного трафика.
+
+**Consequences.**
+
+- каждый механизм применяется на слое, располагающем необходимыми данными;
+- FastAPI не содержит инфраструктурную реализацию распределённого rate limit;
+- HTTP-ограничение не действует при обходе gateway, поэтому сетевое закрытие
+  прямого доступа является обязательным условием production-развёртывания;
+- `LLM_MAX_CONCURRENCY` остаётся локальным для процесса и должен рассчитываться
+  совместно с количеством workers;
+- полноценные пользовательские квоты LiteLLM требуют PostgreSQL и управления
+  virtual keys;
+- batch-нагрузка не должна занимать все интерактивные LLM-слоты.
+
+**Alternatives considered.**
+
+- App-level Redis limiter отклонён: он дублирует ingress policy, требует выбора
+  доверенного идентификатора клиента и добавляет инфраструктурный код в
+  прикладной сервис.
+- Только nginx rate limit отклонён: gateway не контролирует фактическое число
+  токенов, стоимость и provider-specific limits.
+- Только LiteLLM quotas отклонены: они не защищают остальные HTTP endpoint-ы и
+  ресурсы FastAPI до выполнения LLM-вызова.
+- Общий worker pool для interactive и `full_pr_review` отклонён из-за риска
+  starvation интерактивных запросов длинными batch-задачами.
 
 ## ADR-001: Выбор паттерна взаимодействия
 
@@ -180,6 +339,33 @@ flowchart LR
    - короткий executive summary.
 
 Ожидаемый результат такого режима — не чат-ответ, а полноценный review-отчёт по всему PR.
+
+### Ограничение batch-контура
+
+`full_pr_review` использует отдельную очередь и отдельный worker pool. Начальный
+предел — два worker-а с одним активным LLM-вызовом на worker. Таким образом,
+batch-контур создаёт не более двух одновременных LLM-вызовов независимо от
+числа чанков в PR.
+
+Worker pool должен использовать отдельный LiteLLM key/team со следующими
+политиками:
+
+- `max_parallel_requests = 2`;
+- отдельный TPM-лимит, не превышающий целевые `250k TPM` batch-контура;
+- отдельный дневной денежный бюджет;
+- приоритет ниже интерактивных `chat` и `review` запросов;
+- retry с exponential backoff и jitter без немедленного повторного fan-out.
+
+Число worker-ов не масштабируется автоматически только по длине очереди.
+Изменение concurrency допускается после проверки p95 интерактивного контура,
+утилизации провайдерских квот и дневного бюджета.
+
+Текущий `config.production_like.yaml` рассчитан на interactive-профиль до
+`90k TPM` и не обеспечивает заявленные `250k TPM` batch-контура одновременно с
+интерактивной нагрузкой. Перед реализацией `full_pr_review` требуется отдельная
+LiteLLM deployment group для batch-задач либо увеличение подтверждённой
+провайдерской квоты. До выполнения этого условия `250k TPM` является целевым
+параметром проектирования, а не эксплуатационной гарантией.
 
 ## Формат итогового Full PR Review Report
 
@@ -460,9 +646,12 @@ OBSERVABILITY_INCLUDE_CONTENT=false
 могут содержать сырой контент; после включения redaction новые trace должны
 содержать только безопасные preview и метаданные.
 
-## Источники для решения по LiteLLM
+## Источники по Gateway и LLM-слою
 
 - README / getting started: <https://docs.litellm.ai/>
 - Router / routing: <https://docs.litellm.ai/docs/routing>
+- Config / deployment RPM and TPM: <https://docs.litellm.ai/docs/proxy/configs>
+- Budgets and rate limits: <https://docs.litellm.ai/docs/proxy/users>
 - Fallbacks / reliability: <https://docs.litellm.ai/docs/proxy/reliability>
 - GitHub README: <https://github.com/BerriAI/litellm>
+- nginx HTTP rate limiting: <https://nginx.org/en/docs/http/ngx_http_limit_req_module.html>

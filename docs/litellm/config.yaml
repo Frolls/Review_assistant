@@ -1,3 +1,5 @@
+# Capacity values for the local fallback demonstration.
+# They are router metadata, not per-user rate limits.
 model_list:
   - model_name: gpt-4.1-mini
     litellm_params:
@@ -5,6 +7,7 @@ model_list:
       api_key: os.environ/PRIMARY_OPENAI_API_KEY
       timeout: 8
       rpm: 30
+      tpm: 90000
 
   - model_name: gpt-4.1-mini-fallback
     litellm_params:
@@ -13,6 +16,7 @@ model_list:
       api_key: os.environ/FALLBACK_OPENAI_API_KEY
       timeout: 8
       rpm: 120
+      tpm: 360000
 
 router_settings:
   fallbacks:
