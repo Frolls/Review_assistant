@@ -35,6 +35,7 @@ def get_llm_service(
         cache=cache,
         settings=settings,
         semaphore=getattr(request.app.state, "llm_semaphore", None),
+        canary=getattr(request.app.state, "canary", ""),
     )
 
 

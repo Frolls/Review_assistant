@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     redis_url: str = Field(default="redis://localhost:6379/0", validation_alias="REDIS_URL")
     cache_ttl_seconds: int = Field(default=300, validation_alias="CACHE_TTL_SECONDS")
     max_concurrency: int = Field(default=5, validation_alias="LLM_MAX_CONCURRENCY")
+    rate_limit_per_min: int = Field(default=30, validation_alias="RATE_LIMIT_PER_MIN")
+    security_guardrails_enabled: bool = Field(
+        default=True,
+        validation_alias="SECURITY_GUARDRAILS_ENABLED",
+    )
     log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
     observability_include_content: bool = Field(
         default=False,
@@ -161,6 +166,20 @@ class Settings(BaseSettings):
     def validate_max_concurrency(cls, value: int) -> int:
         if value <= 0:
             raise ValueError("LLM_MAX_CONCURRENCY must be greater than zero")
+        return value
+
+    @field_validator("rate_limit_per_min", mode="before")
+    @classmethod
+    def default_rate_limit_per_min(cls, value: object) -> object:
+        if value is None or value == "":
+            return 30
+        return value
+
+    @field_validator("rate_limit_per_min")
+    @classmethod
+    def validate_rate_limit_per_min(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("RATE_LIMIT_PER_MIN must be greater than zero")
         return value
 
     @field_validator("log_level", mode="before")

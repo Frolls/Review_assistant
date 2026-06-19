@@ -42,3 +42,10 @@ class LLMEmptyResponseError(LLMError):
 
     def __init__(self, message: str = "LLM provider returned an empty response.") -> None:
         super().__init__(message)
+
+
+class LLMOutputBlockedError(LLMError):
+    code = "llm_output_blocked"
+
+    def __init__(self, message: str = "LLM output was blocked by the security filter.") -> None:
+        super().__init__(message)

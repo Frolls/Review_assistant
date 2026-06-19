@@ -17,6 +17,9 @@ def setup_tracing(
     observability_include_content: bool | None = None,
 ) -> None:
     global _TRACING_CONFIGURED
+    if os.environ.get("PHOENIX_TRACING_ENABLED", "true").lower() == "false":
+        _TRACING_CONFIGURED = True
+        return
     if _TRACING_CONFIGURED:
         return
 
