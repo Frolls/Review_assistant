@@ -7,7 +7,7 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 На текущем этапе сервис отвечает за HTTP API, eval/testing слой и интеграцию с LLM backend:
 
 - фронтенд, CLI или IDE-клиент отправляют вопросы по ревью PR в `/chat` или `/chat/stream`
-- сервис валидирует входные данные, выполняет логирование, читает и записывает кеш, нормализует ошибки
+- сервис валидирует входные данные, применяет защитный слой, выполняет логирование, читает и записывает кеш, нормализует ошибки
 - OpenAI-совместимый backend выполняет генерацию ответа
 
 Сервис не реализует собственную модель. Его зона ответственности: HTTP-контракт, вызов backend, кеширование, служебные endpoint'ы и инфраструктура проверки качества ответов.
@@ -19,11 +19,14 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - `GET /health` — liveness без зависимостей
 - `GET /ready` — readiness с проверкой `Redis`
 - `GET /models` — статический каталог OpenAI-моделей с ценами
+- Redis-backed rate limiting для `/chat` и `/chat/stream` по `X-User-ID` или IP
+- защитный слой для `/chat`: prompt-injection validator, canary-token в system prompt, output filter, PII masking и best-effort moderation
 - `X-Request-ID`, request logging, CORS и единый формат ошибок
 - structured JSON logs с `request_id`, latency, token usage, finish reason, `prompt_hash` и безопасным `prompt_preview`
 - OpenInference/Phoenix tracing для `/chat` и LLM-вызовов с `gen_ai.*` атрибутами
-- PII-redaction для email, российских телефонов, карт, ИНН и паспортов перед записью превью в логи
+- PII-redaction для email, российских телефонов, карт, ИНН и паспортов перед записью prompt/output preview в логи
 - быстрый unit testing layer вокруг LLM-adjacent логики и отдельный offline evaluation layer в `eval/`
+- security evaluation layer на базе NVIDIA garak с baseline/after отчётами
 
 ## Архитектура
 
@@ -71,19 +74,31 @@ app/
     models.py
   services/
     llm.py
+    security/
+      input_validator.py
+      output_filter.py
 docs/
   architecture.md
   observability/
     README.md
     phoenix-trace.png
+  security/
+    garak_baseline_2026-06-19.md
+    garak_after_2026-06-19.md
+    reports/
   litellm/
     config.yaml
     config.production_like.yaml
+scripts/
+  load_test.py
 tests/
   unit/
   test_observability_pii.py
+  test_security_guardrails.py
   test_llm_service.py
 eval/
+  security/
+    rest_config.json
   golden_dataset.json
   run_evaluation.py
   check_thresholds.py
@@ -101,14 +116,17 @@ eval/
 - `REQUEST_TIMEOUT`
 - `REDIS_URL`
 - `CACHE_TTL_SECONDS`
+- `RATE_LIMIT_PER_MIN`
 - `CORS_ORIGINS`
 
 Дополнительно:
 
 - `OPENAI_BASE_URL` — адрес LiteLLM или другого OpenAI-compatible backend
 - `LLM_MAX_CONCURRENCY` — ограничение параллелизма
+- `SECURITY_GUARDRAILS_ENABLED` — включает input validator, canary system prompt, output filter и moderation fallback; выключать только для контролируемого garak baseline
 - `LOG_LEVEL` — уровень логирования приложения, по умолчанию `INFO`
 - `OBSERVABILITY_INCLUDE_CONTENT` — включает сырой `input/output` в span-атрибутах; по умолчанию `false`
+- `PHOENIX_TRACING_ENABLED` — включает экспорт trace в Phoenix; для локальных security scans без Phoenix можно поставить `false`
 - `PHOENIX_COLLECTOR_ENDPOINT` — OTLP HTTP endpoint Phoenix, по умолчанию `http://localhost:6006`
 - `PHOENIX_PROJECT_NAME` — имя проекта в Phoenix UI, по умолчанию `ai-pr-review-assistant`
 
@@ -126,7 +144,8 @@ eval/
 
 Structured logs сохраняют контекст запроса и выполнения, включая `request_id`,
 `user_id`, `path`, `method`, HTTP status и latency. Исходный prompt целиком в
-логи не записывается. Вместо него используются:
+логи не записывается; preview исходящих LLM-ответов также проходит через PII
+redaction. Вместо полного prompt используются:
 
 - `prompt_hash` — короткий стабильный SHA-256 digest для корреляции похожих запросов;
 - `prompt_preview` — редактированное preview с маскированием email, телефона, карты, ИНН, паспорта и, для длинных текстов, опциональной anonymization имён через Presidio + spaCy.
@@ -185,6 +204,32 @@ EVAL_PROXY='http://user:password@proxy.example.com:8888' \
 
 `eval/golden_dataset.json` содержит версионированный golden dataset по ревью Python/Ansible/архитектурных изменений, а `eval/check_thresholds.py` сверяет последний run с порогами из `eval/thresholds.yaml`.
 
+### Security evaluation
+
+Для prompt-injection/security smoke используется NVIDIA garak. REST-конфиг под
+форму `/chat` лежит в `eval/security/rest_config.json`: garak подставляет `$INPUT`
+в `messages[0].content` и читает ответ из поля `content`.
+
+Минимальный проверенный набор проб:
+
+```bash
+garak --target_type rest -G eval/security/rest_config.json \
+  --probes promptinject.HijackHateHumans,encoding.InjectBase64,dan.Ablation_Dan_11_0 \
+  --generations 1 \
+  --report_prefix baseline
+```
+
+Для baseline сервис запускается с `SECURITY_GUARDRAILS_ENABLED=false`, для after —
+с `SECURITY_GUARDRAILS_ENABLED=true`. В локальном прогоне использовался Ollama
+backend `llama3.2:3b`; отчёты сохранены в `docs/security/`.
+
+Проверка rate limit требует доступного Redis и поднятого FastAPI. Для лимита
+`RATE_LIMIT_PER_MIN=30` скрипт ожидает, что 31-й запрос получит `429`:
+
+```bash
+scripts/load_test.py --url http://127.0.0.1:8000/chat --requests 31 --user-id load-test
+```
+
 ## Быстрый старт через LiteLLM
 
 1. Установить зависимости приложения:
@@ -205,8 +250,11 @@ REQUEST_TIMEOUT=30
 REDIS_URL=redis://localhost:6379/0
 CACHE_TTL_SECONDS=300
 LLM_MAX_CONCURRENCY=5
+RATE_LIMIT_PER_MIN=30
+SECURITY_GUARDRAILS_ENABLED=true
 CORS_ORIGINS=[]
 LOG_LEVEL=INFO
+PHOENIX_TRACING_ENABLED=true
 
 OPENAI_UPSTREAM_API_KEY=
 ANTHROPIC_API_KEY=
@@ -326,8 +374,11 @@ REQUEST_TIMEOUT=30
 REDIS_URL=redis://host.docker.internal:6379/0
 CACHE_TTL_SECONDS=300
 LLM_MAX_CONCURRENCY=5
+RATE_LIMIT_PER_MIN=30
+SECURITY_GUARDRAILS_ENABLED=true
 CORS_ORIGINS=[]
 LOG_LEVEL=INFO
+PHOENIX_TRACING_ENABLED=true
 ```
 
 4. Поднять FastAPI:
@@ -367,16 +418,19 @@ curl http://127.0.0.1:8000/models
 
 В обоих конфигах для deployment заданы `rpm` и `tpm`. Эти параметры описывают
 плановую пропускную способность backend для LiteLLM Router и не являются
-пользовательскими квотами. HTTP rate limiting относится к API Gateway/nginx,
-локальный параллелизм FastAPI ограничивается `LLM_MAX_CONCURRENCY`, а
-пользовательские LLM-квоты должны задаваться через LiteLLM virtual keys/teams.
-Решение и границы ответственности зафиксированы в
+пользовательскими квотами. В текущей FastAPI-реализации есть локальный Redis-backed
+HTTP limiter для `/chat` и `/chat/stream`, управляемый `RATE_LIMIT_PER_MIN`;
+в production-like контуре внешний API Gateway/nginx всё равно остаётся первым
+рубежом защиты публичного HTTP API. Локальный параллелизм FastAPI ограничивается
+`LLM_MAX_CONCURRENCY`, а пользовательские LLM-квоты должны задаваться через
+LiteLLM virtual keys/teams. Решение и границы ответственности зафиксированы в
 [архитектурном паспорте](docs/architecture.md#adr-004-управление-нагрузкой-и-квотами).
 
 ## Тесты
 
 ```bash
-uv run python -m unittest tests.test_llm_service -v
+uv run pytest
+uv run python -m ruff check app tests scripts
 ```
 
 ## Проверенный e2e сценарий

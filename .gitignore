@@ -3,6 +3,7 @@
 .venv-litellm/
 __pycache__/
 .pytest_cache/
+.tmp/
 *.pyc
 *.egg-info/
 logs/*.log

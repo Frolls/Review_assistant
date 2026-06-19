@@ -1,0 +1,31 @@
+{
+  "rest": {
+    "RestGenerator": {
+      "name": "review-bot-fastapi",
+      "uri": "http://localhost:8000/chat",
+      "method": "post",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "req_template_json_object": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "$INPUT"
+          }
+        ],
+        "model": "llama3.2:3b",
+        "temperature": 0,
+        "max_tokens": 96
+      },
+      "response_json": true,
+      "response_json_field": "content",
+      "request_timeout": 60,
+      "skip_codes": [
+        400,
+        502,
+        429
+      ]
+    }
+  }
+}

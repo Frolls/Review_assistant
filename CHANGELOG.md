@@ -1,5 +1,21 @@
 # Changelog
 
+## [2026-06-19]
+
+### Added
+
+- Added prompt-injection input validation, canary-backed output filtering, PII masking, and a best-effort moderation fallback for guarded `/chat` responses.
+- Added Redis-backed HTTP rate limiting for `/chat` and `/chat/stream`, configurable with `RATE_LIMIT_PER_MIN`.
+- Added garak REST target configuration, baseline/after security reports, and committed HTML report artifacts for the local Ollama-backed evaluation run.
+- Added a synthetic load-test script that verifies the 31st request receives `429` when `RATE_LIMIT_PER_MIN=30`.
+- Added guardrail tests for prompt blocking, canary leakage, output PII masking, and moderation fallback behavior.
+
+### Changed
+
+- Disabled Phoenix tracing through `PHOENIX_TRACING_ENABLED=false` for local security scans where Phoenix is not running.
+- Extended structured log redaction so outgoing LLM response previews are masked before being emitted.
+- Aligned the architecture load-management ADR with the implemented FastAPI Redis-backed rate limiter.
+
 ## [2026-06-18]
 
 ### Added
