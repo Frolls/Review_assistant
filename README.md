@@ -2,7 +2,7 @@
 
 HTTP-сервис на `FastAPI` для дипломного проекта «ИИ-ассистент для ревью кода». Цель ассистента — улучшать качество кода и сокращать время ревью pull request'ов. В качестве источников рекомендаций используются Python Enhancement Proposals (PEP), Ansible community documentation, внутренние руководства по стилю кода и архитектурные документы.
 
-Сервис поднимает `app.main:app`, принимает запросы на `POST /chat` и `POST /chat/stream`, кеширует обычные ответы в `Redis`, работает с OpenAI-совместимым backend через `AsyncOpenAI` и экспортирует trace/span-данные в Phoenix.
+Сервис поднимает `app.main:app`, принимает запросы на `POST /chat`, `POST /chat/stream` и stateful API `/chats`, кеширует обычные ответы в `Redis`, работает с OpenAI-совместимым backend через `AsyncOpenAI` и экспортирует trace/span-данные в Phoenix.
 
 На текущем этапе сервис отвечает за HTTP API, eval/testing слой и интеграцию с LLM backend:
 
@@ -16,6 +16,7 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 
 - `POST /chat` — обычный completion-ответ с `cached: true/false`
 - `POST /chat/stream` — SSE-поток с `data: ...` и финальным `data: [DONE]`
+- `POST /chats` и `/chats/{chat_id}/messages` — stateful-чат с серверной историей, SSE-ответом и JSON/Postgres-хранилищем
 - `GET /health` — liveness без зависимостей
 - `GET /ready` — readiness с проверкой `Redis`
 - `GET /models` — статический каталог OpenAI-моделей с ценами
@@ -77,7 +78,15 @@ app/
     security/
       input_validator.py
       output_filter.py
+  chat/
+    domain.py
+    repository.py
+    service.py
+    routes.py
+    deps.py
+    repositories/
 docs/
+  chat.md
   architecture.md
   observability/
     README.md
@@ -129,6 +138,11 @@ eval/
 - `PHOENIX_TRACING_ENABLED` — включает экспорт trace в Phoenix; для локальных security scans без Phoenix можно поставить `false`
 - `PHOENIX_COLLECTOR_ENDPOINT` — OTLP HTTP endpoint Phoenix, по умолчанию `http://localhost:6006`
 - `PHOENIX_PROJECT_NAME` — имя проекта в Phoenix UI, по умолчанию `ai-pr-review-assistant`
+- `CHAT_REPOSITORY` — хранилище stateful-чата: `json` или `postgres`, по умолчанию `json`
+- `CHAT_STORAGE_DIR` — базовый каталог JSONL-хранилища для `/chats`, по умолчанию `./var/chats`
+- `CHAT_CONTEXT_STRATEGY` — стратегия контекста `sliding` или `hybrid`
+- `CHAT_CONTEXT_WINDOW` — количество последних сообщений, сохраняемых в prompt перед token-budget trimming
+- `DATABASE_URL` — async SQLAlchemy URL, обязателен для `CHAT_REPOSITORY=postgres`
 
 `PHOENIX_COLLECTOR_ENDPOINT`, если указывает только на хост Phoenix UI, автоматически нормализуется до `/v1/traces`. Например, `http://localhost:6006` будет использован как `http://localhost:6006/v1/traces`.
 
@@ -411,6 +425,31 @@ curl -N -X POST http://127.0.0.1:8000/chat/stream \
 curl http://127.0.0.1:8000/models
 ```
 
+Чат с серверной историей:
+
+```bash
+curl -X POST http://127.0.0.1:8000/chats \
+  -H 'Content-Type: application/json' \
+  -d '{"owner_external_id":"test-1","interface":"cli"}'
+```
+
+```bash
+curl -N -X POST http://127.0.0.1:8000/chats/<chat_id>/messages \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"Привет, меня зовут Аня"}'
+```
+
+```bash
+curl 'http://127.0.0.1:8000/chats/<chat_id>/messages?limit=50'
+```
+
+```bash
+curl -X DELETE http://127.0.0.1:8000/chats/<chat_id>/messages
+```
+
+Подробности по архитектуре, стратегии контекста, Alembic-миграции и переключению
+`CHAT_REPOSITORY=json|postgres` описаны в [docs/chat.md](docs/chat.md).
+
 ## LiteLLM конфиги
 
 - [docs/litellm/config.production_like.yaml](/workspaces/Review_bot/docs/litellm/config.production_like.yaml:1) — production-like fallback `OpenAI -> Anthropic -> Ollama`
@@ -433,14 +472,69 @@ uv run pytest
 uv run python -m ruff check app tests scripts
 ```
 
-## Проверенный e2e сценарий
+## Smoke-проверка через uvicorn + curl
 
-На локальном стенде с `Ollama qwen3` и `Redis` проверка показала:
+Проверка от 2026-06-25 выполнена без mock-компонентов. Использовались
+`uvicorn`, `curl`, Redis и OpenAI-compatible backend Ollama.
+
+Конфигурация стенда:
+
+```env
+OPENAI_API_KEY=ollama
+OPENAI_BASE_URL=http://host.docker.internal:11434/v1
+DEFAULT_MODEL=qwen3
+REQUEST_TIMEOUT=30
+REDIS_URL=redis://host.docker.internal:6379/0
+SECURITY_GUARDRAILS_ENABLED=true
+CHAT_REPOSITORY=json
+```
+
+Запуск приложения:
+
+```bash
+uv --cache-dir .uv-cache run uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Проверенные запросы:
 
 - `GET /health` -> `200`
+- `GET /ready` -> `200`, `{"status":"ok","redis":"up"}`
 - `GET /models` -> `200`
-- первый `POST /chat` -> `cached: false`
-- второй такой же `POST /chat` -> `cached: true`
-- `POST /chat/stream` -> SSE-чанки, затем `usage`, затем `[DONE]`
+- первичный `POST /chat` -> `200`, `model=qwen3`, `cached:false`, usage `73/16/89`
+- повторный идентичный `POST /chat` -> `200`, `cached:true`
+- `POST /chat/stream` с `model=qwen2.5:14b` -> SSE-чанки `1, 2, 3`, затем `usage`, затем `[DONE]`
+- `POST /chats` -> `200` и `chat_id`
+- `POST /chats/{chat_id}/messages` -> SSE-ответ `pong`, затем `[DONE]`
+- `GET /chats/{chat_id}/messages?limit=10` -> сохранённые сообщения пользователя и ассистента
 
-`qwen3` может передавать reasoning-текст до финального ответа. Для текущего API это допустимо: SSE-поток и завершающие события обрабатываются корректно.
+Запрос без серверной истории для проверки кеша:
+
+```bash
+curl -X POST http://127.0.0.1:8000/chat \
+  -H 'Content-Type: application/json' \
+  -H 'X-User-ID: live-smoke' \
+  -d '{"messages":[{"role":"user","content":"Ответь ровно одним словом: smoke"}],"temperature":0,"max_tokens":16}'
+```
+
+Streaming-запрос:
+
+```bash
+curl -N -X POST http://127.0.0.1:8000/chat/stream \
+  -H 'Content-Type: application/json' \
+  -H 'X-User-ID: live-smoke-stream' \
+  -d '{"model":"qwen2.5:14b","messages":[{"role":"user","content":"Напиши числа 1, 2, 3 через запятую. Только числа."}],"temperature":0,"max_tokens":24}'
+```
+
+Запрос к чату с серверной историей:
+
+```bash
+curl -N -X POST http://127.0.0.1:8000/chats/<chat_id>/messages \
+  -H 'Content-Type: application/json' \
+  -d '{"content":"/no_think Ответь одним словом: pong"}'
+```
+
+Ограничения локального Ollama-стенда:
+
+- `qwen3` может возвращать reasoning-текст до финального ответа. Текущий API корректно обрабатывает SSE-поток и завершающие события.
+- Ollama не поддерживает `/v1/moderations` в использованной конфигурации. Сервис пишет warning `output_moderation.unavailable` и продолжает обработку в режиме best-effort fallback.
+- Если Phoenix UI не запущен на `localhost:6006`, trace exporter пишет предупреждения о недоступном collector и выполняет retry. Для локальной smoke-проверки без Phoenix допустимо установить `PHOENIX_TRACING_ENABLED=false`.

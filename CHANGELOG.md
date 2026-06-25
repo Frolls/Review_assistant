@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026-06-25]
+
+### Added
+
+- Added the stateful `/chats` API with server-side history, SSE responses, JSONL storage, and a Postgres repository backed by an Alembic migration.
+- Added Russian documentation for the stateful chat module, `sliding`/`hybrid` context strategies, JSON/Postgres storage, and smoke verification.
+- Added `curl` examples for chat creation, streaming message submission, history retrieval, and message clearing.
+
+### Changed
+
+- Updated the README with `CHAT_REPOSITORY`, `CHAT_STORAGE_DIR`, `CHAT_CONTEXT_STRATEGY`, `CHAT_CONTEXT_WINDOW`, and `DATABASE_URL`.
+- Documented the smoke verification flow using `uvicorn`, `curl`, Redis, and an Ollama OpenAI-compatible backend.
+
+### Verified
+
+- Verified `GET /health`, `GET /ready`, `GET /models`, `POST /chat`, repeated cache-hit `POST /chat`, `POST /chat/stream`, and stateful `/chats` on a local Ollama and Redis setup.
+- Confirmed that `POST /chat/stream` returns SSE chunks, usage, and final `data: [DONE]`, and that `/chats/{chat_id}/messages` persists user and assistant messages.
+- Documented local setup limitations: an unavailable Phoenix collector emits retry warnings, and Ollama does not support `/v1/moderations` in the tested configuration, so moderation runs as a best-effort fallback.
+
 ## [2026-06-19]
 
 ### Added
