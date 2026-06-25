@@ -4,6 +4,23 @@ import json
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
+try:
+    import tiktoken
+except ModuleNotFoundError:  # pragma: no cover - mock stays usable in tiny envs.
+    tiktoken = None
+
+
+def count_prompt_tokens(messages: list[dict]) -> int:
+    if tiktoken is None:
+        return max(1, len(json.dumps(messages, ensure_ascii=False)) // 4)
+    encoding = tiktoken.get_encoding("o200k_base")
+    total = 2
+    for message in messages:
+        total += 4
+        total += len(encoding.encode(str(message.get("role", ""))))
+        total += len(encoding.encode(str(message.get("content", ""))))
+    return total
+
 
 class MockOpenAIHandler(BaseHTTPRequestHandler):
     server_version = "MockOpenAI/0.1"
@@ -15,6 +32,32 @@ class MockOpenAIHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)
+
+    def _write_sse(self, chunks: list[str]) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        now = int(time.time())
+        for chunk in chunks:
+            payload = {
+                "id": f"chatcmpl-mock-{now}",
+                "object": "chat.completion.chunk",
+                "created": now,
+                "model": "demo-fallback",
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {"content": chunk},
+                        "finish_reason": None,
+                    }
+                ],
+            }
+            self.wfile.write(f"data: {json.dumps(payload, ensure_ascii=False)}\n\n".encode())
+            self.wfile.flush()
+            time.sleep(0.02)
+        self.wfile.write(b"data: [DONE]\n\n")
+        self.wfile.flush()
 
     def do_GET(self) -> None:  # noqa: N802
         if self.path in ("/v1/models", "/models"):
@@ -45,6 +88,21 @@ class MockOpenAIHandler(BaseHTTPRequestHandler):
             if message.get("role") == "user":
                 user_content = message.get("content", "")
                 break
+        transcript = "\n".join(str(message.get("content", "")) for message in messages)
+        if "Как меня зовут" in user_content and "Аня" in transcript:
+            answer = "Тебя зовут Аня."
+        elif "Привет, меня зовут Аня" in user_content:
+            answer = "Привет, Аня. Запомнила."
+        else:
+            answer = (
+                "fallback-ok: primary provider failed, local mock answered. "
+                f"user_prompt={user_content}"
+            )
+
+        if body.get("stream"):
+            midpoint = max(1, len(answer) // 2)
+            self._write_sse([answer[:midpoint], answer[midpoint:]])
+            return
 
         now = int(time.time())
         payload = {
@@ -58,17 +116,14 @@ class MockOpenAIHandler(BaseHTTPRequestHandler):
                     "finish_reason": "stop",
                     "message": {
                         "role": "assistant",
-                        "content": (
-                            "fallback-ok: primary provider failed, local mock answered. "
-                            f"user_prompt={user_content}"
-                        ),
+                        "content": answer,
                     },
                 }
             ],
             "usage": {
-                "prompt_tokens": max(1, len(raw_body) // 4),
+                "prompt_tokens": count_prompt_tokens(messages),
                 "completion_tokens": 24,
-                "total_tokens": max(1, len(raw_body) // 4) + 24,
+                "total_tokens": count_prompt_tokens(messages) + 24,
             },
         }
         self._write_json(200, payload)
