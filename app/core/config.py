@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 import os
 from functools import lru_cache
-from typing import Annotated
+from pathlib import Path
+from typing import Annotated, Literal
 from urllib.parse import urlparse
 
 from pydantic import AliasChoices, BaseModel, Field, SecretStr, field_validator, model_validator
@@ -51,6 +52,23 @@ class Settings(BaseSettings):
     observability_include_content: bool = Field(
         default=False,
         validation_alias="OBSERVABILITY_INCLUDE_CONTENT",
+    )
+    database_url: str | None = Field(default=None, validation_alias="DATABASE_URL")
+    chat_repository: Literal["json", "postgres"] = Field(
+        default="json",
+        validation_alias="CHAT_REPOSITORY",
+    )
+    chat_storage_dir: Path = Field(
+        default=Path("./var/chats"),
+        validation_alias="CHAT_STORAGE_DIR",
+    )
+    chat_context_strategy: Literal["sliding", "hybrid"] = Field(
+        default="sliding",
+        validation_alias="CHAT_CONTEXT_STRATEGY",
+    )
+    chat_context_window: int = Field(
+        default=10,
+        validation_alias="CHAT_CONTEXT_WINDOW",
     )
     cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=list,
@@ -195,6 +213,20 @@ class Settings(BaseSettings):
         if not value.strip():
             raise ValueError("LOG_LEVEL must not be blank")
         return value.upper()
+
+    @field_validator("chat_context_window", mode="before")
+    @classmethod
+    def default_chat_context_window(cls, value: object) -> object:
+        if value is None or value == "":
+            return 10
+        return value
+
+    @field_validator("chat_context_window")
+    @classmethod
+    def validate_chat_context_window(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("CHAT_CONTEXT_WINDOW must be greater than zero")
+        return value
 
     @field_validator("cors_origins", mode="before")
     @classmethod

@@ -27,6 +27,7 @@ from app.core.exceptions import (
 )
 from app.observability.logging import get_logger, setup_logging
 from app.observability.tracing import setup_tracing
+from app.chat.routes import router as stateful_chat_router
 from app.routers.chat import router as chat_router
 from app.routers.health import router as health_router
 from app.routers.models import router as models_router
@@ -39,6 +40,7 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     settings = app.state.settings
     setup_tracing(observability_include_content=settings.observability_include_content)
+    db_engine = None
     openai_client = AsyncOpenAI(
         api_key=settings.openai_api_key.get_secret_value(),
         base_url=settings.openai_base_url,
@@ -48,11 +50,21 @@ async def lifespan(app: FastAPI):
     app.state.openai = openai_client
     app.state.cache = cache
     app.state.llm_semaphore = asyncio.Semaphore(settings.max_concurrency)
+    if settings.chat_repository == "postgres":
+        if not settings.database_url:
+            raise RuntimeError("DATABASE_URL is required when CHAT_REPOSITORY=postgres")
+        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+        db_engine = create_async_engine(settings.database_url)
+        app.state.db_engine = db_engine
+        app.state.db_sessionmaker = async_sessionmaker(db_engine, expire_on_commit=False)
     try:
         yield
     finally:
         await openai_client.close()
         await cache.aclose()
+        if db_engine is not None:
+            await db_engine.dispose()
 
 
 def create_app() -> FastAPI:
@@ -85,6 +97,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(models_router)
     app.include_router(chat_router)
+    app.include_router(stateful_chat_router)
     return app
 
 
@@ -117,7 +130,9 @@ async def request_context_middleware(request: Request, call_next):
 
 
 async def rate_limit_middleware(request: Request, call_next):
-    if request.url.path not in {"/chat", "/chat/stream"}:
+    if request.url.path not in {"/chat", "/chat/stream", "/chats"} and not (
+        request.url.path.startswith("/chats/")
+    ):
         return await call_next(request)
 
     limit = request.app.state.settings.rate_limit_per_min
