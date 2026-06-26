@@ -20,6 +20,22 @@ class PostgresChatRepository:
         interface: str,
         system_prompt: str | None = None,
     ) -> Chat:
+        result = await self.session.execute(
+            select(ChatRow)
+            .where(
+                ChatRow.owner_external_id == owner_external_id,
+                ChatRow.interface == interface,
+                ChatRow.system_prompt.is_(None)
+                if system_prompt is None
+                else ChatRow.system_prompt == system_prompt,
+            )
+            .order_by(ChatRow.created_at.asc())
+            .limit(1)
+        )
+        existing_row = result.scalar_one_or_none()
+        if existing_row is not None:
+            return Chat.model_validate(existing_row, from_attributes=True)
+
         row = ChatRow(
             owner_external_id=owner_external_id,
             interface=interface,

@@ -6,6 +6,7 @@ from uuid import UUID
 import pytest
 
 from app.chat.domain import Chat, ChatMessage
+from app.chat.prompts import TELEGRAM_SYSTEM_PROMPT
 from app.chat.service import ChatService, count_tokens, fit_to_budget
 
 
@@ -13,8 +14,16 @@ class FakeRepository:
     def __init__(self, chat: Chat) -> None:
         self.chat = chat
         self.messages: list[ChatMessage] = []
+        self.create_chat_calls: list[dict[str, str | None]] = []
 
     async def create_chat(self, owner_external_id: str, interface: str, system_prompt: str | None = None):
+        self.create_chat_calls.append(
+            {
+                "owner_external_id": owner_external_id,
+                "interface": interface,
+                "system_prompt": system_prompt,
+            }
+        )
         return self.chat
 
     async def get_chat(self, chat_id: UUID):
@@ -95,6 +104,17 @@ async def test_sliding_context_keeps_system_prompt_and_recent_messages():
     context = service._build_sliding_context(chat, history)
 
     assert [message["content"] for message in context] == ["System.", "middle", "recent"]
+
+
+@pytest.mark.asyncio
+async def test_create_chat_applies_telegram_domain_system_prompt():
+    chat = Chat(owner_external_id="owner", interface="telegram")
+    repo = FakeRepository(chat)
+    service = ChatService(repo, FakeLLM())
+
+    await service.create_chat("owner", "telegram")
+
+    assert repo.create_chat_calls[-1]["system_prompt"] == TELEGRAM_SYSTEM_PROMPT
 
 
 @pytest.mark.asyncio

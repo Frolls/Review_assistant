@@ -80,6 +80,10 @@ class JsonChatRepository:
         interface: str,
         system_prompt: str | None = None,
     ) -> Chat:
+        existing_chat = await self._find_chat(owner_external_id, interface, system_prompt)
+        if existing_chat is not None:
+            return existing_chat
+
         chat = Chat(
             owner_external_id=owner_external_id,
             interface=interface,
@@ -166,3 +170,25 @@ class JsonChatRepository:
 
     def _messages_path(self, chat_id: UUID) -> Path:
         return self._chat_dir(chat_id) / "messages.jsonl"
+
+    async def _find_chat(
+        self,
+        owner_external_id: str,
+        interface: str,
+        system_prompt: str | None,
+    ) -> Chat | None:
+        chats_dir = self.base_dir / "chats"
+        if not chats_dir.exists():
+            return None
+
+        for chat_path in sorted(chats_dir.glob("*/chat.json")):
+            async with _open(chat_path) as file:
+                payload = await file.read()
+            chat = Chat.model_validate_json(payload)
+            if (
+                chat.owner_external_id == owner_external_id
+                and chat.interface == interface
+                and chat.system_prompt == system_prompt
+            ):
+                return chat
+        return None

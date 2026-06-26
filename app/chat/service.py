@@ -8,6 +8,7 @@ from uuid import UUID
 import tiktoken
 
 from app.chat.domain import Chat, ChatMessage
+from app.chat.prompts import default_system_prompt
 from app.chat.repository import ChatRepository
 from app.observability.logging import get_logger
 
@@ -18,7 +19,7 @@ MessagePayload = dict[str, str]
 ContextStrategyName = Literal["sliding", "hybrid"]
 
 DEFAULT_CONTEXT_WINDOW_TOKENS = 8_192
-DEFAULT_RESPONSE_TOKENS = 512
+DEFAULT_RESPONSE_TOKENS = 1_536
 DEFAULT_SAFETY_MARGIN = 256
 DEFAULT_HISTORY_LIMIT = 200
 SUMMARIZE_PROMPT = (
@@ -87,6 +88,7 @@ class ChatService:
         interface: str,
         system_prompt: str | None = None,
     ) -> Chat:
+        system_prompt = default_system_prompt(interface, system_prompt)
         return await self.repository.create_chat(owner_external_id, interface, system_prompt)
 
     async def get_chat(self, chat_id: UUID) -> Chat | None:

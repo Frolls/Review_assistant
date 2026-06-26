@@ -57,6 +57,22 @@ async def test_create_chat_and_read_back(repository):
 
 
 @pytest.mark.asyncio
+async def test_create_chat_is_idempotent_for_same_owner_interface_and_prompt(repository):
+    first = await repository.create_chat(
+        owner_external_id="telegram-42",
+        interface="telegram",
+        system_prompt="Be concise.",
+    )
+    second = await repository.create_chat(
+        owner_external_id="telegram-42",
+        interface="telegram",
+        system_prompt="Be concise.",
+    )
+
+    assert second.id == first.id
+
+
+@pytest.mark.asyncio
 async def test_append_message_and_list_messages_are_chronological(repository):
     chat = await repository.create_chat("owner-1", "cli")
     first = _message(chat.id, "user", "one", seconds=1)

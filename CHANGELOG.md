@@ -1,5 +1,15 @@
 # Changelog
 
+## [2026-06-26]
+
+### Added
+
+- Added Telegram defaults for stateful chats, scoped to Python/Ansible PR review.
+
+### Changed
+
+- Made stateful chat creation idempotent and increased the streamed response budget.
+
 ## [2026-06-25]
 
 ### Added
