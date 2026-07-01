@@ -17,6 +17,7 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - `POST /chat` — обычный completion-ответ с `cached: true/false`
 - `POST /chat/stream` — SSE-поток с `data: ...` и финальным `data: [DONE]`
 - `POST /chats` и `/chats/{chat_id}/messages` — stateful-чат с серверной историей, SSE-ответом и JSON/Postgres-хранилищем
+- `POST /chats/{chat_id}/messages` принимает `multipart/form-data`: поле `content` и опциональный файл `media` для изображений, аудио, PDF и DOCX
 - `GET /health` — liveness без зависимостей
 - `GET /ready` — readiness с проверкой `Redis`
 - `GET /models` — статический каталог OpenAI-моделей с ценами
@@ -51,6 +52,7 @@ Client
 - `OPENAI_API_KEY=ollama`
 - `OPENAI_BASE_URL=http://host.docker.internal:11434/v1` или `http://localhost:11434/v1`
 - `DEFAULT_MODEL=qwen3` или другая локально скачанная модель
+- `VISION_MODEL=qwen2.5vl:7b` или другая vision-модель, если нужно анализировать изображения
 
 ## Основные файлы
 
@@ -131,6 +133,8 @@ eval/
 Дополнительно:
 
 - `OPENAI_BASE_URL` — адрес LiteLLM или другого OpenAI-compatible backend
+- `VISION_MODEL` — модель для stateful-чата с изображениями; если не задана, используется `DEFAULT_MODEL`
+- `LLM_NUM_CTX` — опциональный размер контекста для OpenAI-compatible backend'ов, которые принимают `extra_body.options.num_ctx`
 - `LLM_MAX_CONCURRENCY` — ограничение параллелизма
 - `SECURITY_GUARDRAILS_ENABLED` — включает input validator, canary system prompt, output filter и moderation fallback; выключать только для контролируемого garak baseline
 - `LOG_LEVEL` — уровень логирования приложения, по умолчанию `INFO`
@@ -143,6 +147,8 @@ eval/
 - `CHAT_CONTEXT_STRATEGY` — стратегия контекста `sliding` или `hybrid`
 - `CHAT_CONTEXT_WINDOW` — количество последних сообщений, сохраняемых в prompt перед token-budget trimming
 - `DATABASE_URL` — async SQLAlchemy URL, обязателен для `CHAT_REPOSITORY=postgres`
+- `BOT_URL` — внутренний URL Telegram-бота для backchannel-уведомлений, по умолчанию `http://localhost:8081`
+- `INTERNAL_TOKEN` — общий внутренний токен backend/bot для `/notify`
 
 `PHOENIX_COLLECTOR_ENDPOINT`, если указывает только на хост Phoenix UI, автоматически нормализуется до `/v1/traces`. Например, `http://localhost:6006` будет использован как `http://localhost:6006/v1/traces`.
 
@@ -384,6 +390,8 @@ git ls-files | grep -E '\.env$'
 OPENAI_API_KEY=ollama
 OPENAI_BASE_URL=http://host.docker.internal:11434/v1
 DEFAULT_MODEL=qwen3
+VISION_MODEL=qwen2.5vl:7b
+LLM_NUM_CTX=8192
 REQUEST_TIMEOUT=30
 REDIS_URL=redis://host.docker.internal:6379/0
 CACHE_TTL_SECONDS=300
@@ -435,8 +443,13 @@ curl -X POST http://127.0.0.1:8000/chats \
 
 ```bash
 curl -N -X POST http://127.0.0.1:8000/chats/<chat_id>/messages \
-  -H 'Content-Type: application/json' \
-  -d '{"content":"Привет, меня зовут Аня"}'
+  -F 'content=Привет, меня зовут Аня'
+```
+
+```bash
+curl -N -X POST http://127.0.0.1:8000/chats/<chat_id>/messages \
+  -F 'content=Проверь код на изображении' \
+  -F 'media=@screenshot.png;type=image/png'
 ```
 
 ```bash
@@ -483,6 +496,8 @@ uv run python -m ruff check app tests scripts
 OPENAI_API_KEY=ollama
 OPENAI_BASE_URL=http://host.docker.internal:11434/v1
 DEFAULT_MODEL=qwen3
+VISION_MODEL=qwen2.5vl:7b
+LLM_NUM_CTX=8192
 REQUEST_TIMEOUT=30
 REDIS_URL=redis://host.docker.internal:6379/0
 SECURITY_GUARDRAILS_ENABLED=true
@@ -504,7 +519,7 @@ uv --cache-dir .uv-cache run uvicorn app.main:app --host 127.0.0.1 --port 8000
 - повторный идентичный `POST /chat` -> `200`, `cached:true`
 - `POST /chat/stream` с `model=qwen2.5:14b` -> SSE-чанки `1, 2, 3`, затем `usage`, затем `[DONE]`
 - `POST /chats` -> `200` и `chat_id`
-- `POST /chats/{chat_id}/messages` -> SSE-ответ `pong`, затем `[DONE]`
+- `POST /chats/{chat_id}/messages` -> SSE-ответ `pong`, затем JSON-событие `{"type":"done"}`
 - `GET /chats/{chat_id}/messages?limit=10` -> сохранённые сообщения пользователя и ассистента
 
 Запрос без серверной истории для проверки кеша:
@@ -529,12 +544,13 @@ curl -N -X POST http://127.0.0.1:8000/chat/stream \
 
 ```bash
 curl -N -X POST http://127.0.0.1:8000/chats/<chat_id>/messages \
-  -H 'Content-Type: application/json' \
-  -d '{"content":"/no_think Ответь одним словом: pong"}'
+  -F 'content=/no_think Ответь одним словом: pong'
 ```
 
 Ограничения локального Ollama-стенда:
 
 - `qwen3` может возвращать reasoning-текст до финального ответа. Текущий API корректно обрабатывает SSE-поток и завершающие события.
+- Анализ изображений требует vision-модель в `VISION_MODEL`; текстовая модель может отклонить multimodal-запрос.
+- Голосовые сообщения требуют OpenAI-compatible endpoint `/audio/transcriptions` для Whisper. Чистый Ollama endpoint обычно его не предоставляет.
 - Ollama не поддерживает `/v1/moderations` в использованной конфигурации. Сервис пишет warning `output_moderation.unavailable` и продолжает обработку в режиме best-effort fallback.
 - Если Phoenix UI не запущен на `localhost:6006`, trace exporter пишет предупреждения о недоступном collector и выполняет retry. Для локальной smoke-проверки без Phoenix допустимо установить `PHOENIX_TRACING_ENABLED=false`.

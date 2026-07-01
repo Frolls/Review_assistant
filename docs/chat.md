@@ -30,8 +30,21 @@ API: полный контекст передаётся в каждом запр
 
 - клиент создаёт чат через `POST /chats`;
 - клиент отправляет пользовательское сообщение через `POST /chats/{chat_id}/messages`;
-- сервис сохраняет сообщение пользователя, формирует контекст, вызывает LLM в streaming-режиме и возвращает SSE-поток;
+- сервис при необходимости извлекает данные из `media`, сохраняет сообщение пользователя, формирует контекст, вызывает LLM в streaming-режиме и возвращает SSE-поток;
 - после завершения потока сервис сохраняет накопленный ответ ассистента.
+
+Сообщения отправляются как `multipart/form-data`: обязательное поле `content`
+и опциональный файл `media`. Поддерживаются:
+
+- изображения `image/*` — передаются в LLM как multimodal `image_url`;
+- аудио `audio/*` и `application/ogg` — расшифровываются через Whisper-compatible `/audio/transcriptions`;
+- PDF — извлекается текст первых 50 страниц, результат ограничивается 30 000 символов;
+- DOCX — извлекаются абзацы и таблицы, результат ограничивается 30 000 символов.
+
+Для изображений можно задать `VISION_MODEL`; если переменная пустая, сервис
+использует `DEFAULT_MODEL`. Для локального Ollama voice-сценарий требует
+дополнительный OpenAI-compatible STT endpoint, потому что стандартный Ollama
+endpoint обычно не реализует `/audio/transcriptions`.
 
 ## Стратегии контекста
 
@@ -118,8 +131,23 @@ curl http://localhost:8000/chats/<chat_id>
 
 ```bash
 curl -N -X POST http://localhost:8000/chats/<chat_id>/messages \
-  -H 'Content-Type: application/json' \
-  -d '{"content":"Привет, меня зовут Аня"}'
+  -F 'content=Привет, меня зовут Аня'
+```
+
+Отправить сообщение с файлом:
+
+```bash
+curl -N -X POST http://localhost:8000/chats/<chat_id>/messages \
+  -F 'content=Проверь код на скриншоте' \
+  -F 'media=@screenshot.png;type=image/png'
+```
+
+SSE-поток stateful-чата возвращает JSON-события:
+
+```text
+data: {"type":"token","delta":"..."}
+
+data: {"type":"done"}
 ```
 
 Получить сообщения в хронологическом порядке:
@@ -141,7 +169,7 @@ backend Ollama. Результаты:
 
 - `POST /chats` создал чат и вернул `chat_id`;
 - `POST /chats/{chat_id}/messages` отдал SSE-ответ `pong` и финальное
-  `data: [DONE]`;
+  JSON-событие `{"type":"done"}`;
 - `GET /chats/{chat_id}/messages?limit=10` вернул сохранённые сообщения
   пользователя и ассистента;
 - `GET /chats/{chat_id}` вернул метаданные чата.
@@ -152,6 +180,8 @@ backend Ollama. Результаты:
 OPENAI_API_KEY=ollama
 OPENAI_BASE_URL=http://host.docker.internal:11434/v1
 DEFAULT_MODEL=qwen3
+VISION_MODEL=qwen2.5vl:7b
+LLM_NUM_CTX=8192
 REDIS_URL=redis://host.docker.internal:6379/0
 CHAT_REPOSITORY=json
 ```

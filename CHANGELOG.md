@@ -1,5 +1,22 @@
 # Changelog
 
+## [2026-07-01]
+
+### Added
+
+- Added multipart media support to `POST /chats/{chat_id}/messages` for images, audio, PDF, and DOCX files while keeping the same endpoint URL.
+- Added media extraction helpers: images are forwarded as multimodal `image_url` parts, audio is transcribed through Whisper-compatible `/audio/transcriptions`, and PDF/DOCX text is extracted with bounded limits.
+- Added `media_refs` persistence for stateful chat history, including Postgres JSONB storage and an Alembic migration.
+- Added `VISION_MODEL`, `LLM_NUM_CTX`, `BOT_URL`, and `INTERNAL_TOKEN` configuration.
+- Added internal bot notification helper for the `/notify` backchannel.
+
+### Changed
+
+- Changed stateful chat message submission from JSON-only input to `multipart/form-data` with `content` and optional `media`.
+- Changed stateful chat SSE output to JSON events with `token`, `done`, and `error` event types.
+- Strengthened the Telegram-facing prompt and local domain guardrails for Python/Ansible review usage.
+- Updated dependency metadata and `uv.lock` for media parsing and multipart handling.
+
 ## [2026-06-26]
 
 ### Added
