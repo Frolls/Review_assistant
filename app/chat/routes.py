@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import json
 from collections.abc import AsyncIterator
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
+from openai import APIStatusError, BadRequestError, OpenAIError
 from pydantic import BaseModel
 
 from app.chat.deps import ChatServiceDep
 from app.chat.domain import Chat, ChatMessage
+from app.chat.media import media_to_part
 
 
 router = APIRouter(prefix="/chats", tags=["stateful-chat"])
@@ -22,10 +25,6 @@ class CreateChatIn(BaseModel):
 
 class CreateChatOut(BaseModel):
     chat_id: UUID
-
-
-class MessageIn(BaseModel):
-    content: str
 
 
 @router.post("", response_model=CreateChatOut)
@@ -47,14 +46,62 @@ async def get_chat(chat_id: UUID, chat_service: ChatServiceDep) -> Chat:
 
 
 @router.post("/{chat_id}/messages")
-async def send_message(chat_id: UUID, payload: MessageIn, chat_service: ChatServiceDep) -> StreamingResponse:
+async def send_message(
+    chat_id: UUID,
+    *,
+    content: str = Form(...),
+    media: UploadFile | None = File(None),
+    chat_service: ChatServiceDep,
+) -> StreamingResponse:
     if await chat_service.get_chat(chat_id) is None:
         raise HTTPException(status_code=404, detail="Chat not found")
 
+    local_response = _local_response(content)
+    if local_response is not None and media is None:
+        async def local_stream() -> AsyncIterator[str]:
+            yield _format_sse_event({"type": "token", "delta": local_response})
+            yield _format_sse_event({"type": "done"})
+
+        return StreamingResponse(local_stream(), media_type="text/event-stream")
+
+    refusal = _domain_refusal(content)
+    if (
+        refusal is not None
+        and media is None
+        and not await _has_recent_media_context(chat_service, chat_id)
+    ):
+        async def refusal_stream() -> AsyncIterator[str]:
+            yield _format_sse_event({"type": "token", "delta": refusal})
+            yield _format_sse_event({"type": "done"})
+
+        return StreamingResponse(refusal_stream(), media_type="text/event-stream")
+
+    media_ref = None
+    if media is not None:
+        try:
+            media_part = await media_to_part(media)
+        except ValueError as exc:
+            raise HTTPException(status_code=415, detail=str(exc)) from exc
+        except OpenAIError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail=_media_processing_error_message(exc),
+            ) from exc
+        media_ref = {
+            "mime": media.content_type,
+            "size": media.size,
+            "filename": media.filename,
+            "part": media_part,
+        }
+
     async def event_stream() -> AsyncIterator[str]:
-        async for chunk in chat_service.send_message(chat_id, payload.content):
-            yield _format_sse_data(chunk)
-        yield "data: [DONE]\n\n"
+        try:
+            async for chunk in chat_service.send_message(chat_id, content, media_ref=media_ref):
+                yield _format_sse_event({"type": "token", "delta": chunk})
+        except BadRequestError as exc:
+            yield _format_sse_event({"type": "error", "message": _llm_bad_request_message(exc)})
+            return
+        yield _format_sse_event({"type": "done"})
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
@@ -74,6 +121,172 @@ async def clear_messages(chat_id: UUID, chat_service: ChatServiceDep) -> dict[st
     return {"status": "ok"}
 
 
-def _format_sse_data(chunk: str) -> str:
-    lines = chunk.splitlines() or [chunk]
-    return "".join(f"data: {line}\n" for line in lines) + "\n"
+def _format_sse_event(payload: dict[str, str]) -> str:
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+
+def _domain_refusal(content: str) -> str | None:
+    text = content.lower()
+    entertainment_markers = (
+        "анекдот",
+        "байк",
+        "басн",
+        "шутк",
+        "пошути",
+        "стих",
+        "истори",
+        "рассказ",
+        "сказк",
+        "притч",
+        "развесели",
+        "мем",
+    )
+    request_markers = (
+        "расскажи",
+        "поведай",
+        "придумай",
+        "сочини",
+        "напиши",
+        "дай",
+        "можешь",
+    )
+    if any(marker in text for marker in entertainment_markers) and any(
+        marker in text for marker in request_markers
+    ):
+        return _domain_refusal_text()
+    if not _looks_like_review_request(text):
+        return _domain_refusal_text()
+    return None
+
+
+def _local_response(content: str) -> str | None:
+    text = content.strip().lower().replace("ё", "е")
+    identity_questions = {
+        "ты кто",
+        "ты кто?",
+        "кто ты",
+        "кто ты?",
+        "что ты умеешь",
+        "что ты умеешь?",
+        "что умеешь",
+        "что умеешь?",
+    }
+    if text in identity_questions:
+        return (
+            "Я Telegram-интерфейс ИИ-ассистента для ревью кода. "
+            "Помогаю с Python, Ansible, pull request'ами, тестами, "
+            "читаемостью и архитектурными замечаниями. Можешь отправить "
+            "текст, код, diff, PDF/DOCX или изображение с кодом."
+        )
+    return None
+
+
+def _looks_like_review_request(text: str) -> bool:
+    domain_markers = (
+        "ansible",
+        "ansible-lint",
+        "molecule",
+        "collection",
+        "collections",
+        "arg spec",
+        "arg specs",
+        "argspec",
+        "argspecs",
+        "argument spec",
+        "argument specs",
+        "module argument",
+        "python",
+        "питон",
+        "пайтон",
+        "yaml",
+        "jinja",
+        "pytest",
+        "pip",
+        "venv",
+        "virtualenv",
+        "poetry",
+        "uv",
+        "ruff",
+        "mypy",
+        "pyproject",
+        "requirements",
+        "fastapi",
+        "sqlalchemy",
+        "redis",
+        "docker",
+        "kubernetes",
+        "код",
+        "кода",
+        "ревью",
+        "проверь",
+        "проверить",
+        "ошибк",
+        "баг",
+        "фикс",
+        "рефактор",
+        "тест",
+        "архитект",
+        "читаем",
+        "поддерживаем",
+        "pull request",
+        "merge request",
+        "diff",
+        "pr",
+        "traceback",
+        "stacktrace",
+        "exception",
+        "playbook",
+        "role",
+        "roles/",
+        "tasks:",
+        "- name:",
+        "def ",
+        "class ",
+        "import ",
+        "from ",
+    )
+    return any(marker in text for marker in domain_markers)
+
+
+def _domain_refusal_text() -> str:
+    return (
+        "Я помогаю только с ревью Python/Ansible-кода, pull request'ов, "
+        "тестов, читаемости и архитектуры. Пришли код, diff, описание PR "
+        "или документ в этих рамках, и я разберу его по делу."
+    )
+
+
+async def _has_recent_media_context(chat_service: ChatServiceDep, chat_id: UUID) -> bool:
+    messages = await chat_service.list_messages(chat_id, limit=10)
+    return any(message.media_refs is not None for message in messages)
+
+
+def _llm_bad_request_message(exc: BadRequestError) -> str:
+    message = str(exc)
+    response = getattr(exc, "response", None)
+    if response is not None:
+        try:
+            message = response.text
+        except Exception:
+            message = str(exc)
+    if "does not support multimodal" in message.lower():
+        return (
+            "Текущая модель не поддерживает изображения. "
+            "Для проверки фото переключите backend на vision-модель в Ollama "
+            "или отправьте текст/документ."
+        )
+    return f"LLM backend отклонил запрос: {message[:500]}"
+
+
+def _media_processing_error_message(exc: OpenAIError) -> str:
+    message = str(exc)
+    if isinstance(exc, APIStatusError):
+        message = str(exc.response.text)
+    if "audio" in message.lower() or "transcription" in message.lower():
+        return (
+            "Не удалось расшифровать голосовое сообщение. "
+            "Для voice нужен backend с OpenAI-compatible endpoint "
+            "`/audio/transcriptions` для Whisper; текущий Ollama endpoint, "
+            "скорее всего, его не поддерживает."
+        )
+    return "Не удалось обработать медиафайл. Попробуйте другой файл или отправьте текст."

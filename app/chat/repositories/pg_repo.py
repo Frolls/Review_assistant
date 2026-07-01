@@ -62,6 +62,7 @@ class PostgresChatRepository:
             role=message.role,
             content=message.content,
             tokens=message.tokens,
+            media_refs=message.media_refs,
             created_at=message.created_at,
         )
         self.session.add(row)

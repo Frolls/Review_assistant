@@ -15,7 +15,7 @@ from app.observability.logging import get_logger
 
 logger = get_logger(__name__)
 
-MessagePayload = dict[str, str]
+MessagePayload = dict[str, Any]
 ContextStrategyName = Literal["sliding", "hybrid"]
 
 DEFAULT_CONTEXT_WINDOW_TOKENS = 8_192
@@ -38,7 +38,7 @@ def count_tokens(messages: list[MessagePayload]) -> int:
     for message in messages:
         total += 4
         total += _count_text_tokens(message.get("role", ""))
-        total += _count_text_tokens(message.get("content", ""))
+        total += _count_content_tokens(message.get("content", ""))
     return total
 
 
@@ -67,6 +67,8 @@ class ChatService:
         llm_client: Any,
         *,
         model: str = "gpt-4.1-mini",
+        vision_model: str | None = None,
+        num_ctx: int | None = None,
         context_strategy: ContextStrategyName = "sliding",
         keep_recent: int = 10,
         context_window_tokens: int = DEFAULT_CONTEXT_WINDOW_TOKENS,
@@ -76,6 +78,8 @@ class ChatService:
         self.repository = repository
         self.llm_client = llm_client
         self.model = model
+        self.vision_model = vision_model
+        self.num_ctx = num_ctx
         self.context_strategy = context_strategy
         self.keep_recent = keep_recent
         self.context_window_tokens = context_window_tokens
@@ -97,12 +101,22 @@ class ChatService:
     async def list_messages(self, chat_id: UUID, limit: int = 50) -> list[ChatMessage]:
         return await self.repository.list_messages(chat_id, limit)
 
-    async def send_message(self, chat_id: UUID, user_content: str) -> AsyncIterator[str]:
+    async def send_message(
+        self,
+        chat_id: UUID,
+        user_content: str,
+        media_ref: dict[str, Any] | None = None,
+    ) -> AsyncIterator[str]:
         chat = await self.repository.get_chat(chat_id)
         if chat is None:
             raise ChatNotFoundError(f"Chat {chat_id} was not found")
 
-        user_message = ChatMessage(chat_id=chat_id, role="user", content=user_content)
+        user_message = ChatMessage(
+            chat_id=chat_id,
+            role="user",
+            content=user_content,
+            media_refs=media_ref,
+        )
         await self.repository.append_message(chat_id, user_message)
 
         history = await self.repository.list_messages(chat_id, limit=DEFAULT_HISTORY_LIMIT)
@@ -114,10 +128,11 @@ class ChatService:
         stream_completed = False
         try:
             stream = await self.llm_client.chat.completions.create(
-                model=self.model,
+                model=self._select_model(messages),
                 messages=messages,
-                max_tokens=self.response_tokens,
                 stream=True,
+                stream_options={"include_usage": True},
+                **self._completion_extra_kwargs(),
             )
             async for chunk in stream:
                 text = _extract_delta_text(chunk)
@@ -194,6 +209,16 @@ class ChatService:
         )
         return _extract_response_text(response).strip()
 
+    def _select_model(self, messages: list[MessagePayload]) -> str:
+        if self.vision_model and _messages_include_images(messages):
+            return self.vision_model
+        return self.model
+
+    def _completion_extra_kwargs(self) -> dict[str, Any]:
+        if self.num_ctx is None:
+            return {}
+        return {"extra_body": {"options": {"num_ctx": self.num_ctx}}}
+
 
 def _system_messages(chat: Chat) -> list[MessagePayload]:
     if not chat.system_prompt:
@@ -202,7 +227,27 @@ def _system_messages(chat: Chat) -> list[MessagePayload]:
 
 
 def _to_payload(message: ChatMessage) -> MessagePayload:
+    media_part = (message.media_refs or {}).get("part")
+    if message.role == "user" and isinstance(media_part, dict):
+        return {
+            "role": message.role,
+            "content": [
+                {"type": "text", "text": message.content},
+                media_part,
+            ],
+        }
     return {"role": message.role, "content": message.content}
+
+
+def _messages_include_images(messages: list[MessagePayload]) -> bool:
+    for message in messages:
+        content = message.get("content")
+        if not isinstance(content, list):
+            continue
+        for part in content:
+            if isinstance(part, dict) and part.get("type") == "image_url":
+                return True
+    return False
 
 
 def _extract_delta_text(chunk: Any) -> str:
@@ -229,6 +274,22 @@ def _coerce_text(value: Any) -> str:
     if isinstance(value, dict):
         return _coerce_text(value.get("content") or value.get("text"))
     return str(value)
+
+
+def _count_content_tokens(value: Any) -> int:
+    if isinstance(value, str):
+        return _count_text_tokens(value)
+    if isinstance(value, list):
+        total = 0
+        for part in value:
+            if not isinstance(part, dict):
+                continue
+            if part.get("type") == "text":
+                total += _count_text_tokens(_coerce_text(part.get("text")))
+            elif part.get("type") == "image_url":
+                total += 256
+        return total
+    return _count_text_tokens(_coerce_text(value))
 
 
 def _count_text_tokens(value: str) -> int:

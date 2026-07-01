@@ -36,10 +36,12 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("OPENAI_BASE_URL", "OLLAMA_BASE_URL"),
     )
     default_model: str = Field(
-        default="gpt-4.1-mini",
+        default="gpt-5.2",
         validation_alias=AliasChoices("DEFAULT_MODEL", "OPENAI_MODEL"),
     )
+    vision_model: str | None = Field(default=None, validation_alias="VISION_MODEL")
     request_timeout: float = Field(default=30.0, validation_alias="REQUEST_TIMEOUT")
+    llm_num_ctx: int | None = Field(default=None, validation_alias="LLM_NUM_CTX")
     redis_url: str = Field(default="redis://localhost:6379/0", validation_alias="REDIS_URL")
     cache_ttl_seconds: int = Field(default=300, validation_alias="CACHE_TTL_SECONDS")
     max_concurrency: int = Field(default=5, validation_alias="LLM_MAX_CONCURRENCY")
@@ -74,6 +76,8 @@ class Settings(BaseSettings):
         default_factory=list,
         validation_alias="CORS_ORIGINS",
     )
+    bot_url: str = Field(default="http://localhost:8081", validation_alias="BOT_URL")
+    internal_token: str = Field(default="changeme", validation_alias="INTERNAL_TOKEN")
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -127,7 +131,7 @@ class Settings(BaseSettings):
     @classmethod
     def default_model_name(cls, value: object) -> object:
         if value is None or value == "":
-            return "gpt-4.1-mini"
+            return "gpt-5.2"
         return value
 
     @field_validator("default_model")
@@ -135,6 +139,13 @@ class Settings(BaseSettings):
     def validate_default_model(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("DEFAULT_MODEL must not be blank")
+        return value
+
+    @field_validator("vision_model", mode="before")
+    @classmethod
+    def default_vision_model(cls, value: object) -> object:
+        if value is None or value == "":
+            return None
         return value
 
     @field_validator("request_timeout", mode="before")
@@ -149,6 +160,20 @@ class Settings(BaseSettings):
     def validate_request_timeout(cls, value: float) -> float:
         if value <= 0:
             raise ValueError("REQUEST_TIMEOUT must be greater than zero")
+        return value
+
+    @field_validator("llm_num_ctx", mode="before")
+    @classmethod
+    def default_llm_num_ctx(cls, value: object) -> object:
+        if value is None or value == "":
+            return None
+        return value
+
+    @field_validator("llm_num_ctx")
+    @classmethod
+    def validate_llm_num_ctx(cls, value: int | None) -> int | None:
+        if value is not None and value <= 0:
+            raise ValueError("LLM_NUM_CTX must be greater than zero")
         return value
 
     @field_validator("redis_url", mode="before")
@@ -246,6 +271,20 @@ class Settings(BaseSettings):
                 return [str(item).strip() for item in parsed if str(item).strip()]
             return [item.strip() for item in raw_value.split(",") if item.strip()]
         raise ValueError("CORS_ORIGINS must be a list or a string")
+
+    @field_validator("bot_url", mode="before")
+    @classmethod
+    def default_bot_url(cls, value: object) -> object:
+        if value is None or value == "":
+            return "http://localhost:8081"
+        return value
+
+    @field_validator("internal_token", mode="before")
+    @classmethod
+    def default_internal_token(cls, value: object) -> object:
+        if value is None or value == "":
+            return "changeme"
+        return value
 
     @property
     def llm(self) -> LLMSettings:

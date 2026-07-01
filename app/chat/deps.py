@@ -48,6 +48,8 @@ async def get_chat_service(
         repository=repo,
         llm_client=llm,
         model=settings.default_model,
+        vision_model=settings.vision_model,
+        num_ctx=settings.llm_num_ctx,
         context_strategy=settings.chat_context_strategy,
         keep_recent=settings.chat_context_window,
     )
