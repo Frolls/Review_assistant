@@ -17,6 +17,7 @@ class FakeChatService:
         self.messages = [
             ChatMessage(chat_id=self.chat.id, role="user", content="Hello"),
         ]
+        self.sent_messages: list[str] = []
 
     async def create_chat(self, owner_external_id: str, interface: str, system_prompt: str | None = None):
         self.chat = Chat(
@@ -32,7 +33,8 @@ class FakeChatService:
     async def list_messages(self, chat_id, limit: int = 50):
         return self.messages[-limit:]
 
-    async def send_message(self, chat_id, user_content: str) -> AsyncIterator[str]:
+    async def send_message(self, chat_id, user_content: str, media_ref=None) -> AsyncIterator[str]:
+        self.sent_messages.append(user_content)
         yield "one "
         yield "two"
 
@@ -72,11 +74,142 @@ async def test_stream_message_route(test_app):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             f"/chats/{service.chat.id}/messages",
-            json={"content": "Hi"},
+            data={"content": "проверь Python код"},
         )
 
     assert response.status_code == 200
-    assert response.text == "data: one \n\ndata: two\n\ndata: [DONE]\n\n"
+    assert response.text == (
+        'data: {"type": "token", "delta": "one "}\n\n'
+        'data: {"type": "token", "delta": "two"}\n\n'
+        'data: {"type": "done"}\n\n'
+    )
+
+
+@pytest.mark.asyncio
+async def test_stream_message_route_refuses_entertainment_request(test_app):
+    app, service = test_app
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            f"/chats/{service.chat.id}/messages",
+            data={"content": "поведай байку про мышь"},
+        )
+
+    assert response.status_code == 200
+    assert "Я помогаю только с ревью Python/Ansible-кода" in response.text
+    assert service.sent_messages == []
+
+
+@pytest.mark.asyncio
+async def test_stream_message_route_refuses_general_knowledge_request(test_app):
+    app, service = test_app
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            f"/chats/{service.chat.id}/messages",
+            data={"content": "писал ли Пушкин палиндромы?"},
+        )
+
+    assert response.status_code == 200
+    assert "Я помогаю только с ревью Python/Ansible-кода" in response.text
+    assert service.sent_messages == []
+
+
+@pytest.mark.asyncio
+async def test_stream_message_route_answers_identity_question_locally(test_app):
+    app, service = test_app
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            f"/chats/{service.chat.id}/messages",
+            data={"content": "Ты кто?"},
+        )
+
+    assert response.status_code == 200
+    assert "Я Telegram-интерфейс ИИ-ассистента для ревью кода" in response.text
+    assert service.sent_messages == []
+
+
+@pytest.mark.asyncio
+async def test_stream_message_route_allows_python_tooling_question(test_app):
+    app, service = test_app
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            f"/chats/{service.chat.id}/messages",
+            data={"content": "для чего нужен pip?"},
+        )
+
+    assert response.status_code == 200
+    assert 'data: {"type": "token", "delta": "one "}' in response.text
+    assert service.sent_messages == ["для чего нужен pip?"]
+
+
+@pytest.mark.asyncio
+async def test_stream_message_route_allows_russian_python_question(test_app):
+    app, service = test_app
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            f"/chats/{service.chat.id}/messages",
+            data={"content": "Расскажи про питон"},
+        )
+
+    assert response.status_code == 200
+    assert 'data: {"type": "token", "delta": "one "}' in response.text
+    assert service.sent_messages == ["Расскажи про питон"]
+
+
+@pytest.mark.asyncio
+async def test_stream_message_route_allows_ansible_arg_specs_question(test_app):
+    app, service = test_app
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            f"/chats/{service.chat.id}/messages",
+            data={"content": "стоит ли писать arg specs?"},
+        )
+
+    assert response.status_code == 200
+    assert 'data: {"type": "token", "delta": "one "}' in response.text
+    assert service.sent_messages == ["стоит ли писать arg specs?"]
+
+
+@pytest.mark.asyncio
+async def test_stream_message_route_allows_ansible_argspecs_compact_spelling(test_app):
+    app, service = test_app
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            f"/chats/{service.chat.id}/messages",
+            data={"content": "стоит ли писать argspecs? и для чего?"},
+        )
+
+    assert response.status_code == 200
+    assert 'data: {"type": "token", "delta": "one "}' in response.text
+    assert service.sent_messages == ["стоит ли писать argspecs? и для чего?"]
+
+
+@pytest.mark.asyncio
+async def test_stream_message_route_allows_followup_after_media(test_app):
+    app, service = test_app
+    service.messages.append(
+        ChatMessage(
+            chat_id=service.chat.id,
+            role="user",
+            content="[фото]",
+            media_refs={
+                "mime": "image/png",
+                "part": {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/png;base64,AAA="},
+                },
+            },
+        )
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            f"/chats/{service.chat.id}/messages",
+            data={"content": "я про картинку"},
+        )
+
+    assert response.status_code == 200
+    assert 'data: {"type": "token", "delta": "one "}' in response.text
+    assert service.sent_messages == ["я про картинку"]
 
 
 @pytest.mark.asyncio

@@ -146,3 +146,29 @@ async def test_send_message_streams_and_saves_assistant_response():
     assert chunks == ["Hello, ", "Anya"]
     assert [message.role for message in repo.messages] == ["user", "assistant"]
     assert repo.messages[-1].content == "Hello, Anya"
+
+
+@pytest.mark.asyncio
+async def test_send_message_uses_vision_model_for_image_history():
+    chat = Chat(owner_external_id="owner", interface="cli")
+    repo = FakeRepository(chat)
+    llm = FakeLLM()
+    service = ChatService(repo, llm, model="text-model", vision_model="vision-model")
+
+    chunks = [
+        chunk
+        async for chunk in service.send_message(
+            chat.id,
+            "[фото]",
+            media_ref={
+                "mime": "image/png",
+                "part": {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/png;base64,AAA="},
+                },
+            },
+        )
+    ]
+
+    assert chunks == ["Hello, ", "Anya"]
+    assert llm.chat.completions.calls[-1]["model"] == "vision-model"
