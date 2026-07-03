@@ -324,17 +324,10 @@ http://localhost:8000/docs
 
 ## Запуск через Docker Compose
 
-В корне дипломного workspace есть общий `compose.yaml`, который поднимает полный
-контур: `app`, `bot`, `postgres` и `redis`. Данные Postgres сохраняются в volume
-`pg-data`; Redis использует отдельный volume `redis-data`.
-
-```bash
-cd ..
-docker compose up -d --build
-```
-
-Backend-специфичный `Review_bot/compose.yaml` дополнительно содержит Phoenix и
-удобен для локальной разработки observability-сценариев.
+Каноничный compose-файл хранится в backend-репозитории: `Review_bot/compose.yaml`.
+Он поднимает полный контур: `app`, `bot`, `postgres`, `redis` и `phoenix`.
+Данные Postgres сохраняются в volume `pg-data`; Redis и Phoenix используют
+отдельные volume.
 
 1. Подготовить `.env`:
 
