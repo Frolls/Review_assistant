@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import inspect
 from collections.abc import AsyncIterator
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
@@ -56,6 +58,12 @@ async def send_message(
     if await chat_service.get_chat(chat_id) is None:
         raise HTTPException(status_code=404, detail="Chat not found")
 
+    check_input = getattr(chat_service, "check_input", None)
+    input_moderation_checked = False
+    if check_input is not None:
+        await check_input(chat_id, content)
+        input_moderation_checked = True
+
     local_response = _local_response(content)
     if local_response is not None and media is None:
         async def local_stream() -> AsyncIterator[str]:
@@ -95,13 +103,28 @@ async def send_message(
         }
 
     async def event_stream() -> AsyncIterator[str]:
+        saved_message_id: UUID | None = None
+
+        def remember_saved_message(message: ChatMessage) -> None:
+            nonlocal saved_message_id
+            saved_message_id = message.id
+
         try:
-            async for chunk in chat_service.send_message(chat_id, content, media_ref=media_ref):
+            send_kwargs: dict[str, Any] = {"media_ref": media_ref}
+            send_signature = inspect.signature(chat_service.send_message)
+            if "input_moderation_checked" in send_signature.parameters:
+                send_kwargs["input_moderation_checked"] = input_moderation_checked
+            if "on_message_saved" in send_signature.parameters:
+                send_kwargs["on_message_saved"] = remember_saved_message
+            async for chunk in chat_service.send_message(chat_id, content, **send_kwargs):
                 yield _format_sse_event({"type": "token", "delta": chunk})
         except BadRequestError as exc:
             yield _format_sse_event({"type": "error", "message": _llm_bad_request_message(exc)})
             return
-        yield _format_sse_event({"type": "done"})
+        done_payload = {"type": "done"}
+        if saved_message_id is not None:
+            done_payload["message_id"] = str(saved_message_id)
+        yield _format_sse_event(done_payload)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
@@ -121,7 +144,7 @@ async def clear_messages(chat_id: UUID, chat_service: ChatServiceDep) -> dict[st
     return {"status": "ok"}
 
 
-def _format_sse_event(payload: dict[str, str]) -> str:
+def _format_sse_event(payload: dict[str, Any]) -> str:
     return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 

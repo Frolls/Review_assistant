@@ -13,6 +13,7 @@ from uuid import UUID
 import aiofiles
 
 from app.chat.domain import Chat, ChatMessage
+from app.moderation import ModerationResult
 
 
 def _use_aiofiles() -> bool:
@@ -161,6 +162,64 @@ class JsonChatRepository:
         async with _open(self._messages_path(chat_id), "a") as file:
             await file.write(json.dumps(marker, ensure_ascii=False))
             await file.write("\n")
+
+    async def record_moderation_incident(
+        self,
+        chat_id: UUID,
+        direction: str,
+        result: ModerationResult,
+        text_hash: str,
+        text_preview: str,
+    ) -> None:
+        chat_dir = self._chat_dir(chat_id)
+        chat_dir.mkdir(parents=True, exist_ok=True)
+        incident = {
+            "direction": direction,
+            "categories": result.categories,
+            "reasons": result.reasons,
+            "blocked_by": result.blocked_by,
+            "text_hash": text_hash,
+            "text_preview": text_preview,
+            "created_at": datetime.now(UTC).isoformat(),
+        }
+        async with _open(chat_dir / "moderation_incidents.jsonl", "a") as file:
+            await file.write(json.dumps(incident, ensure_ascii=False))
+            await file.write("\n")
+
+    async def save_feedback(self, chat_id: UUID, message_id: UUID, value: str) -> None:
+        chat = await self.get_chat(chat_id)
+        if chat is None:
+            raise LookupError("Chat was not found")
+        if value not in {"up", "down"}:
+            raise ValueError("Unsupported feedback value")
+
+        feedback_path = self._chat_dir(chat_id) / "message_feedback.jsonl"
+        existing: list[dict[str, Any]] = []
+        if feedback_path.exists():
+            async with _open(feedback_path) as file:
+                for line in await file.readlines():
+                    if line.strip():
+                        existing.append(json.loads(line))
+
+        payload = {
+            "message_id": str(message_id),
+            "owner_external_id": chat.owner_external_id,
+            "value": value,
+            "created_at": datetime.now(UTC).isoformat(),
+        }
+        existing = [
+            item
+            for item in existing
+            if not (
+                item.get("message_id") == payload["message_id"]
+                and item.get("owner_external_id") == payload["owner_external_id"]
+            )
+        ]
+        existing.append(payload)
+        async with _open(feedback_path, "w") as file:
+            for item in existing:
+                await file.write(json.dumps(item, ensure_ascii=False))
+                await file.write("\n")
 
     def _chat_dir(self, chat_id: UUID) -> Path:
         return self.base_dir / "chats" / str(chat_id)

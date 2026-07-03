@@ -78,6 +78,15 @@ class Settings(BaseSettings):
     )
     bot_url: str = Field(default="http://localhost:8081", validation_alias="BOT_URL")
     internal_token: str = Field(default="changeme", validation_alias="INTERNAL_TOKEN")
+    admin_token: str = Field(default="changeme-admin", validation_alias="ADMIN_TOKEN")
+    moderation_openai_enabled: bool = Field(
+        default=False,
+        validation_alias="MODERATION_OPENAI_ENABLED",
+    )
+    moderation_keywords_path: Path = Field(
+        default=Path("app/moderation/moderation_keywords.yaml"),
+        validation_alias="MODERATION_KEYWORDS_PATH",
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -284,6 +293,20 @@ class Settings(BaseSettings):
     def default_internal_token(cls, value: object) -> object:
         if value is None or value == "":
             return "changeme"
+        return value
+
+    @field_validator("admin_token", mode="before")
+    @classmethod
+    def default_admin_token(cls, value: object) -> object:
+        if value is None or value == "":
+            return "changeme-admin"
+        return value
+
+    @field_validator("moderation_keywords_path", mode="before")
+    @classmethod
+    def default_moderation_keywords_path(cls, value: object) -> object:
+        if value is None or value == "":
+            return Path("app/moderation/moderation_keywords.yaml")
         return value
 
     @property

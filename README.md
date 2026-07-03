@@ -18,6 +18,9 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - `POST /chat/stream` — SSE-поток с `data: ...` и финальным `data: [DONE]`
 - `POST /chats` и `/chats/{chat_id}/messages` — stateful-чат с серверной историей, SSE-ответом и JSON/Postgres-хранилищем
 - `POST /chats/{chat_id}/messages` принимает `multipart/form-data`: поле `content` и опциональный файл `media` для изображений, аудио, PDF и DOCX
+- moderation для stateful-чата: keyword/regex слой из `app/moderation/moderation_keywords.yaml`, опциональный OpenAI Moderation API слой и безопасное логирование инцидентов без сырого текста
+- `POST /chats/{chat_id}/messages/{message_id}/feedback` — сохранение 👍/👎 по ответу ассистента с защитой от дублей в Postgres
+- `/chats/admin/*` — admin API для статистики, последних пользователей и broadcast-очереди, защищённое `X-Admin-Token`
 - `GET /health` — liveness без зависимостей
 - `GET /ready` — readiness с проверкой `Redis`
 - `GET /models` — статический каталог OpenAI-моделей с ценами
@@ -82,11 +85,18 @@ app/
       output_filter.py
   chat/
     domain.py
+    feedback.py
     repository.py
     service.py
     routes.py
     deps.py
     repositories/
+  moderation/
+    service.py
+    moderation_keywords.yaml
+  admin/
+    auth.py
+    routes.py
 docs/
   chat.md
   architecture.md
@@ -149,6 +159,9 @@ eval/
 - `DATABASE_URL` — async SQLAlchemy URL, обязателен для `CHAT_REPOSITORY=postgres`
 - `BOT_URL` — внутренний URL Telegram-бота для backchannel-уведомлений, по умолчанию `http://localhost:8081`
 - `INTERNAL_TOKEN` — общий внутренний токен backend/bot для `/notify`
+- `ADMIN_TOKEN` — общий admin-токен для `/chats/admin/*` и Telegram admin-команд
+- `MODERATION_OPENAI_ENABLED` — включает дополнительный OpenAI Moderation API слой для stateful `/chats`, по умолчанию `false`
+- `MODERATION_KEYWORDS_PATH` — путь к YAML-файлу keyword/regex правил, по умолчанию `app/moderation/moderation_keywords.yaml`
 
 `PHOENIX_COLLECTOR_ENDPOINT`, если указывает только на хост Phoenix UI, автоматически нормализуется до `/v1/traces`. Например, `http://localhost:6006` будет использован как `http://localhost:6006/v1/traces`.
 
@@ -311,6 +324,18 @@ http://localhost:8000/docs
 
 ## Запуск через Docker Compose
 
+В корне дипломного workspace есть общий `compose.yaml`, который поднимает полный
+контур: `app`, `bot`, `postgres` и `redis`. Данные Postgres сохраняются в volume
+`pg-data`; Redis использует отдельный volume `redis-data`.
+
+```bash
+cd ..
+docker compose up -d --build
+```
+
+Backend-специфичный `Review_bot/compose.yaml` дополнительно содержит Phoenix и
+удобен для локальной разработки observability-сценариев.
+
 1. Подготовить `.env`:
 
 ```bash
@@ -325,7 +350,8 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Команда поднимет три сервиса: `app`, `redis`, `phoenix`.
+Команда из `Review_bot/` поднимет backend-стек: `app`, `redis`, `postgres`,
+`phoenix` и Telegram-бота из соседнего каталога `telegram-review-bot`.
 
 В `compose.yaml` для сервиса `app` добавлен alias `host.docker.internal:host-gateway`. Он нужен в Linux-сценарии, когда OpenAI-compatible backend работает на хосте, например локальная `Ollama`. Для удалённых backend'ов или контейнерных endpoint'ов эта запись не влияет на работу, если `host.docker.internal` не используется в `OPENAI_BASE_URL`.
 
@@ -363,6 +389,7 @@ git ls-files | grep -E '\.env$'
 Ожидаемый результат:
 
 - `app` и `redis` в статусе `healthy`
+- `postgres` в статусе `healthy`, а данные сохраняются в volume `pg-data`
 - `phoenix` в статусе `running`
 - `/health` -> `200` и `{"status":"ok"}`
 - `/ready` -> `200` и `{"status":"ok","redis":"up"}`
@@ -458,6 +485,34 @@ curl 'http://127.0.0.1:8000/chats/<chat_id>/messages?limit=50'
 
 ```bash
 curl -X DELETE http://127.0.0.1:8000/chats/<chat_id>/messages
+```
+
+Admin API:
+
+```bash
+curl -H 'X-Admin-Token: changeme-admin' \
+  http://127.0.0.1:8000/chats/admin/stats
+```
+
+```bash
+curl -H 'X-Admin-Token: changeme-admin' \
+  'http://127.0.0.1:8000/chats/admin/users?limit=50'
+```
+
+```bash
+curl -X POST http://127.0.0.1:8000/chats/admin/broadcast \
+  -H 'X-Admin-Token: changeme-admin' \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"Плановое уведомление","interface_filter":"telegram"}'
+```
+
+Feedback по ответу ассистента:
+
+```bash
+curl -X POST \
+  http://127.0.0.1:8000/chats/<chat_id>/messages/<message_id>/feedback \
+  -H 'Content-Type: application/json' \
+  -d '{"value":"up"}'
 ```
 
 Подробности по архитектуре, стратегии контекста, Alembic-миграции и переключению

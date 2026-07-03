@@ -4,6 +4,7 @@ from typing import Protocol
 from uuid import UUID
 
 from app.chat.domain import Chat, ChatMessage
+from app.moderation import ModerationResult
 
 
 class ChatRepository(Protocol):
@@ -25,4 +26,17 @@ class ChatRepository(Protocol):
         ...
 
     async def soft_delete_messages(self, chat_id: UUID) -> None:
+        ...
+
+    async def record_moderation_incident(
+        self,
+        chat_id: UUID,
+        direction: str,
+        result: ModerationResult,
+        text_hash: str,
+        text_preview: str,
+    ) -> None:
+        ...
+
+    async def save_feedback(self, chat_id: UUID, message_id: UUID, value: str) -> None:
         ...

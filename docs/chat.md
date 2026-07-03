@@ -7,6 +7,7 @@ flowchart LR
     Client[Клиент: Telegram / Web / CLI]
     Routes[app/chat/routes.py]
     Service[ChatService]
+    Moderation[ModerationService]
     Repo[ChatRepository Protocol]
     Json[(JSONL-файлы)]
     Postgres[(Postgres)]
@@ -15,6 +16,7 @@ flowchart LR
 
     Client --> Routes
     Routes --> Service
+    Service --> Moderation
     Service --> Repo
     Service --> LLM
     Repo --> Json
@@ -30,8 +32,9 @@ API: полный контекст передаётся в каждом запр
 
 - клиент создаёт чат через `POST /chats`;
 - клиент отправляет пользовательское сообщение через `POST /chats/{chat_id}/messages`;
+- сервис проверяет вход через `ModerationService.check_input()`;
 - сервис при необходимости извлекает данные из `media`, сохраняет сообщение пользователя, формирует контекст, вызывает LLM в streaming-режиме и возвращает SSE-поток;
-- после завершения потока сервис сохраняет накопленный ответ ассистента.
+- после завершения потока сервис проверяет накопленный ответ через `ModerationService.check_output()` и сохраняет ответ ассистента.
 
 Сообщения отправляются как `multipart/form-data`: обязательное поле `content`
 и опциональный файл `media`. Поддерживаются:
@@ -45,6 +48,35 @@ API: полный контекст передаётся в каждом запр
 использует `DEFAULT_MODEL`. Для локального Ollama voice-сценарий требует
 дополнительный OpenAI-compatible STT endpoint, потому что стандартный Ollama
 endpoint обычно не реализует `/audio/transcriptions`.
+
+## Модерация
+
+Stateful-чат проверяет пользовательский ввод до LLM-вызова и итоговый ответ
+ассистента перед сохранением. `ModerationService` использует два слоя:
+
+- keyword/regex правила из `app/moderation/moderation_keywords.yaml`;
+- опциональный OpenAI Moderation API слой с моделью `omni-moderation-latest`,
+  включаемый через `MODERATION_OPENAI_ENABLED=true`.
+
+Если вход не проходит модерацию, endpoint возвращает `403`:
+
+```json
+{
+  "detail": {
+    "code": "moderation_blocked",
+    "message": "Сообщение заблокировано модерацией.",
+    "categories": ["violence"]
+  }
+}
+```
+
+Если не проходит итоговый ответ ассистента, пользователю возвращается безопасный
+текст `Не могу показать ответ — он мог нарушить правила`, а в историю
+сохраняется уже этот текст.
+
+Инциденты пишутся в structured logs и, для Postgres-репозитория, в таблицу
+`moderation_incidents`. Сырой текст не сохраняется: используются короткий
+`sha256` hash и PII-masked preview.
 
 ## Стратегии контекста
 
@@ -88,6 +120,12 @@ CHAT_REPOSITORY=postgres
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/review_bot
 alembic upgrade head
 ```
+
+В Postgres-режиме дополнительно доступны:
+
+- `moderation_incidents` — журнал заблокированных входов/выходов;
+- `message_feedback` — оценки ответов ассистента с `UNIQUE (owner_external_id, message_id)`;
+- `broadcast_queue` — очередь admin broadcast-сообщений для Telegram-интерфейса.
 
 Для локальных contract-тестов репозитория укажите `TEST_DATABASE_URL` на
 существующую Postgres-базу или используйте временный контейнер `testcontainers`:
@@ -147,7 +185,7 @@ SSE-поток stateful-чата возвращает JSON-события:
 ```text
 data: {"type":"token","delta":"..."}
 
-data: {"type":"done"}
+data: {"type":"done","message_id":"..."}
 ```
 
 Получить сообщения в хронологическом порядке:
@@ -160,6 +198,25 @@ curl 'http://localhost:8000/chats/<chat_id>/messages?limit=50'
 
 ```bash
 curl -X DELETE http://localhost:8000/chats/<chat_id>/messages
+```
+
+Сохранить feedback по ответу ассистента:
+
+```bash
+curl -X POST http://localhost:8000/chats/<chat_id>/messages/<message_id>/feedback \
+  -H 'Content-Type: application/json' \
+  -d '{"value":"down"}'
+```
+
+Admin endpoint'ы защищены заголовком `X-Admin-Token`:
+
+```bash
+curl -H 'X-Admin-Token: changeme-admin' http://localhost:8000/chats/admin/stats
+curl -H 'X-Admin-Token: changeme-admin' 'http://localhost:8000/chats/admin/users?limit=50'
+curl -X POST http://localhost:8000/chats/admin/broadcast \
+  -H 'X-Admin-Token: changeme-admin' \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"Плановое уведомление","interface_filter":"telegram"}'
 ```
 
 ## Smoke-проверка

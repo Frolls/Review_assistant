@@ -2,15 +2,19 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from functools import lru_cache
+import time
 from typing import Any, Literal
 from uuid import UUID
 
+from fastapi import HTTPException
 import tiktoken
 
 from app.chat.domain import Chat, ChatMessage
 from app.chat.prompts import default_system_prompt
 from app.chat.repository import ChatRepository
+from app.moderation import ModerationResult, ModerationService
 from app.observability.logging import get_logger
+from app.observability.pii import prompt_hash, redact_pii
 
 
 logger = get_logger(__name__)
@@ -66,6 +70,7 @@ class ChatService:
         repository: ChatRepository,
         llm_client: Any,
         *,
+        moderation_service: ModerationService | None = None,
         model: str = "gpt-4.1-mini",
         vision_model: str | None = None,
         num_ctx: int | None = None,
@@ -77,6 +82,7 @@ class ChatService:
     ) -> None:
         self.repository = repository
         self.llm_client = llm_client
+        self.moderation_service = moderation_service or ModerationService()
         self.model = model
         self.vision_model = vision_model
         self.num_ctx = num_ctx
@@ -106,10 +112,16 @@ class ChatService:
         chat_id: UUID,
         user_content: str,
         media_ref: dict[str, Any] | None = None,
+        *,
+        input_moderation_checked: bool = False,
+        on_message_saved: Any | None = None,
     ) -> AsyncIterator[str]:
         chat = await self.repository.get_chat(chat_id)
         if chat is None:
             raise ChatNotFoundError(f"Chat {chat_id} was not found")
+
+        if not input_moderation_checked:
+            await self.check_input(chat_id, user_content)
 
         user_message = ChatMessage(
             chat_id=chat_id,
@@ -126,6 +138,7 @@ class ChatService:
 
         accumulated: list[str] = []
         stream_completed = False
+        started_at = time.perf_counter()
         try:
             stream = await self.llm_client.chat.completions.create(
                 model=self._select_model(messages),
@@ -139,22 +152,53 @@ class ChatService:
                 if not text:
                     continue
                 accumulated.append(text)
-                yield text
             stream_completed = True
         finally:
             full_text = "".join(accumulated)
             if full_text:
-                await self.repository.append_message(
+                output_result = await self.moderation_service.check_output(full_text)
+                if not output_result.allowed:
+                    await self._record_moderation_incident(
+                        chat_id,
+                        "output",
+                        output_result,
+                        full_text,
+                    )
+                    accumulated = [_blocked_output_text()]
+                    full_text = accumulated[0]
+
+                assistant_message = await self.repository.append_message(
                     chat_id,
                     ChatMessage(
                         chat_id=chat_id,
                         role="assistant",
                         content=full_text,
                         tokens=count_tokens([{"role": "assistant", "content": full_text}]),
+                        latency_ms=round((time.perf_counter() - started_at) * 1000),
                     ),
                 )
+                if on_message_saved is not None:
+                    on_message_saved(assistant_message)
             if not stream_completed and full_text:
                 logger.warning("chat.stream_interrupted_saved_partial", chat_id=str(chat_id))
+
+        for text in accumulated:
+            yield text
+
+    async def check_input(self, chat_id: UUID, content: str) -> ModerationResult:
+        result = await self.moderation_service.check_input(content)
+        if result.allowed:
+            return result
+
+        await self._record_moderation_incident(chat_id, "input", result, content)
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "moderation_blocked",
+                "message": "Сообщение заблокировано модерацией.",
+                "categories": result.categories,
+            },
+        )
 
     async def clear_history(self, chat_id: UUID) -> None:
         await self.repository.soft_delete_messages(chat_id)
@@ -219,6 +263,29 @@ class ChatService:
             return {}
         return {"extra_body": {"options": {"num_ctx": self.num_ctx}}}
 
+    async def _record_moderation_incident(
+        self,
+        chat_id: UUID,
+        direction: str,
+        result: ModerationResult,
+        content: str,
+    ) -> None:
+        try:
+            await self.repository.record_moderation_incident(
+                chat_id=chat_id,
+                direction=direction,
+                result=result,
+                text_hash=prompt_hash(content),
+                text_preview=redact_pii(content)[:160],
+            )
+        except Exception as exc:
+            logger.warning(
+                "moderation.incident_persist_failed",
+                chat_id=str(chat_id),
+                direction=direction,
+                error=str(exc),
+            )
+
 
 def _system_messages(chat: Chat) -> list[MessagePayload]:
     if not chat.system_prompt:
@@ -237,6 +304,10 @@ def _to_payload(message: ChatMessage) -> MessagePayload:
             ],
         }
     return {"role": message.role, "content": message.content}
+
+
+def _blocked_output_text() -> str:
+    return "Не могу показать ответ — он мог нарушить правила"
 
 
 def _messages_include_images(messages: list[MessagePayload]) -> bool:

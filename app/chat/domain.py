@@ -13,6 +13,7 @@ class ChatMessage(BaseModel):
     role: Literal["user", "assistant", "system"]
     content: str
     tokens: int | None = None
+    latency_ms: int | None = None
     media_refs: dict[str, Any] | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 

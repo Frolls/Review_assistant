@@ -19,11 +19,20 @@ services:
       - .env
     environment:
       REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/review_bot
+      CHAT_REPOSITORY: postgres
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin}
       PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
+    command:
+      - sh
+      - -c
+      - alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
     depends_on:
       phoenix:
         condition: service_started
       redis:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     # Required on Linux when the backend runs on the host, for example local Ollama.
     # Harmless for remote OpenAI-compatible backends because the alias is unused unless referenced.
@@ -43,6 +52,35 @@ services:
       start_period: 15s
     restart: unless-stopped
 
+  bot:
+    build:
+      context: ../telegram-review-bot
+      dockerfile: Dockerfile
+    env_file:
+      - ../telegram-review-bot/.env
+    environment:
+      BACKEND_URL: http://app:8000
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin}
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: review_bot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d review_bot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   redis:
     image: redis:7.4-alpine
     volumes:
@@ -56,4 +94,5 @@ services:
 
 volumes:
   phoenix-data: {}
+  pg-data: {}
   redis_data: {}

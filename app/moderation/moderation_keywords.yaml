@@ -1,0 +1,36 @@
+# Simple YAML intentionally kept dependency-free by app.moderation.service.
+# Each rule has: category, pattern, reason.
+input:
+  - category: violence
+    pattern: "(?i)\\b(kill|murder|bomb|terrorist attack)\\b|\\bуб(и|е)й|\\bвзорв"
+    reason: "violent request"
+  - category: self-harm
+    pattern: "(?i)suicide|self[- ]?harm|самоубий|суицид"
+    reason: "self-harm content"
+  - category: sexual/minors
+    pattern: "(?i)(minor|child|teen).{0,40}\\b(sex|nude)|детск.{0,40}(секс|порно)"
+    reason: "sexual content involving minors"
+  - category: illicit
+    pattern: "(?i)make\\s+(?:a\\s+)?(?:bomb|explosive)|изготов(ить|ление).{0,40}(бомб|взрывчат)"
+    reason: "illicit violent instructions"
+output:
+  - category: violence
+    pattern: "(?i)\\b(kill|murder|bomb|terrorist attack)\\b|\\bуб(и|е)й|\\bвзорв"
+    reason: "violent output"
+  - category: sexual/minors
+    pattern: "(?i)(minor|child|teen).{0,40}\\b(sex|nude)|детск.{0,40}(секс|порно)"
+    reason: "sexual content involving minors"
+thresholds:
+  harassment: 0.85
+  harassment/threatening: 0.60
+  hate: 0.80
+  hate/threatening: 0.55
+  illicit: 0.80
+  illicit/violent: 0.55
+  self-harm: 0.75
+  self-harm/instructions: 0.50
+  self-harm/intent: 0.50
+  sexual: 0.85
+  sexual/minors: 0.20
+  violence: 0.80
+  violence/graphic: 0.55

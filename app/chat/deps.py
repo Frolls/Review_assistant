@@ -9,6 +9,7 @@ from openai import AsyncOpenAI
 from app.chat.repositories.json_repo import JsonChatRepository
 from app.chat.repository import ChatRepository
 from app.chat.service import ChatService
+from app.moderation import ModerationService
 
 
 async def get_llm_client(request: Request) -> AsyncOpenAI:
@@ -47,6 +48,11 @@ async def get_chat_service(
     return ChatService(
         repository=repo,
         llm_client=llm,
+        moderation_service=ModerationService(
+            openai_client=llm,
+            keywords_path=settings.moderation_keywords_path,
+            openai_enabled=settings.moderation_openai_enabled,
+        ),
         model=settings.default_model,
         vision_model=settings.vision_model,
         num_ctx=settings.llm_num_ctx,

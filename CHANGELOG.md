@@ -1,5 +1,28 @@
 # Changelog
 
+## [2026-07-03]
+
+### Added
+
+- Added stateful chat moderation in `app/moderation` with keyword/regex rules, optional OpenAI Moderation API checks, masked incident logging, and persisted moderation incidents.
+- Added admin API under `/chats/admin` protected by `X-Admin-Token`: 24h stats, recent users, broadcast queue creation, pending broadcast polling, and broadcast completion.
+- Added message feedback API for `POST /chats/{chat_id}/messages/{message_id}/feedback` with Postgres `message_feedback` storage and `UNIQUE (owner_external_id, message_id)`.
+- Added Postgres tables for moderation incidents, message feedback, broadcast queue, and assistant message latency through Alembic revision `20260703_0003`.
+- Added root-level Docker Compose wiring for backend, Telegram bot, Postgres, Redis, and persisted `pg-data`.
+
+### Changed
+
+- Changed stateful chat SSE completion events to include the persisted assistant `message_id` so Telegram can attach feedback callbacks.
+- Changed stateful chat output moderation to replace blocked assistant responses with a safe refusal text before persistence and streaming.
+- Updated Postgres repository behavior to record moderation incidents and upsert feedback with `INSERT ... ON CONFLICT`.
+
+### Verified
+
+- Verified Docker Compose startup for `app`, `postgres`, and `redis`, including Alembic migration to `20260703_0003`.
+- Verified moderation blocking with `403` and `detail.code == "moderation_blocked"` for forbidden input.
+- Verified admin token protection, admin stats/users/broadcast endpoints, SSE `message_id`, and feedback upsert uniqueness against Postgres.
+- Verified Telegram bot image build and live polling against the running backend.
+
 ## [2026-07-01]
 
 ### Added

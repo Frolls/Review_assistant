@@ -4,10 +4,17 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select, update
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.chat.domain import Chat, ChatMessage
-from app.chat.repositories.pg_models import ChatMessageRow, ChatRow
+from app.chat.repositories.pg_models import (
+    ChatMessageRow,
+    ChatRow,
+    MessageFeedbackRow,
+    ModerationIncidentRow,
+)
+from app.moderation import ModerationResult
 
 
 class PostgresChatRepository:
@@ -62,6 +69,7 @@ class PostgresChatRepository:
             role=message.role,
             content=message.content,
             tokens=message.tokens,
+            latency_ms=message.latency_ms,
             media_refs=message.media_refs,
             created_at=message.created_at,
         )
@@ -92,4 +100,51 @@ class PostgresChatRepository:
             .where(ChatMessageRow.chat_id == chat_id, ChatMessageRow.deleted_at.is_(None))
             .values(deleted_at=datetime.now(UTC))
         )
+        await self.session.commit()
+
+    async def record_moderation_incident(
+        self,
+        chat_id: UUID,
+        direction: str,
+        result: ModerationResult,
+        text_hash: str,
+        text_preview: str,
+    ) -> None:
+        self.session.add(
+            ModerationIncidentRow(
+                chat_id=chat_id,
+                direction=direction,
+                categories=result.categories,
+                reasons=result.reasons,
+                blocked_by=result.blocked_by,
+                text_hash=text_hash,
+                text_preview=text_preview,
+            )
+        )
+        await self.session.commit()
+
+    async def save_feedback(self, chat_id: UUID, message_id: UUID, value: str) -> None:
+        chat_result = await self.session.execute(
+            select(ChatRow.owner_external_id)
+            .join(ChatMessageRow, ChatMessageRow.chat_id == ChatRow.id)
+            .where(ChatRow.id == chat_id, ChatMessageRow.id == message_id)
+            .limit(1)
+        )
+        owner_external_id = chat_result.scalar_one_or_none()
+        if owner_external_id is None:
+            raise LookupError("Message was not found in this chat")
+
+        statement = (
+            insert(MessageFeedbackRow)
+            .values(
+                message_id=message_id,
+                owner_external_id=owner_external_id,
+                value=value,
+            )
+            .on_conflict_do_update(
+                constraint="uq_message_feedback_owner_message",
+                set_={"value": value, "created_at": datetime.now(UTC)},
+            )
+        )
+        await self.session.execute(statement)
         await self.session.commit()
