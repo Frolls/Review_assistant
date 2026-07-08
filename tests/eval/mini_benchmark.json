@@ -1,0 +1,42 @@
+[
+  {
+    "query": "В PR добавили функцию `def load(path): return open(path).read()`. Какой комментарий должен оставить ассистент на ревью?",
+    "relevant": "Python style guide: при чтении файлов используйте context manager `with open(path, encoding=\"utf-8\") as fh`, чтобы файловый дескриптор закрывался даже при исключении. Для текстовых файлов явно задавайте encoding, чтобы поведение не зависело от окружения.",
+    "irrelevant": "Ansible style guide: task должен иметь понятное имя и описывать конкретное состояние или действие. Если task содержит несколько unrelated действий, разделите их на отдельные tasks."
+  },
+  {
+    "query": "В Python-коде PR появился bare `except:` вокруг сетевого вызова. Как сформулировать замечание?",
+    "relevant": "PEP 8 / internal style: не используйте bare `except:` без необходимости. Он скрывает `KeyboardInterrupt`, `SystemExit` и реальные ошибки. Ловите конкретные исключения, логируйте контекст и явно решайте, можно ли повторить операцию или вернуть ошибку.",
+    "irrelevant": "Public API guideline: если PR меняет внешний контракт, добавьте документацию, changelog и тесты на основной сценарий, ошибки и обратную совместимость."
+  },
+  {
+    "query": "PR меняет публичную функцию и добавляет параметр без type hints. Что ответить ревьюеру?",
+    "relevant": "Typed Python guideline: публичные функции должны иметь аннотации параметров и возвращаемого значения. Это помогает IDE, mypy/pyright и будущим ревьюерам понимать контракт. Ориентир — PEP 484 и внутренний style guide.",
+    "irrelevant": "Security logging guideline: не пишите полный request payload в logs, если там могут быть email, token или другие чувствительные данные. Логируйте минимальный безопасный контекст и применяйте redaction."
+  },
+  {
+    "query": "В Ansible task используют `shell: useradd app` без `creates`, `changed_when` или модуля `user`. Что важно отметить?",
+    "relevant": "Ansible guideline: task должен быть идемпотентным. Для управления пользователем используйте `ansible.builtin.user`, а не `shell: useradd`. Если shell неизбежен, задайте условия изменения через `creates`, `changed_when` или явную проверку состояния.",
+    "irrelevant": "Python maintainability guideline: длинную функцию с несколькими вложенными циклами стоит разбить на небольшие именованные helpers и покрыть ветвления unit-тестами."
+  },
+  {
+    "query": "В Ansible role добавили `command: systemctl restart nginx` после template task. Как улучшить ревью-комментарий?",
+    "relevant": "Ansible handler guideline: template task должен уведомлять handler через `notify`, а restart должен выполняться только при изменении шаблона. Это уменьшает лишние рестарты и соответствует обычной практике Ansible community documentation.",
+    "irrelevant": "PEP 484 guideline: при изменении публичной функции добавьте type hints для новых параметров и возвращаемого значения, чтобы контракт был понятен инструментам и ревьюерам."
+  },
+  {
+    "query": "В PR добавили секрет `api_token = \"prod-123\"` прямо в Python-файл. Какой ответ ожидается?",
+    "relevant": "Security guideline: секреты нельзя хранить в коде и git history. Вынесите значение в secret manager или переменные окружения, удалите секрет из истории при необходимости и добавьте проверку, чтобы подобное не повторялось.",
+    "irrelevant": "Ansible handler guideline: используйте `notify` и handler для service restart, чтобы перезапуск происходил только при изменении шаблона."
+  },
+  {
+    "query": "PR добавляет синхронный `requests.get()` внутри async FastAPI endpoint. Какой комментарий должен дать ассистент?",
+    "relevant": "Architecture guideline: синхронный I/O внутри async endpoint блокирует event loop и ухудшает latency. Используйте async-клиент, например `httpx.AsyncClient`, вынесите blocking I/O в executor или измените архитектуру вызова.",
+    "irrelevant": "PEP 8 guideline: bare `except:` не следует использовать для обычной обработки ошибок; ловите конкретные исключения и логируйте контекст."
+  },
+  {
+    "query": "В PR добавили `# noqa` на весь файл, чтобы отключить lint warnings. Как должен отреагировать ассистент?",
+    "relevant": "Internal style guideline: не отключайте lint на весь файл. Исправьте предупреждения или поставьте точечное подавление на конкретную строку с объяснением причины. Массовое подавление ухудшает качество кода и скрывает будущие проблемы.",
+    "irrelevant": "Architecture guideline: domain layer не должен импортировать transport/router layer. Общий контракт нужно вынести в нижний слой, а router оставить тонким адаптером."
+  }
+]

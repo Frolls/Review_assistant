@@ -1,5 +1,30 @@
 # Changelog
 
+## [2026-07-08]
+
+### Added
+
+- Added the reusable embedding service in `app/services/embeddings.py` with `embed_texts()`, `embed_query()`, and `embed_documents()` for the future RAG layer.
+- Added batched OpenAI-compatible embedding calls, retry handling for transient provider errors, normalized vectors, and a persistent sqlite embedding cache.
+- Added model-specific asymmetric retrieval handling: Qwen3 Embedding query instructions and E5 `query:` / `passage:` prefixes.
+- Added `tests/eval/mini_benchmark.json` with review-domain query/relevant/irrelevant triples for the PR-review assistant corpus.
+- Added `scripts/embedding_smoke.py` and `scripts/run_embedding_benchmark.py` for cache smoke checks and pairwise retrieval evaluation.
+- Added `docs/embeddings.md` with the model-selection narrative, indexing cost estimate, cache verification, and benchmark results.
+
+### Changed
+
+- Chose `qwen3-embedding:4b` through local Ollama as the baseline RAG embedding model for the diploma corpus, with `text-embedding-3-small` documented as a cloud fallback.
+- Updated `.env.example` with embedding configuration defaults and ignored `.cache/` so sqlite embedding caches stay local.
+- Updated dependency metadata and `uv.lock` for the embedding stack.
+- Expanded the README with the RAG embedding foundation, embedding environment variables, and the mini-benchmark command.
+
+### Verified
+
+- Verified local Ollama exposes `qwen3-embedding:4b` as an embedding model with 2560-dimensional vectors.
+- Verified the embedding cache on a repeated smoke call: `1407.15 ms` cold path and `0.70 ms` cached path.
+- Verified the mini-benchmark on `qwen3-embedding:4b`: `8/8` accuracy, mean margin `+0.2893`, minimum margin `+0.1644`, and cached rerun latency around `9.76 ms`.
+- Verified `pytest tests/unit/test_embeddings.py tests/unit/test_eval_dataset.py` and `ruff check` for the embedding module, benchmark scripts, and tests.
+
 ## [2026-07-03]
 
 ### Added

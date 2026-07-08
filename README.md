@@ -4,11 +4,12 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 
 Сервис поднимает `app.main:app`, принимает запросы на `POST /chat`, `POST /chat/stream` и stateful API `/chats`, кеширует обычные ответы в `Redis`, работает с OpenAI-совместимым backend через `AsyncOpenAI` и экспортирует trace/span-данные в Phoenix.
 
-На текущем этапе сервис отвечает за HTTP API, eval/testing слой и интеграцию с LLM backend:
+На текущем этапе сервис отвечает за HTTP API, eval/testing слой, интеграцию с LLM backend и фундамент будущего RAG-слоя:
 
 - фронтенд, CLI или IDE-клиент отправляют вопросы по ревью PR в `/chat` или `/chat/stream`
 - сервис валидирует входные данные, применяет защитный слой, выполняет логирование, читает и записывает кеш, нормализует ошибки
 - OpenAI-совместимый backend выполняет генерацию ответа
+- embedding-сервис готовит нормализованные векторы для будущего индекса по PEP, Ansible Docs и внутренним стандартам
 
 Сервис не реализует собственную модель. Его зона ответственности: HTTP-контракт, вызов backend, кеширование, служебные endpoint'ы и инфраструктура проверки качества ответов.
 
@@ -30,6 +31,8 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - structured JSON logs с `request_id`, latency, token usage, finish reason, `prompt_hash` и безопасным `prompt_preview`
 - OpenInference/Phoenix tracing для `/chat` и LLM-вызовов с `gen_ai.*` атрибутами
 - PII-redaction для email, российских телефонов, карт, ИНН и паспортов перед записью prompt/output preview в логи
+- embedding-сервис для RAG: `embed_texts()`, `embed_query()`, `embed_documents()`, батчинг, retry на сетевые сбои, sqlite-кеш между рестартами и нормализация векторов
+- mini-benchmark для проверки retrieval-поведения на проектных вопросах из области PR-review ассистента
 - быстрый unit testing layer вокруг LLM-adjacent логики и отдельный offline evaluation layer в `eval/`
 - security evaluation layer на базе NVIDIA garak с baseline/after отчётами
 
@@ -42,6 +45,7 @@ Client
   -> OpenAI-compatible backend
      -> OpenAI API
      -> LiteLLM Proxy
+     -> Ollama embeddings
 ```
 
 Для режима с LiteLLM приложение по-прежнему использует `AsyncOpenAI`, но:
@@ -56,6 +60,7 @@ Client
 - `OPENAI_BASE_URL=http://host.docker.internal:11434/v1` или `http://localhost:11434/v1`
 - `DEFAULT_MODEL=qwen3` или другая локально скачанная модель
 - `VISION_MODEL=qwen2.5vl:7b` или другая vision-модель, если нужно анализировать изображения
+- `EMBEDDING_MODEL=qwen3-embedding:4b` для локального RAG-индекса
 
 ## Основные файлы
 
@@ -79,6 +84,7 @@ app/
     chat.py
     models.py
   services/
+    embeddings.py
     llm.py
     security/
       input_validator.py
@@ -100,6 +106,7 @@ app/
 docs/
   chat.md
   architecture.md
+  embeddings.md
   observability/
     README.md
     phoenix-trace.png
@@ -111,8 +118,11 @@ docs/
     config.yaml
     config.production_like.yaml
 scripts/
+  embedding_smoke.py
   load_test.py
+  run_embedding_benchmark.py
 tests/
+  eval/
   unit/
   test_observability_pii.py
   test_security_guardrails.py
@@ -143,6 +153,12 @@ eval/
 Дополнительно:
 
 - `OPENAI_BASE_URL` — адрес LiteLLM или другого OpenAI-compatible backend
+- `EMBEDDING_PROVIDER` — provider embedding-модели: `openai` для OpenAI-compatible endpoint'ов или `sentence-transformers` для локальной Python-модели
+- `EMBEDDING_MODEL` — модель для RAG-векторов; локальный выбор проекта — `qwen3-embedding:4b`
+- `EMBEDDING_BATCH_SIZE` — размер батча embedding-запросов; для OpenAI-compatible endpoint'ов по умолчанию используется `128`
+- `EMBEDDING_DIMENSIONS` — опциональное сокращение размерности для моделей, которые поддерживают параметр `dimensions`
+- `EMBEDDING_CACHE_PATH` — sqlite-файл кеша embeddings, по умолчанию `.cache/embeddings.sqlite`
+- `EMBEDDING_REQUEST_TIMEOUT` — timeout embedding-запроса к provider
 - `VISION_MODEL` — модель для stateful-чата с изображениями; если не задана, используется `DEFAULT_MODEL`
 - `LLM_NUM_CTX` — опциональный размер контекста для OpenAI-compatible backend'ов, которые принимают `extra_body.options.num_ctx`
 - `LLM_MAX_CONCURRENCY` — ограничение параллелизма
@@ -211,6 +227,22 @@ Evaluation живёт отдельно от `tests/`, потому что это
 uv run python eval/run_evaluation.py --golden eval/golden_dataset.json --judge gpt-5.2 --out eval/runs/$(date +%F).json
 uv run python eval/check_thresholds.py
 ```
+
+Embedding mini-benchmark проверяет, что выбранная embedding-модель ставит
+релевантный фрагмент выше нерелевантного для review-вопросов по Python, Ansible,
+security и architecture guidelines. Проверенный локальный прогон на
+`qwen3-embedding:4b` дал `8/8` и средний margin `+0.2893`:
+
+```bash
+OPENAI_API_KEY=ollama \
+OPENAI_BASE_URL=http://host.docker.internal:11434/v1 \
+EMBEDDING_PROVIDER=openai \
+EMBEDDING_MODEL=qwen3-embedding:4b \
+uv run python scripts/run_embedding_benchmark.py
+```
+
+Повторный запуск использует sqlite-кеш из `EMBEDDING_CACHE_PATH`: в локальной
+проверке latency снизилась примерно с `3142 ms` до `10 ms`.
 
 Для локального smoke/full-прогона через Ollama можно использовать проверенную пару `qwen2.5:14b` + `qwen2.5:14b`:
 

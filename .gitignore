@@ -3,6 +3,7 @@
 .venv-litellm/
 __pycache__/
 .pytest_cache/
+.cache/
 .tmp/
 var/
 *.pyc
