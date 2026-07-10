@@ -52,6 +52,11 @@ async def lifespan(app: FastAPI):
     app.state.openai = openai_client
     app.state.cache = cache
     app.state.llm_semaphore = asyncio.Semaphore(settings.max_concurrency)
+    from app.services.vector_store import build_vector_store
+
+    vector_store = build_vector_store(settings)
+    await vector_store.ensure_collection()
+    app.state.vector_store = vector_store
     if settings.chat_repository == "postgres":
         if not settings.database_url:
             raise RuntimeError("DATABASE_URL is required when CHAT_REPOSITORY=postgres")
@@ -63,6 +68,7 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        await vector_store.close()
         await openai_client.close()
         await cache.aclose()
         if db_engine is not None:

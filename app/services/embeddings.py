@@ -36,6 +36,14 @@ QWEN3_QUERY_INSTRUCTION = (
 RETRYABLE_OPENAI_ERRORS = (APIConnectionError, APITimeoutError, RateLimitError)
 
 
+def _load_dotenv_if_available() -> None:
+    try:
+        from dotenv import load_dotenv
+    except ImportError:
+        return
+    load_dotenv(override=False)
+
+
 @dataclass(frozen=True)
 class EmbeddingConfig:
     provider: Provider
@@ -49,6 +57,7 @@ class EmbeddingConfig:
 
     @classmethod
     def from_env(cls) -> EmbeddingConfig:
+        _load_dotenv_if_available()
         model = os.getenv("EMBEDDING_MODEL", DEFAULT_OPENAI_MODEL).strip()
         provider = _resolve_provider(os.getenv("EMBEDDING_PROVIDER"), model)
         default_batch_size = (

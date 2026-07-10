@@ -43,6 +43,10 @@ class Settings(BaseSettings):
     request_timeout: float = Field(default=30.0, validation_alias="REQUEST_TIMEOUT")
     llm_num_ctx: int | None = Field(default=None, validation_alias="LLM_NUM_CTX")
     redis_url: str = Field(default="redis://localhost:6379/0", validation_alias="REDIS_URL")
+    qdrant_url: str = Field(default="http://localhost:6333", validation_alias="QDRANT_URL")
+    qdrant_api_key: str | None = Field(default=None, validation_alias="QDRANT_API_KEY")
+    qdrant_collection: str = Field(default="documents", validation_alias="QDRANT_COLLECTION")
+    embedding_dim: int = Field(default=2560, validation_alias="EMBEDDING_DIM")
     cache_ttl_seconds: int = Field(default=300, validation_alias="CACHE_TTL_SECONDS")
     max_concurrency: int = Field(default=5, validation_alias="LLM_MAX_CONCURRENCY")
     rate_limit_per_min: int = Field(default=30, validation_alias="RATE_LIMIT_PER_MIN")
@@ -190,6 +194,48 @@ class Settings(BaseSettings):
     def default_redis_url(cls, value: object) -> object:
         if value is None or value == "":
             return "redis://localhost:6379/0"
+        return value
+
+    @field_validator("qdrant_url", mode="before")
+    @classmethod
+    def default_qdrant_url(cls, value: object) -> object:
+        if value is None or value == "":
+            return "http://localhost:6333"
+        return value
+
+    @field_validator("qdrant_api_key", mode="before")
+    @classmethod
+    def default_qdrant_api_key(cls, value: object) -> object:
+        if value is None or value == "":
+            return None
+        return value
+
+    @field_validator("qdrant_collection", mode="before")
+    @classmethod
+    def default_qdrant_collection(cls, value: object) -> object:
+        if value is None or value == "":
+            return "documents"
+        return value
+
+    @field_validator("qdrant_collection")
+    @classmethod
+    def validate_qdrant_collection(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("QDRANT_COLLECTION must not be blank")
+        return value
+
+    @field_validator("embedding_dim", mode="before")
+    @classmethod
+    def default_embedding_dim(cls, value: object) -> object:
+        if value is None or value == "":
+            return 2560
+        return value
+
+    @field_validator("embedding_dim")
+    @classmethod
+    def validate_embedding_dim(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("EMBEDDING_DIM must be greater than zero")
         return value
 
     @field_validator("cache_ttl_seconds", mode="before")
