@@ -1,5 +1,31 @@
 # Changelog
 
+## [2026-07-10]
+
+### Added
+
+- Added Qdrant as the vector store service in `compose.yaml` with persisted storage, API key wiring, healthcheck, and `app` startup dependency.
+- Added `app/services/vector_store.py` with a single `AsyncQdrantClient`, collection creation, payload indexes, batched upsert, and `query_points` search.
+- Added structured review knowledge in `data/review_knowledge.json` with 14 PR-review domain documents and 140 chunks.
+- Added `scripts/load_to_qdrant.py` for schema validation, deterministic point ids, embedding, idempotent Qdrant upsert, and COSINE/DOT comparison.
+- Added unit coverage for the vector store wrapper and structured Qdrant loader.
+- Added `docs/vector_store.md` with collection parameters, payload schema, load procedure, metric comparison, and filter examples.
+
+### Changed
+
+- Wired Qdrant settings into `Settings`, `.env.example`, FastAPI lifespan, and README documentation.
+- Updated embedding configuration loading so standalone scripts read `.env` consistently with the FastAPI service.
+- Updated `docs/embeddings.md` to describe the implemented Qdrant-backed RAG index instead of a future index.
+- Constrained `qdrant-client` to `>=1.14.0,<1.16` to match the Qdrant 1.14 server line used by Docker Compose.
+
+### Verified
+
+- Verified `docker compose -p diploma up -d qdrant` starts Qdrant and exposes `documents` with `status=green`.
+- Verified `python scripts/load_to_qdrant.py --batch-size 16` loads 140 chunks and a repeated run keeps `points_count=140`.
+- Verified `python scripts/load_to_qdrant.py --batch-size 16 --compare-metrics` produces identical top-5 rankings for COSINE and DOT and removes temporary metric collections.
+- Verified Qdrant collection parameters: vector size `2560`, distance `Cosine`, HNSW `m=16`, `ef_construct=100`, and payload indexes for `source`, `created_at`, `tenant_id`, `category`, `access_level`, and `archived`.
+- Verified `pytest` reports `76 passed, 6 skipped`; verified `ruff check` on the Qdrant loader and tests.
+
 ## [2026-07-08]
 
 ### Added

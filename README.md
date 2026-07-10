@@ -4,12 +4,13 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 
 Сервис поднимает `app.main:app`, принимает запросы на `POST /chat`, `POST /chat/stream` и stateful API `/chats`, кеширует обычные ответы в `Redis`, работает с OpenAI-совместимым backend через `AsyncOpenAI` и экспортирует trace/span-данные в Phoenix.
 
-На текущем этапе сервис отвечает за HTTP API, eval/testing слой, интеграцию с LLM backend и фундамент будущего RAG-слоя:
+На текущем этапе сервис отвечает за HTTP API, eval/testing слой, интеграцию с LLM backend и RAG-индекс в Qdrant:
 
 - фронтенд, CLI или IDE-клиент отправляют вопросы по ревью PR в `/chat` или `/chat/stream`
 - сервис валидирует входные данные, применяет защитный слой, выполняет логирование, читает и записывает кеш, нормализует ошибки
 - OpenAI-совместимый backend выполняет генерацию ответа
-- embedding-сервис готовит нормализованные векторы для будущего индекса по PEP, Ansible Docs и внутренним стандартам
+- embedding-сервис готовит нормализованные векторы для базы знаний PR-review ассистента
+- Qdrant хранит индекс `documents` с metadata-фильтрами по `source`, `created_at`, `tenant_id`, `category`, `access_level` и `archived`
 
 Сервис не реализует собственную модель. Его зона ответственности: HTTP-контракт, вызов backend, кеширование, служебные endpoint'ы и инфраструктура проверки качества ответов.
 
@@ -86,6 +87,7 @@ app/
   services/
     embeddings.py
     llm.py
+    vector_store.py
     security/
       input_validator.py
       output_filter.py
@@ -107,6 +109,7 @@ docs/
   chat.md
   architecture.md
   embeddings.md
+  vector_store.md
   observability/
     README.md
     phoenix-trace.png
@@ -157,8 +160,12 @@ eval/
 - `EMBEDDING_MODEL` — модель для RAG-векторов; локальный выбор проекта — `qwen3-embedding:4b`
 - `EMBEDDING_BATCH_SIZE` — размер батча embedding-запросов; для OpenAI-compatible endpoint'ов по умолчанию используется `128`
 - `EMBEDDING_DIMENSIONS` — опциональное сокращение размерности для моделей, которые поддерживают параметр `dimensions`
+- `EMBEDDING_DIM` — размерность vectors в Qdrant; для `qwen3-embedding:4b` используется `2560`
 - `EMBEDDING_CACHE_PATH` — sqlite-файл кеша embeddings, по умолчанию `.cache/embeddings.sqlite`
 - `EMBEDDING_REQUEST_TIMEOUT` — timeout embedding-запроса к provider
+- `QDRANT_URL` — URL Qdrant; локально `http://localhost:6333`, в compose `http://qdrant:6333`
+- `QDRANT_API_KEY` — API key Qdrant; в production должен передаваться из secret manager
+- `QDRANT_COLLECTION` — имя коллекции vector store, по умолчанию `documents`
 - `VISION_MODEL` — модель для stateful-чата с изображениями; если не задана, используется `DEFAULT_MODEL`
 - `LLM_NUM_CTX` — опциональный размер контекста для OpenAI-compatible backend'ов, которые принимают `extra_body.options.num_ctx`
 - `LLM_MAX_CONCURRENCY` — ограничение параллелизма
@@ -243,6 +250,10 @@ uv run python scripts/run_embedding_benchmark.py
 
 Повторный запуск использует sqlite-кеш из `EMBEDDING_CACHE_PATH`: в локальной
 проверке latency снизилась примерно с `3142 ms` до `10 ms`.
+
+RAG-index хранится в Qdrant. Источник данных: `data/review_knowledge.json`.
+Порядок загрузки, payload schema, фильтры и результаты сравнения `COSINE`/`DOT`
+описаны в `docs/vector_store.md`.
 
 Для локального smoke/full-прогона через Ollama можно использовать проверенную пару `qwen2.5:14b` + `qwen2.5:14b`:
 
