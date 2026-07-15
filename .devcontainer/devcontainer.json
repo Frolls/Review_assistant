@@ -1,6 +1,8 @@
 {
-  "name": "pytorch/manylinux2_28-builder:cpu",
-  "image": "docker.io/pytorch/manylinux2_28-builder:cpu",
+  // "name": "pytorch/manylinux2_28-builder:cpu",
+  // "image": "docker.io/pytorch/manylinux2_28-builder:cpu",
+  "name": "Python 3.13",
+  "image": "python:3.13-slim-bookworm",
   "runArgs": ["--add-host=host.docker.internal:host-gateway"],
   "use_podman": true,
   // "privileged": true,

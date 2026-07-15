@@ -27,7 +27,9 @@ tests/
 docs/
 examples/
 notebooks/
-data/
 logs/
 *.md
 !README.md
+data/*
+!data/rag-block-03/
+!data/rag-block-03/**

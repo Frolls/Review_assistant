@@ -6,3 +6,4 @@ services:
       - alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./app:/app/app:ro
+      - ./data/rag-block-03:/app/data/rag-block-03:ro

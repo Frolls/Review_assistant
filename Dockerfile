@@ -15,15 +15,16 @@ COPY --from=ghcr.io/astral-sh/uv:0.6.10 /uv /uvx /bin/
 COPY pyproject.toml uv.lock ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-install-project
+    uv sync --frozen --no-install-project
 
 COPY README.md .env.example ./
+COPY data/rag-block-03 ./data/rag-block-03
 COPY app ./app
 COPY alembic.ini ./
 COPY alembic ./alembic
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+    uv sync --frozen
 
 RUN /app/.venv/bin/python -m spacy download ru_core_news_md
 
