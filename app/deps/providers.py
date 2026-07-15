@@ -9,6 +9,7 @@ from redis.asyncio import Redis
 
 from app.core.config import Settings, get_settings as load_settings
 from app.services.llm import LLMService
+from app.services.rag import RAGService
 
 
 @lru_cache(maxsize=1)
@@ -22,6 +23,10 @@ def get_openai(request: Request) -> AsyncOpenAI:
 
 def get_cache(request: Request) -> Redis:
     return request.app.state.cache
+
+
+def get_rag_service(request: Request) -> RAGService | None:
+    return getattr(request.app.state, "rag_service", None)
 
 
 def get_llm_service(
@@ -42,3 +47,4 @@ def get_llm_service(
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 CacheDep = Annotated[Redis, Depends(get_cache)]
 LLMServiceDep = Annotated[LLMService, Depends(get_llm_service)]
+RAGServiceDep = Annotated[RAGService | None, Depends(get_rag_service)]

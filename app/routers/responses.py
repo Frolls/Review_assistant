@@ -5,6 +5,7 @@ from typing import Final
 from app.schemas.chat import ChatResponse, ErrorResponse
 from app.schemas.health import HealthResponse, ReadinessResponse
 from app.schemas.models import ModelCard
+from app.schemas.rag import RAGQueryResponse
 
 
 API_ERROR_RESPONSES: Final = {
@@ -21,6 +22,12 @@ CHAT_RESPONSES: Final = {
 
 CHAT_STREAM_RESPONSES: Final = {
     200: {"description": "Server-sent event stream with content chunks and final usage."},
+    **API_ERROR_RESPONSES,
+}
+
+RAG_RESPONSES: Final = {
+    200: {"model": RAGQueryResponse, "description": "RAG answer with top sources."},
+    503: {"model": ErrorResponse, "description": "RAG index is unavailable."},
     **API_ERROR_RESPONSES,
 }
 

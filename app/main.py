@@ -33,6 +33,7 @@ from app.chat.routes import router as stateful_chat_router
 from app.routers.chat import router as chat_router
 from app.routers.health import router as health_router
 from app.routers.models import router as models_router
+from app.routers.rag import router as rag_router
 
 
 logger = get_logger(__name__)
@@ -43,6 +44,7 @@ async def lifespan(app: FastAPI):
     settings = app.state.settings
     setup_tracing(observability_include_content=settings.observability_include_content)
     db_engine = None
+    rag_service = None
     openai_client = AsyncOpenAI(
         api_key=settings.openai_api_key.get_secret_value(),
         base_url=settings.openai_base_url,
@@ -57,6 +59,20 @@ async def lifespan(app: FastAPI):
     vector_store = build_vector_store(settings)
     await vector_store.ensure_collection()
     app.state.vector_store = vector_store
+    from app.services.rag import RAGService
+
+    app.state.rag_service = None
+    try:
+        rag_service = RAGService(settings)
+        await rag_service.build()
+        app.state.rag_service = rag_service
+        logger.info("rag_service_ready", collection=settings.rag_collection)
+    except Exception as exc:  # pragma: no cover - depends on local RAG infrastructure.
+        logger.warning(
+            "rag_service_unavailable",
+            error=str(exc),
+            collection=settings.rag_collection,
+        )
     if settings.chat_repository == "postgres":
         if not settings.database_url:
             raise RuntimeError("DATABASE_URL is required when CHAT_REPOSITORY=postgres")
@@ -69,6 +85,8 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await vector_store.close()
+        if rag_service is not None:
+            await rag_service.close()
         await openai_client.close()
         await cache.aclose()
         if db_engine is not None:
@@ -105,6 +123,7 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(models_router)
     app.include_router(chat_router)
+    app.include_router(rag_router)
     app.include_router(stateful_chat_router)
     app.include_router(feedback_router)
     app.include_router(admin_router)
