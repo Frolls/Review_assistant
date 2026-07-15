@@ -2,7 +2,7 @@
 
 HTTP-сервис на `FastAPI` для дипломного проекта «ИИ-ассистент для ревью кода». Цель ассистента — улучшать качество кода и сокращать время ревью pull request'ов. В качестве источников рекомендаций используются Python Enhancement Proposals (PEP), Ansible community documentation, внутренние руководства по стилю кода и архитектурные документы.
 
-Сервис поднимает `app.main:app`, принимает запросы на `POST /chat`, `POST /chat/stream` и stateful API `/chats`, кеширует обычные ответы в `Redis`, работает с OpenAI-совместимым backend через `AsyncOpenAI` и экспортирует trace/span-данные в Phoenix.
+Сервис поднимает `app.main:app`, принимает запросы на `POST /chat`, `POST /chat/stream`, `POST /rag/query` и stateful API `/chats`, кеширует обычные ответы в `Redis`, работает с OpenAI-совместимым backend через `AsyncOpenAI` и экспортирует trace/span-данные в Phoenix.
 
 На текущем этапе сервис отвечает за HTTP API, eval/testing слой, интеграцию с LLM backend и RAG-индекс в Qdrant:
 
@@ -11,13 +11,15 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - OpenAI-совместимый backend выполняет генерацию ответа
 - embedding-сервис готовит нормализованные векторы для базы знаний PR-review ассистента
 - Qdrant хранит индекс `documents` с metadata-фильтрами по `source`, `created_at`, `tenant_id`, `category`, `access_level` и `archived`
+- отдельный LlamaIndex RAG индекс `rag_block_03_diploma` отвечает на вопросы по 10-документному корпусу code-review чеклистов с цитатами на источники
 
-Сервис не реализует собственную модель. Его зона ответственности: HTTP-контракт, вызов backend, кеширование, служебные endpoint'ы и инфраструктура проверки качества ответов.
+Сервис не реализует собственную модель. Его зона ответственности: HTTP-контракт, вызов backend, кеширование, RAG orchestration, служебные endpoint'ы и инфраструктура проверки качества ответов.
 
 ## Что реализовано
 
 - `POST /chat` — обычный completion-ответ с `cached: true/false`
 - `POST /chat/stream` — SSE-поток с `data: ...` и финальным `data: [DONE]`
+- `POST /rag/query` — RAG-ответ по локальному корпусу review-документов с `answer`, `top_score` и списком `sources`
 - `POST /chats` и `/chats/{chat_id}/messages` — stateful-чат с серверной историей, SSE-ответом и JSON/Postgres-хранилищем
 - `POST /chats/{chat_id}/messages` принимает `multipart/form-data`: поле `content` и опциональный файл `media` для изображений, аудио, PDF и DOCX
 - moderation для stateful-чата: keyword/regex слой из `app/moderation/moderation_keywords.yaml`, опциональный OpenAI Moderation API слой и безопасное логирование инцидентов без сырого текста
@@ -33,6 +35,8 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - OpenInference/Phoenix tracing для `/chat` и LLM-вызовов с `gen_ai.*` атрибутами
 - PII-redaction для email, российских телефонов, карт, ИНН и паспортов перед записью prompt/output preview в логи
 - embedding-сервис для RAG: `embed_texts()`, `embed_query()`, `embed_documents()`, батчинг, retry на сетевые сбои, sqlite-кеш между рестартами и нормализация векторов
+- LlamaIndex RAG pipeline: `SimpleDirectoryReader -> SentenceSplitter -> QdrantVectorStore -> VectorStoreIndex -> QueryEngine`
+- bare-metal RAG pipeline для сравнения: чтение файлов, чанкинг, embeddings, Qdrant `query_points`, сборка prompt и OpenAI-compatible chat completion без LlamaIndex
 - mini-benchmark для проверки retrieval-поведения на проектных вопросах из области PR-review ассистента
 - быстрый unit testing layer вокруг LLM-adjacent логики и отдельный offline evaluation layer в `eval/`
 - security evaluation layer на базе NVIDIA garak с baseline/after отчётами
@@ -81,12 +85,16 @@ app/
     chat.py
     health.py
     models.py
+    rag.py
   schemas/
     chat.py
     models.py
+    rag.py
   services/
     embeddings.py
     llm.py
+    rag.py
+    rag_baremetal.py
     vector_store.py
     security/
       input_validator.py
@@ -109,6 +117,7 @@ docs/
   chat.md
   architecture.md
   embeddings.md
+  rag.md
   vector_store.md
   observability/
     README.md
@@ -124,6 +133,9 @@ scripts/
   embedding_smoke.py
   load_test.py
   run_embedding_benchmark.py
+  verify_rag_block03.py
+data/
+  rag-block-03/
 tests/
   eval/
   unit/
@@ -156,7 +168,7 @@ eval/
 Дополнительно:
 
 - `OPENAI_BASE_URL` — адрес LiteLLM или другого OpenAI-compatible backend
-- `EMBEDDING_PROVIDER` — provider embedding-модели: `openai` для OpenAI-compatible endpoint'ов или `sentence-transformers` для локальной Python-модели
+- `EMBEDDING_PROVIDER` — provider embedding-модели: `openai` для OpenAI-compatible endpoint'ов или `sentence-transformers` для локальной Python-модели. Для `sentence-transformers` установите optional extra `local-embeddings`, потому что он тянет PyTorch.
 - `EMBEDDING_MODEL` — модель для RAG-векторов; локальный выбор проекта — `qwen3-embedding:4b`
 - `EMBEDDING_BATCH_SIZE` — размер батча embedding-запросов; для OpenAI-compatible endpoint'ов по умолчанию используется `128`
 - `EMBEDDING_DIMENSIONS` — опциональное сокращение размерности для моделей, которые поддерживают параметр `dimensions`
@@ -166,6 +178,12 @@ eval/
 - `QDRANT_URL` — URL Qdrant; локально `http://localhost:6333`, в compose `http://qdrant:6333`
 - `QDRANT_API_KEY` — API key Qdrant; в production должен передаваться из secret manager
 - `QDRANT_COLLECTION` — имя коллекции vector store, по умолчанию `documents`
+- `RAG_INPUT_DIR` — каталог корпуса для Block 03 RAG, по умолчанию `data/rag-block-03`
+- `RAG_COLLECTION` — отдельная LlamaIndex-коллекция Qdrant, по умолчанию `rag_block_03_diploma`
+- `RAG_BAREMETAL_COLLECTION` — отдельная bare-metal коллекция Qdrant, по умолчанию `rag_block_03_diploma_baremetal`
+- `RAG_CHUNK_SIZE` и `RAG_CHUNK_OVERLAP` — параметры чанкинга, по умолчанию `512` и `64`
+- `RAG_SIMILARITY_TOP_K` — количество возвращаемых источников, минимум `3`
+- `RAG_MIN_TOP_SCORE` — порог честного fallback-а для вопросов вне корпуса, по умолчанию `0.2`
 - `VISION_MODEL` — модель для stateful-чата с изображениями; если не задана, используется `DEFAULT_MODEL`
 - `LLM_NUM_CTX` — опциональный размер контекста для OpenAI-compatible backend'ов, которые принимают `extra_body.options.num_ctx`
 - `LLM_MAX_CONCURRENCY` — ограничение параллелизма
@@ -254,6 +272,51 @@ uv run python scripts/run_embedding_benchmark.py
 RAG-index хранится в Qdrant. Источник данных: `data/review_knowledge.json`.
 Порядок загрузки, payload schema, фильтры и результаты сравнения `COSINE`/`DOT`
 описаны в `docs/vector_store.md`.
+
+## Block 03 RAG
+
+Учебный RAG-инкремент использует отдельный корпус `data/rag-block-03` из 10 Markdown-документов: 9 доменных code-review чеклистов и 1 заведомо нерелевантный документ для fallback-проверки. Основная реализация построена на LlamaIndex, а рядом лежит bare-metal версия для сравнения того же pipeline без фреймворка.
+
+Основной путь:
+
+```bash
+docker compose run --rm --no-deps \
+  -e OPENAI_BASE_URL=http://host.docker.internal:11434/v1 \
+  -e QDRANT_URL=http://host.docker.internal:6333 \
+  app python -m app.services.rag
+```
+
+Сравнительный bare-metal путь:
+
+```bash
+docker compose run --rm --no-deps \
+  -e OPENAI_BASE_URL=http://host.docker.internal:11434/v1 \
+  -e QDRANT_URL=http://host.docker.internal:6333 \
+  -e EMBEDDING_CACHE_PATH=/tmp/embeddings.sqlite \
+  app python -m app.services.rag_baremetal
+```
+
+HTTP endpoint:
+
+```bash
+curl -sS -X POST http://localhost:8000/rag/query \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Что делать, если секрет уже попал в diff?"}'
+```
+
+Ответ содержит `answer`, `top_score` и минимум 3 элемента в `sources`. Индекс создаётся один раз в `lifespan`; если RAG недоступен на старте, `/rag/query` возвращает `503` с `detail.code == "rag_unavailable"`, не останавливая весь FastAPI-сервис.
+
+Повторяемый живой прогон 3 хороших / 1 среднего / 1 внебазового вопроса:
+
+```bash
+docker compose run --rm --no-deps \
+  -e OPENAI_BASE_URL=http://host.docker.internal:11434/v1 \
+  -e QDRANT_URL=http://host.docker.internal:6333 \
+  -v ./scripts:/app/scripts:ro \
+  app python scripts/verify_rag_block03.py
+```
+
+Фактические результаты, решение по коллекциям и сравнение LlamaIndex vs bare-metal описаны в `docs/rag.md`.
 
 Для локального smoke/full-прогона через Ollama можно использовать проверенную пару `qwen2.5:14b` + `qwen2.5:14b`:
 

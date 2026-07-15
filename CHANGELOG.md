@@ -1,5 +1,32 @@
 # Changelog
 
+## [2026-07-15]
+
+### Added
+
+- Added the Block 03 LlamaIndex RAG pipeline in `app/services/rag.py` with `SimpleDirectoryReader`, `SentenceSplitter`, Qdrant-backed `VectorStoreIndex`, a strict context-only QA prompt, score fallback, and source citation output.
+- Added the matching bare-metal RAG implementation in `app/services/rag_baremetal.py` using explicit file loading, chunking, embeddings, Qdrant `query_points`, prompt assembly, and OpenAI-compatible chat completion.
+- Added the dedicated `POST /rag/query` FastAPI endpoint with response schemas, router metadata, and a `503 rag_unavailable` path when the RAG index cannot be initialized.
+- Added the 10-document review-domain corpus in `data/rag-block-03`, including one intentionally unrelated fallback-control document.
+- Added `scripts/verify_rag_block03.py` for repeatable live evaluation of the required 3 good / 1 medium / 1 out-of-corpus question set.
+- Added route coverage for `/rag/query`, including successful source output and unavailable-index behavior.
+
+### Changed
+
+- Added RAG configuration to settings and `.env.example`: corpus path, LlamaIndex and bare-metal collection names, chunk size, chunk overlap, top-k, and minimum top score.
+- Made RAG initialization optional during FastAPI startup so the main service can still boot when Qdrant, Ollama, or LlamaIndex dependencies are unavailable.
+- Updated the Docker image build to install dev dependencies by default, allowing tests to run inside the app image.
+- Updated `README.md` and `docs/rag.md` with RAG configuration, endpoint usage, dependency versions, collection decisions, LlamaIndex vs bare-metal comparison, live HTTP verification, and factual 5-question evaluation results.
+
+### Verified
+
+- Verified `docker compose build app` builds the app image with dev dependencies, including `pytest`, `pytest-asyncio`, `pytest-mock`, and `ruff`.
+- Verified full test suite inside the rebuilt app container: `78 passed, 6 skipped`.
+- Verified `python -m app.services.rag` against Ollama and Qdrant returns `answer`, `top_score`, and 3 sources.
+- Verified `python -m app.services.rag_baremetal` returns the same response contract and retrieves `ansible_best_practices.md` as top-1 for the Ansible control question.
+- Verified live `POST /rag/query` via `curl` returns an answer for the secret-in-diff question with top-1 source `secure_code_review.md`.
+- Verified the live 5-question RAG run: 3 good questions relevant, 1 medium question relevant through top-1/top-2 sources, and the tomato out-of-corpus question falls back at score `0.158 < 0.2`.
+
 ## [2026-07-10]
 
 ### Added
