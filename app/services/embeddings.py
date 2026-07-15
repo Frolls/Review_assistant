@@ -10,7 +10,7 @@ import time
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from openai import (
     APIConnectionError,
@@ -34,6 +34,9 @@ QWEN3_QUERY_INSTRUCTION = (
     "Query: "
 )
 RETRYABLE_OPENAI_ERRORS = (APIConnectionError, APITimeoutError, RateLimitError)
+
+if TYPE_CHECKING:
+    from app.core.config import Settings
 
 
 def _load_dotenv_if_available() -> None:
@@ -85,6 +88,20 @@ class EmbeddingConfig:
             base_url=_blank_to_none(os.getenv("OPENAI_BASE_URL")),
         )
 
+    @classmethod
+    def from_settings(cls, settings: Settings) -> EmbeddingConfig:
+        provider = _resolve_provider(settings.embedding_provider, settings.embedding_model)
+        return cls(
+            provider=provider,
+            model=settings.embedding_model,
+            batch_size=settings.embedding_batch_size,
+            cache_path=settings.embedding_cache_path,
+            dimensions=settings.embedding_dimensions,
+            request_timeout=settings.embedding_request_timeout,
+            api_key=settings.openai_api_key.get_secret_value(),
+            base_url=_blank_to_none(settings.openai_base_url),
+        )
+
 
 class EmbeddingCache:
     def __init__(self, path: Path) -> None:
@@ -128,25 +145,38 @@ _sentence_transformer_model: Any | None = None
 _sentence_transformer_model_name: str | None = None
 
 
-def embed_texts(texts: list[str]) -> list[list[float]]:
+def embed_texts(
+    texts: list[str],
+    *,
+    config: EmbeddingConfig | None = None,
+) -> list[list[float]]:
     """Embed arbitrary text snippets using the configured model."""
 
-    return _embed_texts(texts, input_type="text")
+    return _embed_texts(texts, input_type="text", config=config)
 
 
-def embed_query(text: str) -> list[float]:
+def embed_query(text: str, *, config: EmbeddingConfig | None = None) -> list[float]:
     """Embed a search query with model-specific asymmetric retrieval prefixes."""
 
-    return _embed_texts([text], input_type="query")[0]
+    return _embed_texts([text], input_type="query", config=config)[0]
 
 
-def embed_documents(texts: list[str]) -> list[list[float]]:
+def embed_documents(
+    texts: list[str],
+    *,
+    config: EmbeddingConfig | None = None,
+) -> list[list[float]]:
     """Embed searchable passages with model-specific asymmetric retrieval prefixes."""
 
-    return _embed_texts(texts, input_type="document")
+    return _embed_texts(texts, input_type="document", config=config)
 
 
-def _embed_texts(texts: list[str], *, input_type: InputType) -> list[list[float]]:
+def _embed_texts(
+    texts: list[str],
+    *,
+    input_type: InputType,
+    config: EmbeddingConfig | None = None,
+) -> list[list[float]]:
     if not isinstance(texts, list):
         raise TypeError("texts must be a list[str]")
     if not texts:
@@ -154,7 +184,7 @@ def _embed_texts(texts: list[str], *, input_type: InputType) -> list[list[float]
     if any(not isinstance(text, str) for text in texts):
         raise TypeError("all texts must be strings")
 
-    config = EmbeddingConfig.from_env()
+    config = config or EmbeddingConfig.from_env()
     cache = EmbeddingCache(config.cache_path)
     cache_keys = [_cache_key(config, text, input_type=input_type) for text in texts]
     results: list[list[float] | None] = [None] * len(texts)

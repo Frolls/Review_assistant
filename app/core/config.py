@@ -46,7 +46,38 @@ class Settings(BaseSettings):
     qdrant_url: str = Field(default="http://localhost:6333", validation_alias="QDRANT_URL")
     qdrant_api_key: str | None = Field(default=None, validation_alias="QDRANT_API_KEY")
     qdrant_collection: str = Field(default="documents", validation_alias="QDRANT_COLLECTION")
+    embedding_provider: Literal["openai", "sentence-transformers", "auto"] = Field(
+        default="openai",
+        validation_alias="EMBEDDING_PROVIDER",
+    )
+    embedding_model: str = Field(default="qwen3-embedding:4b", validation_alias="EMBEDDING_MODEL")
+    embedding_batch_size: int = Field(default=128, validation_alias="EMBEDDING_BATCH_SIZE")
+    embedding_dimensions: int | None = Field(
+        default=None,
+        validation_alias="EMBEDDING_DIMENSIONS",
+    )
     embedding_dim: int = Field(default=2560, validation_alias="EMBEDDING_DIM")
+    embedding_cache_path: Path = Field(
+        default=Path(".cache/embeddings.sqlite"),
+        validation_alias="EMBEDDING_CACHE_PATH",
+    )
+    embedding_request_timeout: float = Field(
+        default=30.0,
+        validation_alias="EMBEDDING_REQUEST_TIMEOUT",
+    )
+    rag_input_dir: Path = Field(
+        default=Path("data/rag-block-03"),
+        validation_alias="RAG_INPUT_DIR",
+    )
+    rag_collection: str = Field(default="rag_block_03_diploma", validation_alias="RAG_COLLECTION")
+    rag_baremetal_collection: str = Field(
+        default="rag_block_03_diploma_baremetal",
+        validation_alias="RAG_BAREMETAL_COLLECTION",
+    )
+    rag_chunk_size: int = Field(default=512, validation_alias="RAG_CHUNK_SIZE")
+    rag_chunk_overlap: int = Field(default=64, validation_alias="RAG_CHUNK_OVERLAP")
+    rag_similarity_top_k: int = Field(default=3, validation_alias="RAG_SIMILARITY_TOP_K")
+    rag_min_top_score: float = Field(default=0.2, validation_alias="RAG_MIN_TOP_SCORE")
     cache_ttl_seconds: int = Field(default=300, validation_alias="CACHE_TTL_SECONDS")
     max_concurrency: int = Field(default=5, validation_alias="LLM_MAX_CONCURRENCY")
     rate_limit_per_min: int = Field(default=30, validation_alias="RATE_LIMIT_PER_MIN")
@@ -224,6 +255,57 @@ class Settings(BaseSettings):
             raise ValueError("QDRANT_COLLECTION must not be blank")
         return value
 
+    @field_validator("embedding_provider", mode="before")
+    @classmethod
+    def default_embedding_provider(cls, value: object) -> object:
+        if value is None or value == "":
+            return "openai"
+        if isinstance(value, str) and value == "sentence_transformers":
+            return "sentence-transformers"
+        return value
+
+    @field_validator("embedding_model", mode="before")
+    @classmethod
+    def default_embedding_model(cls, value: object) -> object:
+        if value is None or value == "":
+            return "qwen3-embedding:4b"
+        return value
+
+    @field_validator("embedding_model")
+    @classmethod
+    def validate_embedding_model(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("EMBEDDING_MODEL must not be blank")
+        return value
+
+    @field_validator("embedding_batch_size", mode="before")
+    @classmethod
+    def default_embedding_batch_size(cls, value: object) -> object:
+        if value is None or value == "":
+            return 128
+        return value
+
+    @field_validator("embedding_batch_size")
+    @classmethod
+    def validate_embedding_batch_size(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("EMBEDDING_BATCH_SIZE must be greater than zero")
+        return value
+
+    @field_validator("embedding_dimensions", mode="before")
+    @classmethod
+    def default_embedding_dimensions(cls, value: object) -> object:
+        if value is None or value == "":
+            return None
+        return value
+
+    @field_validator("embedding_dimensions")
+    @classmethod
+    def validate_embedding_dimensions(cls, value: int | None) -> int | None:
+        if value is not None and value <= 0:
+            raise ValueError("EMBEDDING_DIMENSIONS must be greater than zero")
+        return value
+
     @field_validator("embedding_dim", mode="before")
     @classmethod
     def default_embedding_dim(cls, value: object) -> object:
@@ -237,6 +319,117 @@ class Settings(BaseSettings):
         if value <= 0:
             raise ValueError("EMBEDDING_DIM must be greater than zero")
         return value
+
+    @field_validator("embedding_cache_path", mode="before")
+    @classmethod
+    def default_embedding_cache_path(cls, value: object) -> object:
+        if value is None or value == "":
+            return Path(".cache/embeddings.sqlite")
+        return value
+
+    @field_validator("embedding_request_timeout", mode="before")
+    @classmethod
+    def default_embedding_request_timeout(cls, value: object) -> object:
+        if value is None or value == "":
+            return 30.0
+        return value
+
+    @field_validator("embedding_request_timeout")
+    @classmethod
+    def validate_embedding_request_timeout(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError("EMBEDDING_REQUEST_TIMEOUT must be greater than zero")
+        return value
+
+    @field_validator("rag_input_dir", mode="before")
+    @classmethod
+    def default_rag_input_dir(cls, value: object) -> object:
+        if value is None or value == "":
+            return Path("data/rag-block-03")
+        return value
+
+    @field_validator("rag_collection", mode="before")
+    @classmethod
+    def default_rag_collection(cls, value: object) -> object:
+        if value is None or value == "":
+            return "rag_block_03_diploma"
+        return value
+
+    @field_validator("rag_collection", "rag_baremetal_collection")
+    @classmethod
+    def validate_rag_collection(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("RAG collection names must not be blank")
+        return value
+
+    @field_validator("rag_baremetal_collection", mode="before")
+    @classmethod
+    def default_rag_baremetal_collection(cls, value: object) -> object:
+        if value is None or value == "":
+            return "rag_block_03_diploma_baremetal"
+        return value
+
+    @field_validator("rag_chunk_size", mode="before")
+    @classmethod
+    def default_rag_chunk_size(cls, value: object) -> object:
+        if value is None or value == "":
+            return 512
+        return value
+
+    @field_validator("rag_chunk_size")
+    @classmethod
+    def validate_rag_chunk_size(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("RAG_CHUNK_SIZE must be greater than zero")
+        return value
+
+    @field_validator("rag_chunk_overlap", mode="before")
+    @classmethod
+    def default_rag_chunk_overlap(cls, value: object) -> object:
+        if value is None or value == "":
+            return 64
+        return value
+
+    @field_validator("rag_chunk_overlap")
+    @classmethod
+    def validate_rag_chunk_overlap(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("RAG_CHUNK_OVERLAP must be non-negative")
+        return value
+
+    @field_validator("rag_similarity_top_k", mode="before")
+    @classmethod
+    def default_rag_similarity_top_k(cls, value: object) -> object:
+        if value is None or value == "":
+            return 3
+        return value
+
+    @field_validator("rag_similarity_top_k")
+    @classmethod
+    def validate_rag_similarity_top_k(cls, value: int) -> int:
+        if value < 3:
+            raise ValueError("RAG_SIMILARITY_TOP_K must be at least 3")
+        return value
+
+    @field_validator("rag_min_top_score", mode="before")
+    @classmethod
+    def default_rag_min_top_score(cls, value: object) -> object:
+        if value is None or value == "":
+            return 0.2
+        return value
+
+    @field_validator("rag_min_top_score")
+    @classmethod
+    def validate_rag_min_top_score(cls, value: float) -> float:
+        if value < 0:
+            raise ValueError("RAG_MIN_TOP_SCORE must be non-negative")
+        return value
+
+    @model_validator(mode="after")
+    def validate_rag_chunking(self) -> "Settings":
+        if self.rag_chunk_overlap >= self.rag_chunk_size:
+            raise ValueError("RAG_CHUNK_OVERLAP must be smaller than RAG_CHUNK_SIZE")
+        return self
 
     @field_validator("cache_ttl_seconds", mode="before")
     @classmethod
