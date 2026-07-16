@@ -74,10 +74,15 @@ class Settings(BaseSettings):
         default="rag_block_03_diploma_baremetal",
         validation_alias="RAG_BAREMETAL_COLLECTION",
     )
-    rag_chunk_size: int = Field(default=512, validation_alias="RAG_CHUNK_SIZE")
-    rag_chunk_overlap: int = Field(default=64, validation_alias="RAG_CHUNK_OVERLAP")
-    rag_similarity_top_k: int = Field(default=3, validation_alias="RAG_SIMILARITY_TOP_K")
+    rag_chunk_size: int = Field(default=256, validation_alias="RAG_CHUNK_SIZE")
+    rag_chunk_overlap: int = Field(default=32, validation_alias="RAG_CHUNK_OVERLAP")
+    rag_similarity_top_k: int = Field(default=10, validation_alias="RAG_SIMILARITY_TOP_K")
     rag_min_top_score: float = Field(default=0.2, validation_alias="RAG_MIN_TOP_SCORE")
+    rag_reranker_model: str = Field(
+        default="BAAI/bge-reranker-v2-m3",
+        validation_alias="RAG_RERANKER_MODEL",
+    )
+    rag_reranker_top_n: int = Field(default=10, validation_alias="RAG_RERANKER_TOP_N")
     cache_ttl_seconds: int = Field(default=300, validation_alias="CACHE_TTL_SECONDS")
     max_concurrency: int = Field(default=5, validation_alias="LLM_MAX_CONCURRENCY")
     rate_limit_per_min: int = Field(default=30, validation_alias="RATE_LIMIT_PER_MIN")
@@ -373,7 +378,7 @@ class Settings(BaseSettings):
     @classmethod
     def default_rag_chunk_size(cls, value: object) -> object:
         if value is None or value == "":
-            return 512
+            return 256
         return value
 
     @field_validator("rag_chunk_size")
@@ -387,7 +392,7 @@ class Settings(BaseSettings):
     @classmethod
     def default_rag_chunk_overlap(cls, value: object) -> object:
         if value is None or value == "":
-            return 64
+            return 32
         return value
 
     @field_validator("rag_chunk_overlap")
@@ -401,7 +406,7 @@ class Settings(BaseSettings):
     @classmethod
     def default_rag_similarity_top_k(cls, value: object) -> object:
         if value is None or value == "":
-            return 3
+            return 10
         return value
 
     @field_validator("rag_similarity_top_k")
@@ -423,6 +428,34 @@ class Settings(BaseSettings):
     def validate_rag_min_top_score(cls, value: float) -> float:
         if value < 0:
             raise ValueError("RAG_MIN_TOP_SCORE must be non-negative")
+        return value
+
+    @field_validator("rag_reranker_model", mode="before")
+    @classmethod
+    def default_rag_reranker_model(cls, value: object) -> object:
+        if value is None or value == "":
+            return "BAAI/bge-reranker-v2-m3"
+        return value
+
+    @field_validator("rag_reranker_model")
+    @classmethod
+    def validate_rag_reranker_model(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("RAG_RERANKER_MODEL must not be blank")
+        return value
+
+    @field_validator("rag_reranker_top_n", mode="before")
+    @classmethod
+    def default_rag_reranker_top_n(cls, value: object) -> object:
+        if value is None or value == "":
+            return 10
+        return value
+
+    @field_validator("rag_reranker_top_n")
+    @classmethod
+    def validate_rag_reranker_top_n(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("RAG_RERANKER_TOP_N must be greater than zero")
         return value
 
     @model_validator(mode="after")

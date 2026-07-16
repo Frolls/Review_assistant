@@ -1,0 +1,146 @@
+[
+  {
+    "question": "Какое замечание оставить, если в Python PR добавили bare except вокруг сетевого вызова?",
+    "relevant_doc_ids": ["pep8_style_guide.md"]
+  },
+  {
+    "question": "Как правильно сравнивать значение с None и почему не стоит использовать equality?",
+    "relevant_doc_ids": ["pep8_style_guide.md"]
+  },
+  {
+    "question": "Как сгруппировать импорты в Python-файле и что сделать с wildcard import?",
+    "relevant_doc_ids": ["pep8_style_guide.md"]
+  },
+  {
+    "question": "Почему в большом Python PR изменения форматирования лучше отделить от изменений поведения?",
+    "relevant_doc_ids": ["pep8_style_guide.md"]
+  },
+  {
+    "question": "Как отревьюить Python-функцию с mutable default, неясными именами и комментарием, пересказывающим код?",
+    "relevant_doc_ids": ["pep8_style_guide.md"]
+  },
+  {
+    "question": "Какие публичные Python-объекты должны иметь docstring и когда он необязателен?",
+    "relevant_doc_ids": ["pep257_docstrings.md"]
+  },
+  {
+    "question": "Как оформить однострочный и многострочный docstring по PEP 257?",
+    "relevant_doc_ids": ["pep257_docstrings.md"]
+  },
+  {
+    "question": "Что должен объяснять docstring функции, если типы параметров уже указаны в аннотациях?",
+    "relevant_doc_ids": ["pep257_docstrings.md", "pep484_type_hints.md"]
+  },
+  {
+    "question": "Почему Optional не означает, что аргумент можно не передавать, и когда None нужно убрать из внутреннего контракта?",
+    "relevant_doc_ids": ["pep484_type_hints.md"]
+  },
+  {
+    "question": "Какой return type указывать у async-функции: coroutine или результат после await?",
+    "relevant_doc_ids": ["pep484_type_hints.md"]
+  },
+  {
+    "question": "Когда Any допустим на границе Python-сервиса и почему object безопаснее для неизвестного значения?",
+    "relevant_doc_ids": ["pep484_type_hints.md"]
+  },
+  {
+    "question": "Что проверить, если новый Python-код содержит сложный cast и широкий type ignore?",
+    "relevant_doc_ids": ["pep484_type_hints.md"]
+  },
+  {
+    "question": "Когда Protocol лучше ABC для repository или HTTP transport?",
+    "relevant_doc_ids": ["pep544_protocols.md"]
+  },
+  {
+    "question": "Почему protocol для тестового fake должен содержать только методы, которые реально вызывает сервис?",
+    "relevant_doc_ids": ["pep544_protocols.md"]
+  },
+  {
+    "question": "Что на самом деле проверяет runtime_checkable Protocol и почему isinstance не заменяет type checker?",
+    "relevant_doc_ids": ["pep544_protocols.md"]
+  },
+  {
+    "question": "Чем заменить dict[str, Any] с устойчивым набором ключей в существующем JSON-контракте?",
+    "relevant_doc_ids": ["pep589_typed_dict.md"]
+  },
+  {
+    "question": "Чем необязательный ключ TypedDict отличается от обязательного ключа со значением T | None?",
+    "relevant_doc_ids": ["pep589_typed_dict.md"]
+  },
+  {
+    "question": "Достаточно ли TypedDict для проверки JSON из внешнего API во время исполнения?",
+    "relevant_doc_ids": ["pep589_typed_dict.md", "pep484_type_hints.md"]
+  },
+  {
+    "question": "Как зафиксировать публичный Python-контракт: форму JSON, статические типы и смысл параметров?",
+    "relevant_doc_ids": ["pep589_typed_dict.md", "pep484_type_hints.md", "pep257_docstrings.md"]
+  },
+  {
+    "question": "Как обеспечить идемпотентность Ansible task, если без command или shell не обойтись?",
+    "relevant_doc_ids": ["ansible_playbook_practices.md"]
+  },
+  {
+    "question": "Что проверить в Ansible task с коротким именем модуля, числовым mode и become на уровне всего play?",
+    "relevant_doc_ids": ["ansible_playbook_practices.md", "ansible_vault_become.md"]
+  },
+  {
+    "question": "Как проверить template до установки и перезапустить сервис только после фактического изменения?",
+    "relevant_doc_ids": ["ansible_playbook_practices.md", "ansible_handlers_error_handling.md"]
+  },
+  {
+    "question": "Когда Ansible handler выполняется и почему несколько notify обычно приводят только к одному restart?",
+    "relevant_doc_ids": ["ansible_handlers_error_handling.md"]
+  },
+  {
+    "question": "Что произойдёт с уведомлённым handler после более поздней ошибки task и когда рассматривать force_handlers?",
+    "relevant_doc_ids": ["ansible_handlers_error_handling.md"]
+  },
+  {
+    "question": "Когда использовать failed_when вместо ignore_errors и как объединяются несколько условий?",
+    "relevant_doc_ids": ["ansible_handlers_error_handling.md"]
+  },
+  {
+    "question": "Почему успешный ansible-playbook --check не гарантирует, что все tasks действительно проверены?",
+    "relevant_doc_ids": ["ansible_check_diff_mode.md"]
+  },
+  {
+    "question": "Как не вывести секретный template в diff mode и при этом проверить playbook?",
+    "relevant_doc_ids": ["ansible_check_diff_mode.md", "ansible_vault_become.md"]
+  },
+  {
+    "question": "Какие три прогона нужны для проверки converge, идемпотентности и dry run Ansible role?",
+    "relevant_doc_ids": ["ansible_check_diff_mode.md", "ansible_playbook_practices.md"]
+  },
+  {
+    "question": "Где объявлять зависимости reusable Ansible role и почему нельзя полагаться на порядок roles во внешнем playbook?",
+    "relevant_doc_ids": ["ansible_roles.md"]
+  },
+  {
+    "question": "Чем defaults/main.yml отличается от vars/main.yml и куда не должны попадать inventory-specific значения?",
+    "relevant_doc_ids": ["ansible_roles.md"]
+  },
+  {
+    "question": "Чем динамический include_role отличается от статического import_role при ревью порядка и handlers?",
+    "relevant_doc_ids": ["ansible_roles.md"]
+  },
+  {
+    "question": "Где хранить пароль Ansible Vault и почему его нельзя коммитить рядом с encrypted variables?",
+    "relevant_doc_ids": ["ansible_vault_become.md"]
+  },
+  {
+    "question": "Почему no_log не заменяет Vault или secret manager и где ещё секрет может утечь?",
+    "relevant_doc_ids": ["ansible_vault_become.md"]
+  },
+  {
+    "question": "Почему become лучше ограничивать отдельными tasks, а не включать для всего play?",
+    "relevant_doc_ids": ["ansible_vault_become.md"]
+  },
+  {
+    "question": "Как отревьюить Ansible task, который всегда changed, ставит непроверенный template и безусловно перезапускает сервис?",
+    "relevant_doc_ids": ["ansible_playbook_practices.md", "ansible_handlers_error_handling.md", "ansible_check_diff_mode.md"]
+  },
+  {
+    "question": "Что проверить в reusable role, которая принимает production secrets, требует root и должна безопасно проходить CI?",
+    "relevant_doc_ids": ["ansible_roles.md", "ansible_vault_become.md", "ansible_check_diff_mode.md"]
+  }
+]
