@@ -36,7 +36,10 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - PII-redaction для email, российских телефонов, карт, ИНН и паспортов перед записью prompt/output preview в логи
 - embedding-сервис для RAG: `embed_texts()`, `embed_query()`, `embed_documents()`, батчинг, retry на сетевые сбои, sqlite-кеш между рестартами и нормализация векторов
 - LlamaIndex RAG pipeline: `SimpleDirectoryReader -> SentenceSplitter -> QdrantVectorStore -> VectorStoreIndex -> QueryEngine`
+- recursive chunking с границами абзацев и русских предложений; выбранный конфиг `256/32`, `top-K=10`
 - bare-metal RAG pipeline для сравнения: чтение файлов, чанкинг, embeddings, Qdrant `query_points`, сборка prompt и OpenAI-compatible chat completion без LlamaIndex
+- retrieval evaluation на 36 Python/Ansible-вопросах и 10 документах: Hit Rate@5, MRR@10, Recall@10, A/B chunking и embedding-моделей
+- optional re-ranker `BAAI/bge-reranker-v2-m3` для offline retrieval evaluation
 - mini-benchmark для проверки retrieval-поведения на проектных вопросах из области PR-review ассистента
 - быстрый unit testing layer вокруг LLM-adjacent логики и отдельный offline evaluation layer в `eval/`
 - security evaluation layer на базе NVIDIA garak с baseline/after отчётами
@@ -91,10 +94,13 @@ app/
     models.py
     rag.py
   services/
+    chunking.py
     embeddings.py
     llm.py
     rag.py
     rag_baremetal.py
+    reranker.py
+    retrieval_eval.py
     vector_store.py
     security/
       input_validator.py
@@ -116,6 +122,7 @@ app/
 docs/
   chat.md
   architecture.md
+  chunking_experiment.md
   embeddings.md
   rag.md
   vector_store.md
@@ -130,14 +137,19 @@ docs/
     config.yaml
     config.production_like.yaml
 scripts/
+  compare_embedding_latency.py
   embedding_smoke.py
   load_test.py
+  run_chunking_experiment.py
   run_embedding_benchmark.py
   verify_rag_block03.py
 data/
+  retrieval-corpus/
+  review_knowledge.json
   rag-block-03/
 tests/
   eval/
+    retrieval_dataset.json
   unit/
   test_observability_pii.py
   test_security_guardrails.py
@@ -182,8 +194,10 @@ eval/
 - `RAG_COLLECTION` — отдельная LlamaIndex-коллекция Qdrant, по умолчанию `rag_block_03_diploma`
 - `RAG_BAREMETAL_COLLECTION` — отдельная bare-metal коллекция Qdrant, по умолчанию `rag_block_03_diploma_baremetal`
 - `RAG_CHUNK_SIZE` и `RAG_CHUNK_OVERLAP` — параметры чанкинга, по умолчанию `512` и `64`
-- `RAG_SIMILARITY_TOP_K` — количество возвращаемых источников, минимум `3`
+- `RAG_SIMILARITY_TOP_K` — число retrieval-кандидатов, по умолчанию `10`, минимум `3`
 - `RAG_MIN_TOP_SCORE` — порог честного fallback-а для вопросов вне корпуса, по умолчанию `0.2`
+- `RAG_RERANKER_MODEL` — optional cross-encoder для retrieval evaluation, по умолчанию `BAAI/bge-reranker-v2-m3`
+- `RAG_RERANKER_TOP_N` — число кандидатов после re-rank, по умолчанию `10`
 - `VISION_MODEL` — модель для stateful-чата с изображениями; если не задана, используется `DEFAULT_MODEL`
 - `LLM_NUM_CTX` — опциональный размер контекста для OpenAI-compatible backend'ов, которые принимают `extra_body.options.num_ctx`
 - `LLM_MAX_CONCURRENCY` — ограничение параллелизма
@@ -246,7 +260,8 @@ Structured logs сохраняются в stdout контейнера `app`. К�
 uv run pytest tests/unit/ -m "not llm"
 ```
 
-Evaluation живёт отдельно от `tests/`, потому что это медленный ручной прогон с production model и judge model:
+Generation evaluation живёт отдельно от `tests/`, потому что это
+медленный ручной прогон с production model и judge model:
 
 ```bash
 uv run python eval/run_evaluation.py --golden eval/golden_dataset.json --judge gpt-5.2 --out eval/runs/$(date +%F).json
@@ -269,9 +284,33 @@ uv run python scripts/run_embedding_benchmark.py
 Повторный запуск использует sqlite-кеш из `EMBEDDING_CACHE_PATH`: в локальной
 проверке latency снизилась примерно с `3142 ms` до `10 ms`.
 
-RAG-index хранится в Qdrant. Источник данных: `data/review_knowledge.json`.
-Порядок загрузки, payload schema, фильтры и результаты сравнения `COSINE`/`DOT`
-описаны в `docs/vector_store.md`.
+Retrieval-eval использует 10 документов из `data/retrieval-corpus` и
+`tests/eval/retrieval_dataset.json` с 36 вручную размеченными
+Python/Ansible-вопросами. Полный прогон с BGE
+re-ranker требует optional extra:
+
+```bash
+uv sync --extra local-embeddings
+uv run python scripts/run_chunking_experiment.py --qdrant-path .cache/qdrant-eval
+uv run python scripts/compare_embedding_latency.py
+```
+
+Без re-ranker тяжёлая optional-зависимость не нужна:
+
+```bash
+uv run python scripts/run_chunking_experiment.py \
+  --qdrant-path .cache/qdrant-eval \
+  --skip-reranker
+```
+
+Фактические метрики, параметрическая сетка и сравнение
+`qwen3-embedding:4b`/`0.6b` зафиксированы в
+`docs/chunking_experiment.md`.
+
+Основная Qdrant-коллекция `documents` загружается из
+`data/review_knowledge.json`. Отдельный endpoint `/rag/query` использует
+Block 03 corpus и коллекцию `rag_block_03_diploma`. Payload schema, фильтры и
+результаты сравнения `COSINE`/`DOT` описаны в `docs/vector_store.md`.
 
 ## Block 03 RAG
 
@@ -304,7 +343,11 @@ curl -sS -X POST http://localhost:8000/rag/query \
   -d '{"question":"Что делать, если секрет уже попал в diff?"}'
 ```
 
-Ответ содержит `answer`, `top_score` и минимум 3 элемента в `sources`. Индекс создаётся один раз в `lifespan`; если RAG недоступен на старте, `/rag/query` возвращает `503` с `detail.code == "rag_unavailable"`, не останавливая весь FastAPI-сервис.
+Ответ содержит `answer`, `top_score` и до `RAG_SIMILARITY_TOP_K`
+элементов в `sources`; текущий default равен `10`. Индекс создаётся
+один раз в `lifespan`; если RAG недоступен на старте, `/rag/query`
+возвращает `503` с `detail.code == "rag_unavailable"`, не останавливая
+весь FastAPI-сервис.
 
 Повторяемый живой прогон 3 хороших / 1 среднего / 1 внебазового вопроса:
 

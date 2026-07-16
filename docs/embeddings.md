@@ -46,6 +46,9 @@ EMBEDDING_MODEL=text-embedding-3-small
 модели автоматически создаёт новые embedding-записи и не смешивает векторы
 разной размерности.
 
+Кеш не меняет Qdrant schema. При смене `EMBEDDING_MODEL` или
+`EMBEDDING_DIM` коллекцию нужно пересоздать и переиндексировать.
+
 Для `qwen3-embedding` запросы и документы кодируются асимметрично:
 `embed_query()` добавляет instruction-префикс, а `embed_documents()` оставляет
 passage без префикса. Маркеры `Instruct:` и `Query:` оставлены на английском,
@@ -78,7 +81,32 @@ dimensions=2560
 Минимальный margin положительный (`+0.1644`). На данном наборе модель отделяет
 релевантные фрагменты от нерелевантных. Оценка не заменяет retrieval-eval на
 полной Qdrant-коллекции; результаты эксперимента по метрике и фильтрации
-зафиксированы в `docs/vector_store.md`.
+зафиксированы в `docs/vector_store.md` и
+`docs/chunking_experiment.md`.
+
+## Сравнение 4B и 0.6B
+
+Модели прогнаны на 36 вручную размеченных Python/Ansible-вопросах и 10
+документах. В таблице приведена одинаковая semantic-стратегия.
+
+| Модель | Vector dim | Hit Rate@5 | MRR@10 | Recall@10 | Query embedding mean |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `qwen3-embedding:4b` | 2560 | 1.0000 | 0.9722 | 1.0000 | 110.88 ms |
+| `qwen3-embedding:0.6b` | 1024 | 0.9722 | 0.9352 | 1.0000 | 92.47 ms |
+
+Latency измерена с пустым embedding-кешем после warm-up модели. 0.6B
+сократила среднюю latency на 18.41 ms, но потеряла один Hit@5 и 0.0370 MRR
+на semantic chunking. `qwen3-embedding:4b` остаётся default; 0.6B не
+используется в рабочем индексе.
+
+Повторяемый замер:
+
+```bash
+uv run python scripts/compare_embedding_latency.py
+```
+
+Полная таблица с p95, Qdrant latency и размерами моделей приведена в
+`docs/chunking_experiment.md`.
 
 ## Smoke-проверка кеша
 
@@ -123,11 +151,3 @@ OpenAI:
 Если индексация выполняется через Batch API, OpenAI даёт скидку 50% по
 сравнению с синхронными endpoint'ами, поэтому базовый сценарий для
 `text-embedding-3-small` будет порядка `$0.00125`.
-
-## Ссылки
-
-- OpenAI Embeddings Guide: https://platform.openai.com/docs/guides/embeddings
-- OpenAI Batch API: https://platform.openai.com/docs/guides/batch
-- Qwen3 Embedding model card: https://huggingface.co/Qwen/Qwen3-Embedding-0.6B
-- Ollama qwen3-embedding: https://ollama.com/library/qwen3-embedding
-- Sentence Transformers API: https://sbert.net/docs/package_reference/sentence_transformer/SentenceTransformer.html

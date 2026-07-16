@@ -42,11 +42,33 @@ Bare-metal реализация использует отдельную колл
 - vector size: `EMBEDDING_DIM=2560`
 - distance: `COSINE`
 - embed model: `EMBEDDING_MODEL=qwen3-embedding:4b`
-- chunk size: `RAG_CHUNK_SIZE=512`
-- chunk overlap: `RAG_CHUNK_OVERLAP=64`
-- top k: `RAG_SIMILARITY_TOP_K=3`
+- chunking strategy: recursive `SentenceSplitter`
+- chunk size: `RAG_CHUNK_SIZE=256`
+- chunk overlap: `RAG_CHUNK_OVERLAP=32`
+- top k: `RAG_SIMILARITY_TOP_K=10`
+
+Сплиттер использует `paragraph_separator="\n\n"` и sentence tokenizer для
+русской пунктуации. Выбор стратегии и параметров зафиксирован в
+`docs/chunking_experiment.md`.
 
 Размерность, distance и embed-модель должны совпадать с тем, что лежит в коллекции. Несовпадение размерности считается ошибкой запуска.
+
+## Retrieval evaluation
+
+Offline retrieval-eval не использует контрольный Block 03 corpus. Он индексирует
+10 документов из `data/retrieval-corpus` и оценивает выдачу на 36 вручную
+размеченных вопросах из `tests/eval/retrieval_dataset.json`.
+
+Коллекции A/B-прогона:
+
+- `docs_fixed`;
+- `docs_recursive`;
+- `docs_semantic`.
+
+Метрики: Hit Rate@5, MRR@10 и Recall@10. Скрипт
+`scripts/run_chunking_experiment.py` пересоздаёт коллекции и выполняет восемь
+параметрических прогонов для fixed и recursive. BGE re-ranker подключается
+только в offline-eval.
 
 ## FastAPI
 
@@ -113,7 +135,10 @@ docker compose run --rm --no-deps \
   app python scripts/verify_rag_block03.py
 ```
 
-Использовались Ollama `qwen3`, embedding-модель `qwen3-embedding:4b`, Qdrant-коллекция `rag_block_03_diploma`, `RAG_SIMILARITY_TOP_K=3`, `RAG_MIN_TOP_SCORE=0.2`.
+Использовались Ollama `qwen3`, embedding-модель `qwen3-embedding:4b`,
+Qdrant-коллекция `rag_block_03_diploma`, историческое
+`RAG_SIMILARITY_TOP_K=3` и `RAG_MIN_TOP_SCORE=0.2`. Текущий default top-K равен
+`10`; числа ниже относятся к прогону 2026-07-15 и не пересчитывались.
 
 ### 3 хороших
 

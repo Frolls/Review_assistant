@@ -85,7 +85,7 @@ flowchart LR
     subgraph DL["4. Data Layer"]
         CACHE["Redis Cache-Aside\nTTL 15m\nkey = sha256(model_alias + normalized_messages + temperature + kb_version)"]
         PG["Postgres\nrequest log, cost, feedback, audit"]
-        KB["Review rules / retrieval layer\nJSON now, future pgvector / JSONB KB"]
+        KB["Review retrieval\nQdrant vector store\nJSON / Markdown sources"]
         S3["S3 / MinIO optional\nlarge diff snapshots, prompt artifacts"]
     end
 

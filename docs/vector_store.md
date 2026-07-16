@@ -70,6 +70,19 @@ Payload indexes:
 - `access_level`: `KEYWORD`
 - `archived`: `KEYWORD`
 
+### Экспериментальные коллекции
+
+Offline chunking-eval использует отдельные коллекции:
+
+| Коллекция | Стратегия | points_count |
+| --- | --- | ---: |
+| `docs_fixed` | `TokenTextSplitter`, 512/64 | 34 |
+| `docs_recursive` | `SentenceSplitter`, 512/64 | 34 |
+| `docs_semantic` | `SemanticSplitterNodeParser`, 95 percentile | 31 |
+
+Эти коллекции не подключены к FastAPI runtime и не заменяют
+`documents`. Их пересоздаёт `scripts/run_chunking_experiment.py`.
+
 ## Загрузка
 
 `scripts/load_to_qdrant.py` выполняет следующие операции:
@@ -82,6 +95,11 @@ Payload indexes:
 6. Проверяет, что размерность каждого vector равна `EMBEDDING_DIM`.
 7. Выполняет batch upsert через `VectorStore`.
 8. Печатает `points_count`.
+
+Основной loader индексирует 140 готовых фрагментов из поля `chunks` в
+`data/review_knowledge.json`. Chunking-eval использует отдельный корпус из 10
+Python/Ansible-документов в `data/retrieval-corpus`. Поэтому `points_count`
+основной и экспериментальных коллекций не должен совпадать.
 
 Идентификатор точки детерминированный:
 
@@ -130,7 +148,9 @@ python scripts/load_to_qdrant.py --compare-metrics
 | Как ревьюить миграцию Postgres без долгих блокировок? | `postgres_migration_checklist.md#0`, `postgres_migration_checklist.md#6`, `postgres_migration_checklist.md#9`, `postgres_migration_checklist.md#2`, `postgres_migration_checklist.md#8` | `postgres_migration_checklist.md#0`, `postgres_migration_checklist.md#6`, `postgres_migration_checklist.md#9`, `postgres_migration_checklist.md#2`, `postgres_migration_checklist.md#8` | да |
 | Какие документы доступны только platform team? | `platform_private_runbook.md#0`, `platform_private_runbook.md#7`, `platform_private_runbook.md#6`, `secure_code_review.md#0`, `archived_legacy_index.md#8` | `platform_private_runbook.md#0`, `platform_private_runbook.md#7`, `platform_private_runbook.md#6`, `secure_code_review.md#0`, `archived_legacy_index.md#8` | да |
 
-После проверки в Qdrant остаётся только коллекция `documents`.
+После сравнения удаляются только временные `documents_cosine` и
+`documents_dot`. Коллекции `docs_fixed`, `docs_recursive` и `docs_semantic`
+управляются отдельным chunking-экспериментом.
 
 ## Фильтры
 

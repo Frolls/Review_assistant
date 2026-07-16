@@ -1,5 +1,32 @@
 # Changelog
 
+## [2026-07-16]
+
+### Added
+
+- Added `app/services/chunking.py` with fixed-size, Russian-aware recursive, and semantic LlamaIndex splitters.
+- Added `app/services/retrieval_eval.py` with dataset validation and macro-averaged Hit Rate@5, MRR@10, and Recall@10.
+- Added `data/retrieval-corpus` with 10 focused PEP and Ansible documents containing 13,592 tokens.
+- Added `tests/eval/retrieval_dataset.json` with 36 manually labelled Python/Ansible retrieval questions and one to three relevant sources per case.
+- Added `app/services/reranker.py` with an optional `BAAI/bge-reranker-v2-m3` cross-encoder.
+- Added `scripts/run_chunking_experiment.py`, `scripts/compare_embedding_latency.py`, and unit coverage for chunking, retrieval metrics, and re-ranking.
+- Added `docs/chunking_experiment.md` with index statistics, strategy metrics, re-ranking results, parameter tuning, and the Qwen3 Embedding 4B/0.6B comparison.
+
+### Changed
+
+- Changed the RAG defaults to recursive chunking with `chunk_size=256`, `chunk_overlap=32`, and `top-K=10`.
+- Updated `app/services/rag.py` to split on paragraph boundaries and Russian sentence boundaries.
+- Kept `qwen3-embedding:4b` with 2560-dimensional vectors as the default after the 0.6B comparison.
+- Updated `.env.example`, `README.md`, and RAG, embeddings, vector-store, and architecture documentation to match the implemented retrieval-evaluation pipeline.
+
+### Verified
+
+- Verified `docs_fixed`, `docs_recursive`, and `docs_semantic` with 34, 34, and 31 points respectively.
+- Verified tuned recursive retrieval metrics: Hit Rate@5 `1.0000`, MRR@10 `0.9861`, and Recall@10 `1.0000`.
+- Verified BGE re-ranking raises semantic MRR@10 from `0.9722` to `1.0000`; measured mean CPU latency is `10.50 s` per query.
+- Verified `qwen3-embedding:0.6b` reduces semantic Hit Rate@5 to `0.9722` and MRR@10 to `0.9352`; measured mean query-embedding latency is `92.47 ms` versus `110.88 ms` for 4B.
+- Verified Ruff on the changed Python files and pytest excluding two host-only ASGI timeouts: `82 passed, 6 skipped`.
+
 ## [2026-07-15]
 
 ### Added
