@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from app.core.config import Settings, get_settings
+from app.services.chunking import split_russian_sentences
 
 
 UNKNOWN_ANSWER = (
@@ -136,6 +137,8 @@ class RAGService:
         LlamaSettings.node_parser = SentenceSplitter(
             chunk_size=self.settings.rag_chunk_size,
             chunk_overlap=self.settings.rag_chunk_overlap,
+            paragraph_separator="\n\n",
+            chunking_tokenizer_fn=split_russian_sentences,
         )
 
         vector_store = QdrantVectorStore(
