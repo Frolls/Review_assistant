@@ -17,16 +17,19 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project
 
+RUN /app/.venv/bin/python -m spacy download ru_core_news_md
+
 COPY README.md .env.example ./
-COPY data/rag-block-03 ./data/rag-block-03
+COPY data ./data
+COPY scripts ./scripts
 COPY app ./app
 COPY alembic.ini ./
 COPY alembic ./alembic
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen
+RUN mkdir -p /app/var/ingestion && chown -R 1000:1000 /app/data /app/var
 
-RUN /app/.venv/bin/python -m spacy download ru_core_news_md
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --inexact
 
 FROM python:3.13-slim-bookworm AS runtime
 

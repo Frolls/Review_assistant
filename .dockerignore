@@ -33,3 +33,7 @@ logs/
 data/*
 !data/rag-block-03/
 !data/rag-block-03/**
+!data/retrieval-corpus/
+!data/retrieval-corpus/**
+!data/python-peps/
+!data/python-peps/**

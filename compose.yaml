@@ -25,10 +25,12 @@ services:
       PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
       QDRANT_URL: http://qdrant:6333
       QDRANT_API_KEY: ${QDRANT_API_KEY:-dev-qdrant-key}
+      # Calibrated for the bundled qwen3-embedding:4b configuration.
+      RAG_SCORE_THRESHOLD: ${RAG_SCORE_THRESHOLD:-0.5}
     command:
       - sh
       - -c
-      - alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
+      - python scripts/ingest.py data/ && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
     depends_on:
       phoenix:
         condition: service_started
@@ -44,6 +46,9 @@ services:
       - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
+    volumes:
+      - app_data:/app/data
+      - ingestion_storage:/app/var/ingestion
     healthcheck:
       test:
         - CMD
@@ -52,8 +57,10 @@ services:
         - import urllib.request; urllib.request.urlopen("http://localhost:8000/ready", timeout=5)
       interval: 15s
       timeout: 5s
-      retries: 3
-      start_period: 15s
+      retries: 5
+      # The first start indexes the bundled corpus with a local 4B embedding
+      # model before Uvicorn starts. Subsequent UPSERT runs are immediate.
+      start_period: 5m
     restart: unless-stopped
 
   bot:
@@ -116,6 +123,8 @@ services:
     restart: unless-stopped
 
 volumes:
+  app_data: {}
+  ingestion_storage: {}
   phoenix-data: {}
   pg-data: {}
   qdrant_storage: {}
