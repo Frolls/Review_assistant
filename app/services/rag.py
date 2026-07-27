@@ -2,243 +2,434 @@ from __future__ import annotations
 
 import asyncio
 import json
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, AsyncIterator, Sequence
+from uuid import UUID
+
+from openai import AsyncOpenAI
 
 from app.core.config import Settings, get_settings
-from app.services.chunking import split_russian_sentences
+from app.observability.logging import get_logger
+from app.services.reranker import BGEReranker
 
 
-UNKNOWN_ANSWER = (
-    "В корпусе RAG не нашлось достаточно релевантной информации для ответа."
+logger = get_logger(__name__)
+
+UNKNOWN_ANSWER = "по базе не нашёл, могу эскалировать"
+GROUNDING_INSTRUCTION = (
+    "Ты корпоративный RAG-ассистент. Отвечай только по переданному контексту. "
+    "Каждое фактическое утверждение сопровождай ссылкой на номер фрагмента: [1], [2]. "
+    "Не цитируй номер, если фрагмент не подтверждает утверждение. "
+    f"Если ответа в контексте нет, ответь ровно: «{UNKNOWN_ANSWER}»"
 )
-QA_PROMPT_TEMPLATE = (
-    "Ниже приведён контекст из базы знаний для ревью кода.\n"
-    "---------------------\n"
-    "{context_str}\n"
-    "---------------------\n"
-    "Ответь на вопрос, опираясь только на этот контекст. "
-    "Если в контексте нет ответа, честно скажи, что в корпусе RAG не нашлось "
-    "достаточно релевантной информации. Не используй внешние знания и не выдумывай. "
-    "Отвечай по-русски, кратко и по делу.\n"
-    "Вопрос: {query_str}\n"
-    "Ответ:"
+CONDENSE_PROMPT = (
+    "Перепиши последний вопрос пользователя как самодостаточный поисковый запрос. "
+    "Разреши местоимения и короткие продолжения по истории. Не отвечай на вопрос, "
+    "не добавляй новых фактов. Верни только переписанный вопрос."
 )
+
+
+@dataclass(slots=True)
+class PreparedRAG:
+    original_question: str
+    retrieval_question: str
+    sources: list[dict[str, Any]]
+    top_score: float | None
+    confident: bool
+    context: str
 
 
 class RAGService:
+    """Retrieval-first RAG: score guard always runs before answer generation."""
+
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        self._query_engine: Any | None = None
-        self._client: Any | None = None
+        self._retriever: Any | None = None
+        self._qdrant_client: Any | None = None
+        self._llm = AsyncOpenAI(
+            api_key=settings.openai_api_key.get_secret_value(),
+            base_url=settings.openai_base_url,
+            timeout=settings.request_timeout,
+        )
+        self._reranker: BGEReranker | None = None
 
     async def build(self) -> None:
         await asyncio.to_thread(self._build_sync)
 
-    async def answer(self, question: str) -> dict[str, Any]:
-        if self._query_engine is None:
+    async def prepare(
+        self,
+        question: str,
+        *,
+        history: Sequence[dict[str, Any]] | None = None,
+        chat_id: UUID | str | None = None,
+    ) -> PreparedRAG:
+        if self._retriever is None:
             await self.build()
-        return await asyncio.to_thread(self._answer_sync, question)
+
+        retrieval_question = question
+        if self.settings.rag_condense_enabled and history:
+            retrieval_question = await self._condense(question, history, chat_id=chat_id)
+
+        nodes = await asyncio.to_thread(self._retrieve_sync, retrieval_question)
+        top_score = _top_score(nodes)
+        confident = (
+            top_score is not None and top_score >= self.settings.rag_score_threshold
+        )
+        if not confident:
+            logger.info(
+                "rag.score_guard_refusal",
+                chat_id=str(chat_id) if chat_id is not None else None,
+                top_score=top_score,
+                threshold=self.settings.rag_score_threshold,
+                retrieval_question=retrieval_question[:200],
+            )
+            return PreparedRAG(
+                original_question=question,
+                retrieval_question=retrieval_question,
+                sources=[],
+                top_score=top_score,
+                confident=False,
+                context="",
+            )
+
+        ranked_nodes = await asyncio.to_thread(
+            self._rerank_sync,
+            retrieval_question,
+            nodes,
+        )
+        sources = [_source_payload(node, index) for index, node in enumerate(ranked_nodes, 1)]
+        context = "\n\n".join(
+            f"[{source['id']}] Файл: {source['file_name']}; "
+            f"страница: {source['page'] or '—'}\n{source['snippet']}"
+            for source in sources
+        )
+        return PreparedRAG(
+            original_question=question,
+            retrieval_question=retrieval_question,
+            sources=sources,
+            top_score=top_score,
+            confident=True,
+            context=context,
+        )
+
+    async def answer(
+        self,
+        question: str,
+        *,
+        history: Sequence[dict[str, Any]] | None = None,
+        chat_id: UUID | str | None = None,
+    ) -> dict[str, Any]:
+        prepared = await self.prepare(question, history=history, chat_id=chat_id)
+        if not prepared.confident:
+            return _result(UNKNOWN_ANSWER, prepared)
+
+        response = await self._llm.chat.completions.create(
+            model=self.settings.default_model,
+            messages=self.generation_messages(prepared, history=history),
+            temperature=0,
+        )
+        answer = _completion_text(response) or UNKNOWN_ANSWER
+        return _result(answer, prepared)
+
+    async def stream_answer(
+        self,
+        question: str,
+        *,
+        history: Sequence[dict[str, Any]] | None = None,
+        chat_id: UUID | str | None = None,
+    ) -> tuple[PreparedRAG, AsyncIterator[str]]:
+        prepared = await self.prepare(question, history=history, chat_id=chat_id)
+        if not prepared.confident:
+            return prepared, _single_chunk(UNKNOWN_ANSWER)
+
+        stream = await self._llm.chat.completions.create(
+            model=self.settings.default_model,
+            messages=self.generation_messages(prepared, history=history),
+            temperature=0,
+            stream=True,
+        )
+
+        async def tokens() -> AsyncIterator[str]:
+            async for chunk in stream:
+                text = _stream_delta(chunk)
+                if text:
+                    yield text
+
+        return prepared, tokens()
+
+    def generation_messages(
+        self,
+        prepared: PreparedRAG,
+        *,
+        history: Sequence[dict[str, Any]] | None = None,
+    ) -> list[dict[str, Any]]:
+        messages: list[dict[str, Any]] = [
+            {
+                "role": "system",
+                "content": f"{GROUNDING_INSTRUCTION}\n\nКонтекст:\n{prepared.context}",
+            }
+        ]
+        messages.extend(_text_messages(history or []))
+        if not messages or not _same_last_user(messages, prepared.original_question):
+            messages.append({"role": "user", "content": prepared.original_question})
+        return messages
 
     async def close(self) -> None:
-        client = self._client
+        await self._llm.close()
+        client = self._qdrant_client
         if client is not None:
             close = getattr(client, "close", None)
             if close is not None:
                 await asyncio.to_thread(close)
 
     def _build_sync(self) -> None:
-        if self._query_engine is not None:
+        if self._retriever is not None:
             return
-
         try:
-            from llama_index.core import Settings as LlamaSettings
-            from llama_index.core import (
-                PromptTemplate,
-                SimpleDirectoryReader,
-                StorageContext,
-                VectorStoreIndex,
-            )
-            from llama_index.core.base.llms.types import LLMMetadata, MessageRole
-            from llama_index.core.node_parser import SentenceSplitter
+            from llama_index.core import VectorStoreIndex
             from llama_index.embeddings.openai import OpenAIEmbedding
-            from llama_index.llms.openai import OpenAI
             from llama_index.vector_stores.qdrant import QdrantVectorStore
-            from pydantic import PrivateAttr
             from qdrant_client import QdrantClient
-            from qdrant_client.http.models import Distance, VectorParams
-        except ImportError as exc:  # pragma: no cover - exercised in clean local envs.
+        except ImportError as exc:  # pragma: no cover
             raise RuntimeError(
-                "Install llama-index, llama-index-vector-stores-qdrant, "
-                "llama-index-readers-file and qdrant-client to use RAGService."
+                "Install llama-index, llama-index-vector-stores-qdrant and qdrant-client."
             ) from exc
 
-        input_dir = self._input_dir()
-        if not input_dir.exists():
-            raise FileNotFoundError(f"RAG input directory does not exist: {input_dir}")
-
-        self._client = QdrantClient(
+        self._qdrant_client = QdrantClient(
             url=self.settings.qdrant_url,
             api_key=self.settings.qdrant_api_key,
         )
-        exists = bool(self._client.collection_exists(self.settings.rag_collection))
-        if exists:
-            current_size = _collection_vector_size(
-                self._client.get_collection(self.settings.rag_collection)
+        if not self._qdrant_client.collection_exists(self.settings.rag_collection):
+            raise RuntimeError(
+                f"RAG collection {self.settings.rag_collection!r} is absent. "
+                "Run `python scripts/ingest.py data/` first."
             )
-            if current_size != self.settings.embedding_dim:
-                raise ValueError(
-                    f"Qdrant collection {self.settings.rag_collection!r} has vector size "
-                    f"{current_size}, but EMBEDDING_DIM={self.settings.embedding_dim}."
-                )
-        else:
-            self._client.create_collection(
-                collection_name=self.settings.rag_collection,
-                vectors_config=VectorParams(
-                    size=self.settings.embedding_dim,
-                    distance=Distance.COSINE,
-                ),
+        points_count = int(
+            getattr(
+                self._qdrant_client.get_collection(self.settings.rag_collection),
+                "points_count",
+                0,
             )
-
-        class OpenAICompatibleLLM(OpenAI):
-            _context_window: int = PrivateAttr(default=8192)
-
-            def __init__(self, *, context_window: int, **kwargs: Any) -> None:
-                super().__init__(**kwargs)
-                self._context_window = context_window
-
-            @property
-            def metadata(self) -> LLMMetadata:
-                return LLMMetadata(
-                    context_window=self._context_window,
-                    num_output=self.max_tokens or 512,
-                    is_chat_model=True,
-                    is_function_calling_model=False,
-                    model_name=self.model,
-                    system_role=MessageRole.SYSTEM,
-                )
-
-        LlamaSettings.llm = OpenAICompatibleLLM(
-            model=self.settings.default_model,
-            api_key=self.settings.openai_api_key.get_secret_value(),
-            api_base=self.settings.openai_base_url,
-            timeout=self.settings.request_timeout,
-            context_window=self.settings.llm_num_ctx or 8192,
+            or 0
         )
-        embedding_kwargs: dict[str, Any] = {
+        if points_count == 0:
+            raise RuntimeError(
+                f"RAG collection {self.settings.rag_collection!r} is empty. "
+                "Run `python scripts/ingest.py data/` first."
+            )
+
+        embed_kwargs: dict[str, Any] = {
             "model_name": self.settings.embedding_model,
             "api_key": self.settings.openai_api_key.get_secret_value(),
             "api_base": self.settings.openai_base_url,
             "timeout": self.settings.embedding_request_timeout,
+            "embed_batch_size": self.settings.embedding_batch_size,
         }
         if self.settings.embedding_dimensions is not None:
-            embedding_kwargs["dimensions"] = self.settings.embedding_dimensions
-        LlamaSettings.embed_model = OpenAIEmbedding(**embedding_kwargs)
-        LlamaSettings.node_parser = SentenceSplitter(
-            chunk_size=self.settings.rag_chunk_size,
-            chunk_overlap=self.settings.rag_chunk_overlap,
-            paragraph_separator="\n\n",
-            chunking_tokenizer_fn=split_russian_sentences,
-        )
-
+            embed_kwargs["dimensions"] = self.settings.embedding_dimensions
         vector_store = QdrantVectorStore(
-            client=self._client,
+            client=self._qdrant_client,
             collection_name=self.settings.rag_collection,
         )
-        storage_context = StorageContext.from_defaults(vector_store=vector_store)
-        points_count = int(
-            getattr(self._client.get_collection(self.settings.rag_collection), "points_count", 0)
-            or 0
+        index = VectorStoreIndex.from_vector_store(
+            vector_store=vector_store,
+            embed_model=OpenAIEmbedding(**embed_kwargs),
+        )
+        self._retriever = index.as_retriever(
+            similarity_top_k=self.settings.rag_similarity_top_k
         )
 
-        if points_count > 0:
-            index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
-        else:
-            documents = SimpleDirectoryReader(
-                input_dir=str(input_dir),
-                recursive=True,
-            ).load_data()
-            index = VectorStoreIndex.from_documents(
-                documents,
-                storage_context=storage_context,
-                show_progress=True,
-            )
-
-        self._query_engine = index.as_query_engine(
-            similarity_top_k=self.settings.rag_similarity_top_k,
-            response_mode="compact",
-            text_qa_template=PromptTemplate(QA_PROMPT_TEMPLATE),
-        )
-
-    def _answer_sync(self, question: str) -> dict[str, Any]:
-        if self._query_engine is None:
+    def _retrieve_sync(self, question: str) -> list[Any]:
+        if self._retriever is None:
             raise RuntimeError("RAGService is not built")
+        return list(self._retriever.retrieve(question))
 
-        response = self._query_engine.query(question)
-        source_nodes = list(getattr(response, "source_nodes", []) or [])
-        top_score = _top_score(source_nodes)
-        sources = [
-            {
-                "text": str(getattr(node, "text", ""))[:300],
-                "source": _source_name(node),
-                "score": _rounded_score(getattr(node, "score", None)),
-            }
-            for node in source_nodes
-        ]
-        answer = str(response)
-        if top_score is None or top_score < self.settings.rag_min_top_score:
-            answer = UNKNOWN_ANSWER
-        return {
-            "answer": answer,
-            "top_score": _rounded_score(top_score),
-            "sources": sources,
-        }
+    def _rerank_sync(self, question: str, nodes: list[Any]) -> list[Any]:
+        if not self.settings.rag_reranker_enabled:
+            return nodes[: self.settings.rag_reranker_top_n]
+        try:
+            if self._reranker is None:
+                self._reranker = BGEReranker(self.settings.rag_reranker_model)
+            return self._reranker.rerank(
+                question,
+                nodes,
+                top_n=self.settings.rag_reranker_top_n,
+            )
+        except Exception as exc:
+            logger.warning("rag.reranker_unavailable", error=str(exc))
+            return nodes[: self.settings.rag_reranker_top_n]
 
-    def _input_dir(self) -> Path:
-        return self.settings.rag_input_dir
+    async def _condense(
+        self,
+        question: str,
+        history: Sequence[dict[str, Any]],
+        *,
+        chat_id: UUID | str | None,
+    ) -> str:
+        transcript = "\n".join(
+            f"{item.get('role', 'user')}: {_message_text(item.get('content'))}"
+            for item in history[-self.settings.chat_context_window :]
+            if item.get("role") in {"user", "assistant"}
+            and _message_text(item.get("content"))
+        )
+        response = await self._llm.chat.completions.create(
+            model=self.settings.default_model,
+            messages=[
+                {"role": "system", "content": CONDENSE_PROMPT},
+                {
+                    "role": "user",
+                    "content": f"История chat_id={chat_id or 'one-shot'}:\n{transcript}\n"
+                    f"Последний вопрос: {question}",
+                },
+            ],
+            temperature=0,
+            max_tokens=256,
+        )
+        condensed = _completion_text(response).strip() or question
+        anchor = _last_user_text(history)
+        if anchor and _is_context_dependent_followup(question):
+            # Local models occasionally return an empty rewrite or drop the
+            # subject while resolving the pronoun. Preserve the previous user
+            # question as a retrieval anchor without another LLM call.
+            condensed = f"{condensed}\nПредыдущий вопрос: {anchor}"
+        if condensed != question:
+            logger.info(
+                "rag.query_condensed",
+                chat_id=str(chat_id) if chat_id is not None else None,
+                original=question[:200],
+                condensed=condensed[:200],
+            )
+        return condensed
 
 
-def _top_score(source_nodes: list[Any]) -> float | None:
-    scores = [getattr(node, "score", None) for node in source_nodes]
+def _source_payload(node_with_score: Any, citation_id: int) -> dict[str, Any]:
+    node = getattr(node_with_score, "node", node_with_score)
+    metadata = getattr(node, "metadata", None) or {}
+    text = str(getattr(node, "text", "") or node.get_content()).strip()
+    page = metadata.get("page") or metadata.get("page_label")
+    try:
+        page = int(page) if page is not None else None
+    except (TypeError, ValueError):
+        page = str(page)
+    return {
+        "id": citation_id,
+        "file_name": _source_name(metadata),
+        "page": page,
+        "score": _rounded_score(getattr(node_with_score, "score", None)),
+        "snippet": text[:700],
+    }
+
+
+def _result(answer: str, prepared: PreparedRAG) -> dict[str, Any]:
+    return {
+        "answer": answer,
+        "top_score": _rounded_score(prepared.top_score),
+        "confident": prepared.confident,
+        "sources": prepared.sources,
+    }
+
+
+def _top_score(nodes: list[Any]) -> float | None:
+    scores = [getattr(node, "score", None) for node in nodes]
     numeric = [float(score) for score in scores if score is not None]
-    if not numeric:
-        return None
-    return max(numeric)
+    return max(numeric) if numeric else None
 
 
 def _rounded_score(score: float | None) -> float | None:
-    if score is None:
-        return None
-    return round(float(score), 3)
+    return round(float(score), 4) if score is not None else None
 
 
-def _source_name(node: Any) -> str | None:
-    metadata = getattr(node, "metadata", None) or {}
+def _source_name(metadata: dict[str, Any]) -> str:
     for key in ("file_name", "source", "file_path"):
         value = metadata.get(key)
         if value:
             return Path(str(value)).name
-    return None
+    return "unknown"
 
 
-def _collection_vector_size(collection_info: Any) -> int:
-    vectors = collection_info.config.params.vectors
-    size = getattr(vectors, "size", None)
-    if size is not None:
-        return int(size)
-    if isinstance(vectors, dict):
-        first_vector = next(iter(vectors.values()))
-        if isinstance(first_vector, dict):
-            return int(first_vector["size"])
-        return int(first_vector.size)
-    raise ValueError("Could not read Qdrant vector size from collection config")
+def _completion_text(response: Any) -> str:
+    choices = getattr(response, "choices", None) or []
+    if not choices:
+        return ""
+    return _message_text(getattr(choices[0].message, "content", ""))
+
+
+def _stream_delta(chunk: Any) -> str:
+    choices = getattr(chunk, "choices", None) or []
+    if not choices:
+        return ""
+    return _message_text(getattr(choices[0].delta, "content", ""))
+
+
+def _message_text(content: Any) -> str:
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        return "".join(_message_text(item) for item in content)
+    if isinstance(content, dict):
+        return _message_text(content.get("text") or content.get("content"))
+    return str(content)
+
+
+def _text_messages(history: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    result = []
+    for item in history:
+        content = _message_text(item.get("content"))
+        if content and item.get("role") in {"system", "user", "assistant"}:
+            result.append({"role": item["role"], "content": content})
+    return result
+
+
+def _same_last_user(messages: Sequence[dict[str, Any]], question: str) -> bool:
+    return bool(
+        messages
+        and messages[-1].get("role") == "user"
+        and _message_text(messages[-1].get("content")).strip() == question.strip()
+    )
+
+
+def _last_user_text(history: Sequence[dict[str, Any]]) -> str:
+    for item in reversed(history):
+        if item.get("role") == "user":
+            text = _message_text(item.get("content")).strip()
+            if text:
+                return text
+    return ""
+
+
+def _is_context_dependent_followup(question: str) -> bool:
+    if len(question) > 160:
+        return False
+    normalized = question.casefold().replace("ё", "е")
+    markers = (
+        "для них",
+        "для него",
+        "для нее",
+        "а как",
+        "а что",
+        "а если",
+        "а когда",
+        "этим",
+        "таких",
+        "for them",
+        "for it",
+        "and how",
+        "and what",
+        "what about",
+    )
+    return any(marker in normalized for marker in markers)
+
+
+async def _single_chunk(text: str) -> AsyncIterator[str]:
+    yield text
 
 
 async def _demo() -> None:
-    settings = get_settings()
-    service = RAGService(settings)
+    service = RAGService(get_settings())
     try:
-        await service.build()
         result = await service.answer("Почему в Ansible task лучше избегать command и shell?")
         print(json.dumps(result, ensure_ascii=False, indent=2))
     finally:

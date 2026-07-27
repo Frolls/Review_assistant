@@ -186,7 +186,14 @@ class JsonChatRepository:
             await file.write(json.dumps(incident, ensure_ascii=False))
             await file.write("\n")
 
-    async def save_feedback(self, chat_id: UUID, message_id: UUID, value: str) -> None:
+    async def save_feedback(
+        self,
+        chat_id: UUID,
+        message_id: UUID,
+        value: str,
+        *,
+        sources: list[dict[str, Any]] | None = None,
+    ) -> None:
         chat = await self.get_chat(chat_id)
         if chat is None:
             raise LookupError("Chat was not found")
@@ -205,6 +212,7 @@ class JsonChatRepository:
             "message_id": str(message_id),
             "owner_external_id": chat.owner_external_id,
             "value": value,
+            "sources": sources or [],
             "created_at": datetime.now(UTC).isoformat(),
         }
         existing = [

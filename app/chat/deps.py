@@ -58,6 +58,7 @@ async def get_chat_service(
         num_ctx=settings.llm_num_ctx,
         context_strategy=settings.chat_context_strategy,
         keep_recent=settings.chat_context_window,
+        rag_service=getattr(request.app.state, "rag_service", None),
     )
 
 

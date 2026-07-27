@@ -13,11 +13,14 @@ class FakeRAGService:
         return {
             "answer": f"answer for {question}",
             "top_score": 0.75,
+            "confident": True,
             "sources": [
                 {
-                    "text": "source text",
-                    "source": "source.md",
+                    "id": 1,
+                    "file_name": "source.md",
+                    "page": 3,
                     "score": 0.75,
+                    "snippet": "source text",
                 }
             ],
         }
@@ -36,11 +39,14 @@ async def test_rag_query_returns_answer_with_sources() -> None:
     assert response.json() == {
         "answer": "answer for Что проверить?",
         "top_score": 0.75,
+        "confident": True,
         "sources": [
             {
-                "text": "source text",
-                "source": "source.md",
+                "id": 1,
+                "file_name": "source.md",
+                "page": 3,
                 "score": 0.75,
+                "snippet": "source text",
             }
         ],
     }

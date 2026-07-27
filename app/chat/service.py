@@ -15,6 +15,7 @@ from app.chat.repository import ChatRepository
 from app.moderation import ModerationResult, ModerationService
 from app.observability.logging import get_logger
 from app.observability.pii import prompt_hash, redact_pii
+from app.services.rag import UNKNOWN_ANSWER, PreparedRAG, RAGService
 
 
 logger = get_logger(__name__)
@@ -79,6 +80,7 @@ class ChatService:
         context_window_tokens: int = DEFAULT_CONTEXT_WINDOW_TOKENS,
         response_tokens: int = DEFAULT_RESPONSE_TOKENS,
         safety_margin: int = DEFAULT_SAFETY_MARGIN,
+        rag_service: RAGService | None = None,
     ) -> None:
         self.repository = repository
         self.llm_client = llm_client
@@ -91,6 +93,7 @@ class ChatService:
         self.context_window_tokens = context_window_tokens
         self.response_tokens = response_tokens
         self.safety_margin = safety_margin
+        self.rag_service = rag_service
 
     async def create_chat(
         self,
@@ -115,6 +118,7 @@ class ChatService:
         *,
         input_moderation_checked: bool = False,
         on_message_saved: Any | None = None,
+        on_sources: Any | None = None,
     ) -> AsyncIterator[str]:
         chat = await self.repository.get_chat(chat_id)
         if chat is None:
@@ -138,20 +142,52 @@ class ChatService:
 
         accumulated: list[str] = []
         stream_completed = False
+        prepared: PreparedRAG | None = None
         started_at = time.perf_counter()
         try:
-            stream = await self.llm_client.chat.completions.create(
-                model=self._select_model(messages),
-                messages=messages,
-                stream=True,
-                stream_options={"include_usage": True},
-                **self._completion_extra_kwargs(),
-            )
-            async for chunk in stream:
-                text = _extract_delta_text(chunk)
-                if not text:
-                    continue
-                accumulated.append(text)
+            if self.rag_service is not None and media_ref is None:
+                prepared = await self.rag_service.prepare(
+                    user_content,
+                    history=messages[:-1],
+                    chat_id=chat_id,
+                )
+                if on_sources is not None:
+                    on_sources(prepared.sources, prepared.confident)
+                if not prepared.confident:
+                    accumulated.append(UNKNOWN_ANSWER)
+                    yield UNKNOWN_ANSWER
+                else:
+                    rag_messages = self.rag_service.generation_messages(
+                        prepared,
+                        history=messages,
+                    )
+                    stream = await self.llm_client.chat.completions.create(
+                        model=self._select_model(rag_messages),
+                        messages=rag_messages,
+                        stream=True,
+                        stream_options={"include_usage": True},
+                        **self._completion_extra_kwargs(),
+                    )
+                    async for chunk in stream:
+                        text = _extract_delta_text(chunk)
+                        if not text:
+                            continue
+                        accumulated.append(text)
+                        yield text
+            else:
+                stream = await self.llm_client.chat.completions.create(
+                    model=self._select_model(messages),
+                    messages=messages,
+                    stream=True,
+                    stream_options={"include_usage": True},
+                    **self._completion_extra_kwargs(),
+                )
+                async for chunk in stream:
+                    text = _extract_delta_text(chunk)
+                    if not text:
+                        continue
+                    accumulated.append(text)
+                    yield text
             stream_completed = True
         finally:
             full_text = "".join(accumulated)
@@ -175,15 +211,20 @@ class ChatService:
                         content=full_text,
                         tokens=count_tokens([{"role": "assistant", "content": full_text}]),
                         latency_ms=round((time.perf_counter() - started_at) * 1000),
+                        media_refs=(
+                            {
+                                "rag_sources": prepared.sources,
+                                "rag_confident": prepared.confident,
+                            }
+                            if prepared is not None
+                            else None
+                        ),
                     ),
                 )
                 if on_message_saved is not None:
                     on_message_saved(assistant_message)
             if not stream_completed and full_text:
                 logger.warning("chat.stream_interrupted_saved_partial", chat_id=str(chat_id))
-
-        for text in accumulated:
-            yield text
 
     async def check_input(self, chat_id: UUID, content: str) -> ModerationResult:
         result = await self.moderation_service.check_input(content)

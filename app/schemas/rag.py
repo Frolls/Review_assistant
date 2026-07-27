@@ -8,12 +8,15 @@ class RAGQueryRequest(BaseModel):
 
 
 class RAGSource(BaseModel):
-    text: str
-    source: str | None = None
+    id: int
+    file_name: str
+    page: int | str | None = None
     score: float | None = None
+    snippet: str
 
 
 class RAGQueryResponse(BaseModel):
     answer: str
     top_score: float | None
+    confident: bool
     sources: list[RAGSource]

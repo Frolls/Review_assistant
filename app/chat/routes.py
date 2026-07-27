@@ -68,19 +68,26 @@ async def send_message(
     if local_response is not None and media is None:
         async def local_stream() -> AsyncIterator[str]:
             yield _format_sse_event({"type": "token", "delta": local_response})
-            yield _format_sse_event({"type": "done"})
+            yield _format_sse_event(
+                {"type": "done", "sources": [], "confident": False}
+            )
 
         return StreamingResponse(local_stream(), media_type="text/event-stream")
 
+    # Preserve the legacy domain filter only when RAG is unavailable. With a
+    # built index, out-of-domain questions must reach the observable score guard.
     refusal = _domain_refusal(content)
     if (
         refusal is not None
         and media is None
+        and getattr(chat_service, "rag_service", None) is None
         and not await _has_recent_media_context(chat_service, chat_id)
     ):
         async def refusal_stream() -> AsyncIterator[str]:
             yield _format_sse_event({"type": "token", "delta": refusal})
-            yield _format_sse_event({"type": "done"})
+            yield _format_sse_event(
+                {"type": "done", "sources": [], "confident": False}
+            )
 
         return StreamingResponse(refusal_stream(), media_type="text/event-stream")
 
@@ -104,10 +111,17 @@ async def send_message(
 
     async def event_stream() -> AsyncIterator[str]:
         saved_message_id: UUID | None = None
+        shown_sources: list[dict[str, Any]] = []
+        confident = False
 
         def remember_saved_message(message: ChatMessage) -> None:
             nonlocal saved_message_id
             saved_message_id = message.id
+
+        def remember_sources(sources: list[dict[str, Any]], is_confident: bool) -> None:
+            nonlocal shown_sources, confident
+            shown_sources = sources
+            confident = is_confident
 
         try:
             send_kwargs: dict[str, Any] = {"media_ref": media_ref}
@@ -116,12 +130,18 @@ async def send_message(
                 send_kwargs["input_moderation_checked"] = input_moderation_checked
             if "on_message_saved" in send_signature.parameters:
                 send_kwargs["on_message_saved"] = remember_saved_message
+            if "on_sources" in send_signature.parameters:
+                send_kwargs["on_sources"] = remember_sources
             async for chunk in chat_service.send_message(chat_id, content, **send_kwargs):
                 yield _format_sse_event({"type": "token", "delta": chunk})
         except BadRequestError as exc:
             yield _format_sse_event({"type": "error", "message": _llm_bad_request_message(exc)})
             return
-        done_payload = {"type": "done"}
+        done_payload = {
+            "type": "done",
+            "sources": shown_sources,
+            "confident": confident,
+        }
         if saved_message_id is not None:
             done_payload["message_id"] = str(saved_message_id)
         yield _format_sse_event(done_payload)
@@ -145,7 +165,17 @@ async def clear_messages(chat_id: UUID, chat_service: ChatServiceDep) -> dict[st
 
 
 def _format_sse_event(payload: dict[str, Any]) -> str:
-    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+    return f"data: {json.dumps(_sanitize_sse_payload(payload), ensure_ascii=False)}\n\n"
+
+
+def _sanitize_sse_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    """Keep every SSE event on one data line; JSON encodes embedded newlines."""
+    sanitized = dict(payload)
+    for key in ("delta", "message"):
+        value = sanitized.get(key)
+        if isinstance(value, str):
+            sanitized[key] = value.replace("\r\n", "\n").replace("\r", "\n")
+    return sanitized
 
 
 def _domain_refusal(content: str) -> str | None:

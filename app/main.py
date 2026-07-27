@@ -34,6 +34,7 @@ from app.routers.chat import router as chat_router
 from app.routers.health import router as health_router
 from app.routers.models import router as models_router
 from app.routers.rag import router as rag_router
+from app.routers.documents import router as documents_router
 
 
 logger = get_logger(__name__)
@@ -124,6 +125,7 @@ def create_app() -> FastAPI:
     app.include_router(models_router)
     app.include_router(chat_router)
     app.include_router(rag_router)
+    app.include_router(documents_router)
     app.include_router(stateful_chat_router)
     app.include_router(feedback_router)
     app.include_router(admin_router)

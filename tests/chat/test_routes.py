@@ -81,7 +81,7 @@ async def test_stream_message_route(test_app):
     assert response.text == (
         'data: {"type": "token", "delta": "one "}\n\n'
         'data: {"type": "token", "delta": "two"}\n\n'
-        'data: {"type": "done"}\n\n'
+        'data: {"type": "done", "sources": [], "confident": false}\n\n'
     )
 
 

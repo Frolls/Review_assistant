@@ -38,5 +38,12 @@ class ChatRepository(Protocol):
     ) -> None:
         ...
 
-    async def save_feedback(self, chat_id: UUID, message_id: UUID, value: str) -> None:
+    async def save_feedback(
+        self,
+        chat_id: UUID,
+        message_id: UUID,
+        value: str,
+        *,
+        sources: list[dict] | None = None,
+    ) -> None:
         ...

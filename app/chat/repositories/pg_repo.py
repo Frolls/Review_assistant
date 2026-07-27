@@ -123,7 +123,14 @@ class PostgresChatRepository:
         )
         await self.session.commit()
 
-    async def save_feedback(self, chat_id: UUID, message_id: UUID, value: str) -> None:
+    async def save_feedback(
+        self,
+        chat_id: UUID,
+        message_id: UUID,
+        value: str,
+        *,
+        sources: list[dict] | None = None,
+    ) -> None:
         chat_result = await self.session.execute(
             select(ChatRow.owner_external_id)
             .join(ChatMessageRow, ChatMessageRow.chat_id == ChatRow.id)
@@ -140,10 +147,15 @@ class PostgresChatRepository:
                 message_id=message_id,
                 owner_external_id=owner_external_id,
                 value=value,
+                sources=sources or [],
             )
             .on_conflict_do_update(
                 constraint="uq_message_feedback_owner_message",
-                set_={"value": value, "created_at": datetime.now(UTC)},
+                set_={
+                    "value": value,
+                    "sources": sources or [],
+                    "created_at": datetime.now(UTC),
+                },
             )
         )
         await self.session.execute(statement)

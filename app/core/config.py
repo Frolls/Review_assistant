@@ -66,10 +66,14 @@ class Settings(BaseSettings):
         validation_alias="EMBEDDING_REQUEST_TIMEOUT",
     )
     rag_input_dir: Path = Field(
-        default=Path("data/rag-block-03"),
+        default=Path("data"),
         validation_alias="RAG_INPUT_DIR",
     )
-    rag_collection: str = Field(default="rag_block_03_diploma", validation_alias="RAG_COLLECTION")
+    rag_pipeline_storage_dir: Path = Field(
+        default=Path("var/ingestion"),
+        validation_alias="RAG_PIPELINE_STORAGE_DIR",
+    )
+    rag_collection: str = Field(default="corporate_rag", validation_alias="RAG_COLLECTION")
     rag_baremetal_collection: str = Field(
         default="rag_block_03_diploma_baremetal",
         validation_alias="RAG_BAREMETAL_COLLECTION",
@@ -77,12 +81,23 @@ class Settings(BaseSettings):
     rag_chunk_size: int = Field(default=256, validation_alias="RAG_CHUNK_SIZE")
     rag_chunk_overlap: int = Field(default=32, validation_alias="RAG_CHUNK_OVERLAP")
     rag_similarity_top_k: int = Field(default=10, validation_alias="RAG_SIMILARITY_TOP_K")
-    rag_min_top_score: float = Field(default=0.2, validation_alias="RAG_MIN_TOP_SCORE")
+    rag_score_threshold: float = Field(
+        default=0.3,
+        validation_alias=AliasChoices("RAG_SCORE_THRESHOLD", "RAG_MIN_TOP_SCORE"),
+    )
+    rag_condense_enabled: bool = Field(
+        default=True,
+        validation_alias="RAG_CONDENSE_ENABLED",
+    )
+    rag_reranker_enabled: bool = Field(
+        default=False,
+        validation_alias="RAG_RERANKER_ENABLED",
+    )
     rag_reranker_model: str = Field(
         default="BAAI/bge-reranker-v2-m3",
         validation_alias="RAG_RERANKER_MODEL",
     )
-    rag_reranker_top_n: int = Field(default=10, validation_alias="RAG_RERANKER_TOP_N")
+    rag_reranker_top_n: int = Field(default=5, validation_alias="RAG_RERANKER_TOP_N")
     cache_ttl_seconds: int = Field(default=300, validation_alias="CACHE_TTL_SECONDS")
     max_concurrency: int = Field(default=5, validation_alias="LLM_MAX_CONCURRENCY")
     rate_limit_per_min: int = Field(default=30, validation_alias="RATE_LIMIT_PER_MIN")
@@ -350,14 +365,21 @@ class Settings(BaseSettings):
     @classmethod
     def default_rag_input_dir(cls, value: object) -> object:
         if value is None or value == "":
-            return Path("data/rag-block-03")
+            return Path("data")
+        return value
+
+    @field_validator("rag_pipeline_storage_dir", mode="before")
+    @classmethod
+    def default_rag_pipeline_storage_dir(cls, value: object) -> object:
+        if value is None or value == "":
+            return Path("var/ingestion")
         return value
 
     @field_validator("rag_collection", mode="before")
     @classmethod
     def default_rag_collection(cls, value: object) -> object:
         if value is None or value == "":
-            return "rag_block_03_diploma"
+            return "corporate_rag"
         return value
 
     @field_validator("rag_collection", "rag_baremetal_collection")
@@ -416,18 +438,18 @@ class Settings(BaseSettings):
             raise ValueError("RAG_SIMILARITY_TOP_K must be at least 3")
         return value
 
-    @field_validator("rag_min_top_score", mode="before")
+    @field_validator("rag_score_threshold", mode="before")
     @classmethod
-    def default_rag_min_top_score(cls, value: object) -> object:
+    def default_rag_score_threshold(cls, value: object) -> object:
         if value is None or value == "":
-            return 0.2
+            return 0.3
         return value
 
-    @field_validator("rag_min_top_score")
+    @field_validator("rag_score_threshold")
     @classmethod
-    def validate_rag_min_top_score(cls, value: float) -> float:
-        if value < 0:
-            raise ValueError("RAG_MIN_TOP_SCORE must be non-negative")
+    def validate_rag_score_threshold(cls, value: float) -> float:
+        if not 0 <= value <= 1:
+            raise ValueError("RAG_SCORE_THRESHOLD must be between zero and one")
         return value
 
     @field_validator("rag_reranker_model", mode="before")
@@ -448,7 +470,7 @@ class Settings(BaseSettings):
     @classmethod
     def default_rag_reranker_top_n(cls, value: object) -> object:
         if value is None or value == "":
-            return 10
+            return 5
         return value
 
     @field_validator("rag_reranker_top_n")
@@ -462,7 +484,14 @@ class Settings(BaseSettings):
     def validate_rag_chunking(self) -> "Settings":
         if self.rag_chunk_overlap >= self.rag_chunk_size:
             raise ValueError("RAG_CHUNK_OVERLAP must be smaller than RAG_CHUNK_SIZE")
+        if self.rag_reranker_top_n > self.rag_similarity_top_k:
+            raise ValueError("RAG_RERANKER_TOP_N must not exceed RAG_SIMILARITY_TOP_K")
         return self
+
+    @property
+    def rag_min_top_score(self) -> float:
+        """Backward-compatible alias used by the Block 03 bare-metal demo."""
+        return self.rag_score_threshold
 
     @field_validator("cache_ttl_seconds", mode="before")
     @classmethod
