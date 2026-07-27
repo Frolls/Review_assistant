@@ -1,179 +1,225 @@
-# RAG Block 03
+# Корпоративный RAG
 
-## Зависимости
+## Архитектура
 
-Проектный `pyproject.toml` фиксирует минимальные версии:
+```mermaid
+flowchart LR
+    subgraph I["Ingestion contour"]
+        Files["data/category/*<br/>PDF · DOCX · HTML · MD"]
+        Readers["PyMuPDFReader<br/>DocxReader<br/>HTMLTagReader<br/>MarkdownReader"]
+        Meta["Metadata enrichment<br/>source · dates · author<br/>category · version · page"]
+        Split["SentenceSplitter<br/>256 / overlap 32"]
+        Embed["OpenAI-compatible embeddings<br/>qwen3-embedding:4b"]
+        Docstore["SimpleDocumentStore<br/>persistent hashes"]
+        Qdrant[("Qdrant<br/>corporate_rag")]
+        Files --> Readers --> Meta --> Split --> Embed --> Qdrant
+        Meta --> Docstore
+        Docstore -->|"DocstoreStrategy.UPSERTS"| Split
+    end
 
-- `llama-index>=0.12.0`
-- `llama-index-vector-stores-qdrant>=0.4.0`
-- `llama-index-readers-file>=0.4.0`
-- `qdrant-client>=1.14.0,<1.16`
-- `openai>=2.38.0,<3`
+    subgraph Q["Query contour"]
+        Client["HTTP / Telegram"]
+        History[("Postgres chat history")]
+        Condense["Optional condense<br/>follow-up → standalone query"]
+        Retrieve["Vector retrieval<br/>top_k = 10"]
+        Guard{"top_score ≥ configured threshold?<br/>0.5 for Qwen3 4B"}
+        Rerank["Optional BGE rerank<br/>top_n = 5"]
+        Prompt["Numbered context<br/>[1], [2], …"]
+        LLM["OpenAI-compatible LLM<br/>streaming"]
+        Refusal["Fixed refusal<br/>no answer LLM call"]
+        SSE["SSE tokens + final<br/>sources, confident"]
+        Client --> Condense
+        History --> Condense
+        Condense --> Retrieve --> Guard
+        Guard -->|yes| Rerank --> Prompt --> LLM --> SSE
+        History --> Prompt
+        Guard -->|no| Refusal --> SSE
+    end
 
-Метапакет `llama-index` подтягивает core, OpenAI LLM и OpenAI embeddings. Отдельно добавлены Qdrant vector store и файловые reader'ы, потому что они не являются частью минимального ядра.
-
-В dev-образе, пересобранном для проверки 2026-07-15, установлены: `llama-index==0.14.23`, `llama-index-core==0.14.23`, `llama-index-vector-stores-qdrant==0.8.8`, `llama-index-readers-file==0.6.0`, `qdrant-client==1.15.1`, `openai==2.38.0`.
-
-## Корпус
-
-Учебный корпус лежит в `data/rag-block-03` и содержит 10 Markdown-файлов по предметной области диплома: правила и чеклисты для ИИ-ассистента, который ревьюит код. В корпусе 9 доменных документов и 1 контрольный нерелевантный документ для fallback-проверки.
-
-- `python_style_review.md`
-- `python_typing_review.md`
-- `python_tests_review.md`
-- `secure_code_review.md`
-- `api_contract_review.md`
-- `database_migration_review.md`
-- `ansible_best_practices.md`
-- `architecture_review.md`
-- `observability_review.md`
-- `unrelated_fallback_control.md`
-
-Файл `unrelated_fallback_control.md` заведомо вне предметной области code review и нужен только для проверки fallback-сценария. Остальные файлы описывают именно знания, которые ассистент использует при ревью PR: стиль Python, typing, тесты, security, API-контракты, миграции БД, Ansible, архитектуру и observability.
-
-## Коллекции
-
-Для блока используется отдельная LlamaIndex-коллекция `rag_block_03_diploma`. Старый индекс `documents` наполнялся напрямую через `qdrant-client` с плоским payload, а LlamaIndex хранит ноды в своём формате, включая `_node_content`. Если подключаться к чужой коллекции через `from_vector_store`, `source_nodes` и metadata будут неполными.
-
-Bare-metal реализация использует отдельную коллекцию `rag_block_03_diploma_baremetal`, чтобы сравнение не смешивало разные payload-схемы.
-
-Параметры индекса:
-
-- vector size: `EMBEDDING_DIM=2560`
-- distance: `COSINE`
-- embed model: `EMBEDDING_MODEL=qwen3-embedding:4b`
-- chunking strategy: recursive `SentenceSplitter`
-- chunk size: `RAG_CHUNK_SIZE=256`
-- chunk overlap: `RAG_CHUNK_OVERLAP=32`
-- top k: `RAG_SIMILARITY_TOP_K=10`
-
-Сплиттер использует `paragraph_separator="\n\n"` и sentence tokenizer для
-русской пунктуации. Выбор стратегии и параметров зафиксирован в
-`docs/chunking_experiment.md`.
-
-Размерность, distance и embed-модель должны совпадать с тем, что лежит в коллекции. Несовпадение размерности считается ошибкой запуска.
-
-## Retrieval evaluation
-
-Offline retrieval-eval не использует контрольный Block 03 corpus. Он индексирует
-10 документов из `data/retrieval-corpus` и оценивает выдачу на 36 вручную
-размеченных вопросах из `tests/eval/retrieval_dataset.json`.
-
-Коллекции A/B-прогона:
-
-- `docs_fixed`;
-- `docs_recursive`;
-- `docs_semantic`.
-
-Метрики: Hit Rate@5, MRR@10 и Recall@10. Скрипт
-`scripts/run_chunking_experiment.py` пересоздаёт коллекции и выполняет восемь
-параметрических прогонов для fixed и recursive. BGE re-ranker подключается
-только в offline-eval.
-
-## FastAPI
-
-LlamaIndex query engine использует явный QA prompt: модель должна отвечать только по найденному контексту, не использовать внешние знания и честно сообщать, если в корпусе нет ответа. Дополнительно ответ отсекается по `RAG_MIN_TOP_SCORE`.
-
-Маршрут `POST /rag/query` принимает:
-
-```json
-{"question": "Почему в Ansible task лучше избегать command и shell?"}
+    Qdrant --> Retrieve
 ```
 
-Ответ:
+Ingestion и query разделены. FastAPI не переиндексирует корпус во время обычного
+запроса. Compose выполняет `scripts/ingest.py data/` перед стартом приложения,
+а `POST /documents/upload` запускает тот же pipeline как background task.
+
+## Ingestion
+
+`app/services/ingestion.py` явно выбирает reader по расширению:
+
+- PDF — `PyMuPDFReader` (`pymupdf>=1.24`);
+- DOCX — `DocxReader`; author читается из DOCX core properties через
+  `python-docx`;
+- HTML/Confluence export — `HTMLTagReader(tag="body")`;
+- Markdown — `MarkdownReader`.
+
+Для каждого документа добавляются `source`, `file_name`, `file_path`,
+`last_modified`, `created_at`, `author` при наличии, первый сегмент
+`data/<category>/...` как `category`, версия из имени вида `*-v1.2.*` и `page`.
+Технические значения перечислены в `excluded_embed_metadata_keys`, поэтому пути,
+даты, номера страниц и служебные HTML-поля не меняют смысл embedding.
+
+Pipeline:
+
+```text
+readers → metadata → SentenceSplitter(256, 32) → embedding → Qdrant
+                         ↕
+              SimpleDocumentStore + UPSERTS
+```
+
+`SimpleDocumentStore` сохраняется в `RAG_PIPELINE_STORAGE_DIR`
+(`var/ingestion/docstore.json`). Стабильный document id и hash позволяют
+`DocstoreStrategy.UPSERTS` удалить старые чанки изменённого документа и не
+добавлять ничего для неизменённого. CLI печатает итог
+`0 changed, N unchanged`; повреждённый файл получает суффикс `.failed`, а ошибка
+остаётся в логе.
+
+Локальный запуск:
+
+```bash
+python scripts/download_data.py
+python scripts/ingest.py data/ --show-progress
+python scripts/ingest.py data/
+```
+
+## Retrieval, guard и цитаты
+
+Последовательность в `app/services/rag.py`:
+
+1. При наличии истории и `RAG_CONDENSE_ENABLED=true` короткий follow-up
+   переписывается в самостоятельный запрос. В prompt передаётся `chat_id`, но
+   отдельное хранилище не создаётся.
+2. Retriever получает `RAG_SIMILARITY_TOP_K=10`.
+3. До answer-generation считается максимальный cosine score.
+4. Если score ниже порога, возвращается
+   `по базе не нашёл, могу эскалировать`; генерация ответа не вызывается.
+5. При `RAG_RERANKER_ENABLED=true` кандидаты сортирует multilingual
+   `BAAI/bge-reranker-v2-m3`, остаётся `top_n=5`. Это optional heavyweight
+   dependency из extra `local-embeddings`; без неё сервис пишет warning и
+   сохраняет исходный порядок retrieval. При выключенном re-ranker первые
+   пять retrieval-кандидатов также передаются в контекст.
+6. Фрагменты нумеруются, а системный prompt требует подтверждать утверждения
+   ссылками `[1]`, `[2]`. JSON sources использует те же номера.
+
+История Postgres передаётся генерации целиком после существующего token-budget
+window. Поэтому «А для них?» понятен генератору; condense нужен только для
+качества поиска.
+
+Предметная smoke-пара для `scripts/verify_multiturn.py`:
+«Почему в Ansible лучше избегать command и shell?» →
+«А как для них обеспечить идемпотентность?». Вторая реплика должна быть
+переписана в самостоятельный Ansible-запрос и вернуть источники из
+`ansible_best_practices.md`/`ansible_playbook_practices.md`.
+
+## Порог отказа
+
+Кодовый default — `RAG_SCORE_THRESHOLD=0.3`. Это стартовое значение для cosine
+на OpenAI `text-embedding-3-small`, указанное в задании. Локальный Compose
+использует другую модель, `qwen3-embedding:4b`, поэтому в корневом `.env.example`
+зафиксирован откалиброванный порог `0.5`.
+
+Фактический прогон 27 июля 2026 года на полном 56-файловом корпусе:
+
+| Метка | min | median | max |
+| --- | ---: | ---: | ---: |
+| 5 предметных запросов | 0.644 | 0.702 | 0.770 |
+| 5 запросов вне базы | 0.207 | 0.305 | 0.367 |
+
+При `0.3` три negative-запроса проходили guard, поэтому этот порог для Qwen3 4B
+не принят. `0.5` лежит между наблюдаемым negative max `0.367` и positive min
+`0.644`: запас до каждого класса больше 0.13. Полные вопросы, score и исходное
+решение guard лежат в
+[`docs/rag_score_distribution.json`](rag_score_distribution.json);
+воспроизводящий скрипт — `scripts/calibrate_rag_threshold.py`. При смене корпуса
+или embedding-модели распределение нужно пересчитать.
+
+Score-guard дублируется правилом в системном prompt. Кодовая защита экономит
+answer-вызов LLM, а prompt защищает от ответа по внешним знаниям при ложноположительном
+retrieval.
+
+## API
+
+| Endpoint | Назначение |
+| --- | --- |
+| `POST /rag/query` | Синхронный одношаговый RAG-ответ |
+| `POST /chats` | Создать или получить stateful chat |
+| `POST /chats/{id}/messages` | Диалоговый SSE-поток |
+| `GET /chats/{id}/messages` | История из JSON/Postgres repository |
+| `POST /chats/{id}/messages/{mid}/feedback` | `up/down` и показанные sources |
+| `POST /documents/upload` | Сохранить документ и поставить ingestion в background, HTTP 202 |
+
+`POST /rag/query`:
 
 ```json
 {
-  "answer": "...",
-  "top_score": 0.721,
+  "question": "Почему shell нежелателен в Ansible task?"
+}
+```
+
+```json
+{
+  "answer": "Специализированный модуль проще сделать идемпотентным [1].",
+  "top_score": 0.737,
+  "confident": true,
   "sources": [
-    {"text": "...", "source": "ansible_best_practices.md", "score": 0.721}
+    {
+      "id": 1,
+      "file_name": "ansible_best_practices.md",
+      "page": 1,
+      "score": 0.737,
+      "snippet": "..."
+    }
   ]
 }
 ```
 
-Индекс создаётся один раз в `lifespan` приложения и сохраняется в `app.state.rag_service`; endpoint не пересоздаёт индекс на каждый запрос. Если RAG-инфраструктура недоступна на старте, основной FastAPI-сервис продолжает запускаться, а `POST /rag/query` возвращает `503` с кодом `rag_unavailable`.
+SSE каждое событие сериализует через JSON; переводы строк внутри delta остаются
+экранированными и не разрывают `data:` frame. Финальное событие:
 
-Живая HTTP-проверка выполнена 2026-07-15:
-
-```bash
-docker compose run --rm --no-deps -p 8001:8000 \
-  -e OPENAI_BASE_URL=http://host.docker.internal:11434/v1 \
-  -e QDRANT_URL=http://host.docker.internal:6333 \
-  -e CHAT_REPOSITORY=json \
-  app uvicorn app.main:app --host 0.0.0.0 --port 8000
-
-curl -sS -X POST http://localhost:8001/rag/query \
-  -H "Content-Type: application/json" \
-  -d '{"question":"Что делать, если секрет уже попал в diff?"}'
+```text
+data: {"type":"done","message_id":"...","confident":true,"sources":[...]}
 ```
 
-Ответ вернул `answer`, `top_score=0.554` и 3 источника; top-1 source — `secure_code_review.md`.
+Telegram-клиент читает этот поток, обновляет одно сообщение не чаще раза в
+700 мс, после завершения добавляет 👍/👎 и передаёт backend список показанных
+sources вместе с feedback.
 
-## LlamaIndex vs Bare-metal
+## Подтверждённая приёмка
 
-| Критерий | LlamaIndex | Bare-metal |
-| -------- | ---------- | ---------- |
-| Строк кода (ingestion + query, без импортов) | примерно 115 | примерно 155 |
-| Поддержка форматов из коробки | `SimpleDirectoryReader` плюс `llama-index-readers-file` умеют читать `.md`, `.txt`, `.pdf`, `.docx`, `.html` и другие форматы через reader'ы | Нужно вручную поддерживать каждый формат; сейчас добавлены `.md`, `.txt`, `.html`, `.pdf`, `.docx` |
-| Что дописать для PDF/DOCX | Подключить reader-пакет и положить файлы в корпус | Вызвать `pypdf`/`python-docx`, ограничить страницы и обработать сканы/битые файлы |
-| Что дописать для batch-ingestion / async | Настроить ingestion pipeline, batch size и async reader/vector-store операции | Самостоятельно писать batch embedding, retry, backpressure, async Qdrant/OpenAI клиенты |
-| Где удобнее дебажить top_score / source_nodes | Удобно смотреть `response.source_nodes`, но часть payload спрятана в формате LlamaIndex | Удобнее видеть каждый payload и score, потому что весь retrieval-контракт написан явно |
-| Где гибче подменять компоненты (re-ranker, chunker) | Быстрее заменить готовый компонент через Settings/pipeline | Максимальная гибкость, но каждый компонент и его контракт нужно поддерживать руками |
+Полный локальный прогон выполнен 27 июля 2026 года с Ollama
+`qwen3:8b`, `qwen3-embedding:4b`, Qdrant 1.14, PostgreSQL 16 и Redis 7.4:
 
-В дипломной версии логичнее оставить LlamaIndex как основной путь: он короче, лучше покрывает файловый ingestion и быстрее показывает полный RAG-cycle. Bare-metal версия остаётся рядом как учебное сравнение и как способ объяснить, что именно скрывают `SimpleDirectoryReader`, `SentenceSplitter`, `VectorStoreIndex` и `QueryEngine`. Для production-доработки всё равно понадобятся явные фильтры tenant/access, eval и observability вокруг retrieval.
+| Проверка | Фактический результат |
+| --- | --- |
+| Cold ingestion | `56 changed, 0 unchanged, 0 failed`, 1726 чанков |
+| Повторный ingestion | `0 changed, 56 unchanged, 0 failed`, 0 новых чанков |
+| Профильный `/rag/query` | top score `0.7598`, `confident=true`, пять sources и цитаты |
+| Внебазовый запрос | score `0.2963 < 0.5`, фиксированный отказ и событие `rag.score_guard_refusal` |
+| Multi-turn follow-up | condense сохранил Ansible-контекст, top score `0.7631` |
+| PDF upload | HTTP 202 за 4 мс, один чанк доступен в поиске примерно через 8 секунд |
+| Ошибка reader | повреждённые и повторно загруженные PDF получили уникальные имена `*.failed` |
+| Feedback | `up/down` и показанные sources записаны в PostgreSQL |
+| Telegram | реальный Bot API polling, backend SSE и финальное редактирование сообщения |
+| Compose | обычный `docker compose up -d` поднял app, bot, Qdrant, PostgreSQL и Redis |
 
-## Прогон 5 Вопросов
+После тестового PDF рабочая коллекция содержала 1727 точек. Этот upload хранится
+в runtime volume и не входит в репозиторный inventory из 56 файлов.
 
-Живой прогон выполнен 2026-07-15 через LlamaIndex-реализацию командой:
+Автоматические проверки финального состояния: backend — `93 passed, 6 skipped`;
+Telegram — `14 passed`. Отдельный Telegram-тест подтверждает схлопывание быстрых
+чанков при `MIN_EDIT_INTERVAL=0.7`.
+
+## Запуск
+
+Из корня workspace:
 
 ```bash
-docker compose run --rm --no-deps \
-  -e OPENAI_BASE_URL=http://host.docker.internal:11434/v1 \
-  -e QDRANT_URL=http://host.docker.internal:6333 \
-  -v ./scripts:/app/scripts:ro \
-  app python scripts/verify_rag_block03.py
+cp .env.example .env
+# заполнить BOT_TOKEN и при необходимости имена локальных Ollama-моделей
+docker compose up -d
 ```
 
-Использовались Ollama `qwen3`, embedding-модель `qwen3-embedding:4b`,
-Qdrant-коллекция `rag_block_03_diploma`, историческое
-`RAG_SIMILARITY_TOP_K=3` и `RAG_MIN_TOP_SCORE=0.2`. Текущий default top-K равен
-`10`; числа ниже относятся к прогону 2026-07-15 и не пересчитывались.
-
-### 3 хороших
-
-1. Вопрос: Почему в Ansible task лучше избегать command и shell?
-   Краткий ответ: `command` и `shell` хуже сохраняют идемпотентность, требуют явной проверки состояния, `creates`/`removes` или корректного `changed_when`; вместо них лучше использовать специализированные модули и handler для рестартов.
-   Top-1 source: `ansible_best_practices.md`, score `0.657`.
-   Оценка: релевантно.
-   Гипотеза: прямое совпадение по `Ansible`, `command`, `shell` и `идемпотентность`; retrieval попал в нужный документ.
-
-2. Вопрос: Что делать, если секрет уже попал в diff?
-   Краткий ответ: запросить ротацию секрета, убедиться, что значение удалено из истории, и обработать ситуацию по внутреннему incident-процессу.
-   Top-1 source: `secure_code_review.md`, score `0.553`.
-   Оценка: релевантно.
-   Гипотеза: термин `секрет` и фраза `попал в diff` напрямую совпали с security-чеклистом.
-
-3. Вопрос: Как безопасно добавить NOT NULL колонку в большую таблицу?
-   Краткий ответ: сначала добавить nullable-колонку, заполнить её батчами, затем отдельным коротким шагом применить `NOT NULL`; нельзя делать один большой `UPDATE`, который блокирует таблицу.
-   Top-1 source: `database_migration_review.md`, score `0.641`.
-   Оценка: релевантно.
-   Гипотеза: `NOT NULL`, `большая таблица` и сценарий backfill хорошо совпали с документом про миграции.
-
-### 1 средний
-
-4. Вопрос: Как отревьюить PR, где endpoint пишет в базу, вызывает внешний HTTP API и форматирует ответ в одной функции?
-   Краткий ответ: не принимать смешивание HTTP-валидации, бизнес-логики, БД, внешнего HTTP и форматирования ответа в одной функции; разделить код на endpoint, service, repository/client и проверить контракт ошибок.
-   Top-1 source: `api_contract_review.md`, score `0.660`; top-2 `architecture_review.md`, score `0.597`.
-   Оценка: релевантно.
-   Гипотеза: вопрос широкого типа; retrieval первым поднял API-контракт из-за слов `endpoint`, `форматирует ответ`, `HTTP API`, но второй источник дал архитектурные границы ответственности.
-
-### 1 вне базы
-
-5. Вопрос: Когда лучше высаживать томаты в открытый грунт?
-   Краткий ответ: `В корпусе RAG не нашлось достаточно релевантной информации для ответа.`
-   Top-1 source: `unrelated_fallback_control.md`, score `0.158`.
-   Оценка: fallback сработал корректно.
-   Гипотеза: вопрос намеренно вне базы review assistant; top score ниже `RAG_MIN_TOP_SCORE=0.2`, поэтому генерация была отсечена.
-
-Итог: фактический прогон подтвердил схему `3 хороших / 1 средний / 1 вне базы`. Для предметных вопросов top-1 или top-2 source соответствует ожидаемому документу, а внебазовый вопрос не привёл к выдуманному ответу.
+Compose поднимает app, Qdrant, Redis, PostgreSQL и bot. Индексирование, миграции
+и запуск API входят в command контейнера app; `docker exec` и ручной `pip
+install` не нужны. На первом старте embedding всего корпуса может занять
+несколько минут; healthcheck учитывает это через `start_period=5m`.

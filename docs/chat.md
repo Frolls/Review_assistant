@@ -8,6 +8,8 @@ flowchart LR
     Routes[app/chat/routes.py]
     Service[ChatService]
     Moderation[ModerationService]
+    RAG[RAGService]
+    Qdrant[(Qdrant corporate_rag)]
     Repo[ChatRepository Protocol]
     Json[(JSONL-файлы)]
     Postgres[(Postgres)]
@@ -18,7 +20,10 @@ flowchart LR
     Routes --> Service
     Service --> Moderation
     Service --> Repo
-    Service --> LLM
+    Service --> RAG
+    Service -->|"media"| LLM
+    RAG --> Qdrant
+    RAG --> LLM
     Repo --> Json
     Repo --> Postgres
     LLM --> OpenAI
@@ -33,7 +38,13 @@ API: полный контекст передаётся в каждом запр
 - клиент создаёт чат через `POST /chats`;
 - клиент отправляет пользовательское сообщение через `POST /chats/{chat_id}/messages`;
 - сервис проверяет вход через `ModerationService.check_input()`;
-- сервис при необходимости извлекает данные из `media`, сохраняет сообщение пользователя, формирует контекст, вызывает LLM в streaming-режиме и возвращает SSE-поток;
+- без `media` сервис передаёт историю в RAG: optional condense улучшает поиск
+  короткого follow-up, retrieval выполняется в Qdrant, а score guard может
+  вернуть фиксированный отказ без answer-вызова LLM;
+- при уверенном retrieval сервис формирует нумерованный контекст, передаёт
+  историю генерации, стримит ответ и сохраняет показанные sources в metadata
+  сообщения ассистента;
+- при наличии `media` сохраняется прежний multimodal flow без RAG retrieval;
 - после завершения потока сервис проверяет накопленный ответ через `ModerationService.check_output()` и сохраняет ответ ассистента.
 
 Сообщения отправляются как `multipart/form-data`: обязательное поле `content`
@@ -124,7 +135,8 @@ alembic upgrade head
 В Postgres-режиме дополнительно доступны:
 
 - `moderation_incidents` — журнал заблокированных входов/выходов;
-- `message_feedback` — оценки ответов ассистента с `UNIQUE (owner_external_id, message_id)`;
+- `message_feedback` — оценки ответов ассистента и показанные `sources` с
+  `UNIQUE (owner_external_id, message_id)`;
 - `broadcast_queue` — очередь admin broadcast-сообщений для Telegram-интерфейса.
 
 Для локальных contract-тестов репозитория укажите `TEST_DATABASE_URL` на
@@ -185,8 +197,13 @@ SSE-поток stateful-чата возвращает JSON-события:
 ```text
 data: {"type":"token","delta":"..."}
 
-data: {"type":"done","message_id":"..."}
+data: {"type":"done","message_id":"...","confident":true,"sources":[...]}
 ```
+
+Переводы строк внутри `delta` кодируются JSON-экранированием, поэтому каждый
+SSE event остаётся одной строкой `data:`. При срабатывании score guard приходит
+текст `по базе не нашёл, могу эскалировать`, `confident=false` и пустой массив
+`sources`.
 
 Получить сообщения в хронологическом порядке:
 
@@ -205,7 +222,7 @@ curl -X DELETE http://localhost:8000/chats/<chat_id>/messages
 ```bash
 curl -X POST http://localhost:8000/chats/<chat_id>/messages/<message_id>/feedback \
   -H 'Content-Type: application/json' \
-  -d '{"value":"down"}'
+  -d '{"value":"down","sources":[{"id":1,"file_name":"ansible.md","page":1,"score":0.73,"snippet":"..."}]}'
 ```
 
 Admin endpoint'ы защищены заголовком `X-Admin-Token`:

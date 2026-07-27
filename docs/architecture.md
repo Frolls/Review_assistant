@@ -19,14 +19,17 @@
 
 ### 1. Chat
 
-Пользователь отправляет обычный вопрос без review-orchestration:
+Для stateless endpoint'ов `/chat` и `/chat/stream` пользователь отправляет
+обычный вопрос без review-orchestration:
 
 - короткий LLM-запрос;
 - без retrieval;
 - без server-side tools;
 - с Redis cache-aside для повторяющихся запросов.
 
-Этот режим нужен как самый простой и дешёвый путь для UI, smoke-check и интеграций.
+Stateful `/chats/{id}/messages` использует другой путь: история хранится в
+Postgres, вопрос проходит RAG retrieval/score guard, а ответ стримится с
+цитатами и sources. Этот режим используется Telegram-ботом.
 
 ### 2. Interactive Review
 
@@ -36,7 +39,9 @@
 - какие правила применимы к этому куску diff;
 - что проверить в импортах, idempotence, логировании и т.д.
 
-Здесь главный приоритет — быстрый ответ, но уже с возможностью orchestration: retrieval по правилам ревью, ограниченные tools и policy-управление.
+Реализованный путь interactive review — синхронный `POST /rag/query` и
+stateful SSE `POST /chats/{id}/messages`: top-10 retrieval по Qdrant, code-level
+score guard, optional top-5 re-ranking и генерация по нумерованному контексту.
 
 ### 3. Full PR Review
 
@@ -63,8 +68,8 @@ flowchart LR
     subgraph SVCL["2. Service Layer"]
         API["FastAPI / review-service\nHTTP API + validation + cache access\nper-process LLM concurrency bulkhead"]
         ORCH["Unified Orchestrator\nmode = chat | review | full_pr_review"]
-        CHAT["Chat mode\nsimple completion / stream"]
-        REVIEW["Review mode\nretrieval + tool policy + tool loop"]
+        CHAT["Stateless chat\nsimple completion / stream"]
+        REVIEW["Stateful / RAG review\ncondense + retrieval + score guard"]
         FULL["Full PR Review mode\nasync job orchestration"]
         PRFETCH["PR fetcher\nGitHub/GitLab API\ngit diff / patch loader"]
         CHUNK["Diff chunker\nsplit by file/hunk\ntoken budget per chunk"]
@@ -84,8 +89,8 @@ flowchart LR
 
     subgraph DL["4. Data Layer"]
         CACHE["Redis Cache-Aside\nTTL 15m\nkey = sha256(model_alias + normalized_messages + temperature + kb_version)"]
-        PG["Postgres\nrequest log, cost, feedback, audit"]
-        KB["Review retrieval\nQdrant vector store\nJSON / Markdown sources"]
+        PG["Postgres\nchat history, feedback sources, audit"]
+        KB["Review retrieval\nQdrant corporate_rag\nPDF / DOCX / HTML / Markdown"]
         S3["S3 / MinIO optional\nlarge diff snapshots, prompt artifacts"]
     end
 

@@ -1,5 +1,38 @@
 # Changelog
 
+## [2026-07-27]
+
+### Added
+
+- Added explicit PDF, DOCX, HTML, and Markdown ingestion in `app/services/ingestion.py`, including path-derived metadata, DOCX author extraction, stable document ids, and embedding metadata exclusions.
+- Added a persistent LlamaIndex `IngestionPipeline` with `SimpleDocumentStore`, `DocstoreStrategy.UPSERTS`, `SentenceSplitter(256/32)`, OpenAI-compatible embeddings, and `QdrantVectorStore`.
+- Added `scripts/ingest.py`, the reproducible PEP downloader, score calibration and multi-turn verification scripts, a 56-document domain corpus, and the data inventory.
+- Added `POST /documents/upload` with HTTP 202, background incremental ingestion, live RAG refresh, and `.failed` handling for unreadable files.
+- Added feedback source persistence through Alembic revision `20260727_0004`.
+
+### Changed
+
+- Rebuilt `app/services/rag.py` as a retrieval-first pipeline with top-10 retrieval, a pre-generation score guard, optional BGE re-ranking to top-5, numbered citations, structured sources, and `confident`.
+- Integrated RAG into the existing Postgres-backed stateful chat flow, including optional history-aware condense for retrieval and token-by-token SSE with final `sources`, `confident`, and `message_id`.
+- Changed the local deployment baseline to `qwen3-embedding:4b`, 2560-dimensional vectors, the `corporate_rag` collection, and a calibrated Compose threshold of `0.5`.
+- Updated the root Compose stack to run ingestion and migrations automatically and to persist the corpus, ingestion docstore, Qdrant, PostgreSQL, and Redis data.
+- Updated RAG, chat, inventory, README, and deployment documentation to match the implemented multi-format and multi-turn flow.
+
+### Fixed
+
+- Fixed out-of-corpus handling so answer generation is skipped and returns the exact grounded fallback while logging `rag.score_guard_refusal`.
+- Fixed short follow-up retrieval when a local condense model returns an empty or subjectless rewrite by retaining the previous user question as an anchor.
+- Fixed repeated unreadable uploads so every failed source receives a unique final `.failed` name.
+- Fixed cold-start health reporting by allowing the initial 4B embedding pass to complete before the app is marked unhealthy.
+
+### Verified
+
+- Verified cold ingestion: `56 changed, 0 unchanged, 0 failed`, 1726 chunks; verified the repeated run: `0 changed, 56 unchanged`, 0 chunks.
+- Verified live `/rag/query` citations at score `0.7598`, multi-turn Ansible retrieval at `0.7631`, and score-guard refusal at `0.2963 < 0.5` without answer generation.
+- Verified PDF upload returns HTTP 202 and becomes retrievable in about 8 seconds; verified feedback and shown sources are persisted in PostgreSQL.
+- Verified the root `docker compose up -d` starts app, bot, Qdrant, PostgreSQL, and Redis, and verified real Telegram polling and handled RAG updates.
+- Verified the final backend suite: `93 passed, 6 skipped`; verified Ruff on all changed backend files.
+
 ## [2026-07-16]
 
 ### Added

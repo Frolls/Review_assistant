@@ -1,0 +1,72 @@
+{
+  "measured_at": "2026-07-27",
+  "embedding_model": "qwen3-embedding:4b",
+  "collection": "corporate_rag_check",
+  "corpus_files": 56,
+  "threshold_during_measurement": 0.3,
+  "selected_threshold": 0.5,
+  "summary": {
+    "positive": {
+      "min": 0.6437533,
+      "median": 0.701768,
+      "max": 0.7703475
+    },
+    "negative": {
+      "min": 0.20702843,
+      "median": 0.3049646,
+      "max": 0.36713913
+    }
+  },
+  "queries": [
+    {
+      "label": "positive",
+      "question": "Почему в Ansible task лучше избегать command и shell?",
+      "top_score": 0.7369343
+    },
+    {
+      "label": "positive",
+      "question": "Что делать, если секрет уже попал в diff?",
+      "top_score": 0.6437533
+    },
+    {
+      "label": "positive",
+      "question": "Как безопасно добавить NOT NULL колонку в большую таблицу?",
+      "top_score": 0.69573784
+    },
+    {
+      "label": "positive",
+      "question": "Для чего в Python нужен Protocol?",
+      "top_score": 0.701768
+    },
+    {
+      "label": "positive",
+      "question": "Как работает structural pattern matching в Python?",
+      "top_score": 0.7703475
+    },
+    {
+      "label": "negative",
+      "question": "Когда лучше высаживать томаты в открытый грунт?",
+      "top_score": 0.20702843
+    },
+    {
+      "label": "negative",
+      "question": "Как приготовить яблочный пирог?",
+      "top_score": 0.3049646
+    },
+    {
+      "label": "negative",
+      "question": "Кто выиграл последний чемпионат мира по футболу?",
+      "top_score": 0.34127802
+    },
+    {
+      "label": "negative",
+      "question": "Какая завтра погода в Екатеринбурге?",
+      "top_score": 0.36713913
+    },
+    {
+      "label": "negative",
+      "question": "Как выбрать зимние шины для автомобиля?",
+      "top_score": 0.26595843
+    }
+  ]
+}

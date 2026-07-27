@@ -11,7 +11,7 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - OpenAI-совместимый backend выполняет генерацию ответа
 - embedding-сервис готовит нормализованные векторы для базы знаний PR-review ассистента
 - Qdrant хранит индекс `documents` с metadata-фильтрами по `source`, `created_at`, `tenant_id`, `category`, `access_level` и `archived`
-- отдельный LlamaIndex RAG индекс `rag_block_03_diploma` отвечает на вопросы по 10-документному корпусу code-review чеклистов с цитатами на источники
+- LlamaIndex RAG-индекс `corporate_rag` отвечает по 56 профильным HTML/Markdown-документам и принимает новые PDF/DOCX с цитатами на источники
 
 Сервис не реализует собственную модель. Его зона ответственности: HTTP-контракт, вызов backend, кеширование, RAG orchestration, служебные endpoint'ы и инфраструктура проверки качества ответов.
 
@@ -19,7 +19,8 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 
 - `POST /chat` — обычный completion-ответ с `cached: true/false`
 - `POST /chat/stream` — SSE-поток с `data: ...` и финальным `data: [DONE]`
-- `POST /rag/query` — RAG-ответ по локальному корпусу review-документов с `answer`, `top_score` и списком `sources`
+- `POST /rag/query` — синхронный RAG-ответ с `answer`, `confident`, `top_score` и списком цитируемых `sources`
+- `POST /documents/upload` — загрузка PDF/DOCX/HTML/Markdown с фоновой UPSERT-индексацией (`202 Accepted`)
 - `POST /chats` и `/chats/{chat_id}/messages` — stateful-чат с серверной историей, SSE-ответом и JSON/Postgres-хранилищем
 - `POST /chats/{chat_id}/messages` принимает `multipart/form-data`: поле `content` и опциональный файл `media` для изображений, аудио, PDF и DOCX
 - moderation для stateful-чата: keyword/regex слой из `app/moderation/moderation_keywords.yaml`, опциональный OpenAI Moderation API слой и безопасное логирование инцидентов без сырого текста
@@ -35,7 +36,9 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - OpenInference/Phoenix tracing для `/chat` и LLM-вызовов с `gen_ai.*` атрибутами
 - PII-redaction для email, российских телефонов, карт, ИНН и паспортов перед записью prompt/output preview в логи
 - embedding-сервис для RAG: `embed_texts()`, `embed_query()`, `embed_documents()`, батчинг, retry на сетевые сбои, sqlite-кеш между рестартами и нормализация векторов
-- LlamaIndex RAG pipeline: `SimpleDirectoryReader -> SentenceSplitter -> QdrantVectorStore -> VectorStoreIndex -> QueryEngine`
+- multi-format LlamaIndex ingestion: explicit PDF/DOCX/HTML/Markdown readers → metadata enrichment → `SentenceSplitter(256/32)` → `OpenAIEmbedding` → `QdrantVectorStore`
+- persistent `SimpleDocumentStore` with `DocstoreStrategy.UPSERTS`, so unchanged documents are not embedded again
+- retrieval-first query pipeline: optional history-aware condense → top-10 retrieval → score guard → optional BGE re-ranking to top-5 → numbered context and citations
 - recursive chunking с границами абзацев и русских предложений; выбранный конфиг `256/32`, `top-K=10`
 - bare-metal RAG pipeline для сравнения: чтение файлов, чанкинг, embeddings, Qdrant `query_points`, сборка prompt и OpenAI-compatible chat completion без LlamaIndex
 - retrieval evaluation на 36 Python/Ansible-вопросах и 10 документах: Hit Rate@5, MRR@10, Recall@10, A/B chunking и embedding-моделей
@@ -86,6 +89,7 @@ app/
     providers.py
   routers/
     chat.py
+    documents.py
     health.py
     models.py
     rag.py
@@ -96,6 +100,7 @@ app/
   services/
     chunking.py
     embeddings.py
+    ingestion.py
     llm.py
     rag.py
     rag_baremetal.py
@@ -123,8 +128,10 @@ docs/
   chat.md
   architecture.md
   chunking_experiment.md
+  data_inventory.md
   embeddings.md
   rag.md
+  rag_score_distribution.json
   vector_store.md
   observability/
     README.md
@@ -137,13 +144,17 @@ docs/
     config.yaml
     config.production_like.yaml
 scripts/
+  calibrate_rag_threshold.py
   compare_embedding_latency.py
+  download_data.py
   embedding_smoke.py
+  ingest.py
   load_test.py
   run_chunking_experiment.py
   run_embedding_benchmark.py
-  verify_rag_block03.py
+  verify_multiturn.py
 data/
+  python-peps/
   retrieval-corpus/
   review_knowledge.json
   rag-block-03/
@@ -190,14 +201,17 @@ eval/
 - `QDRANT_URL` — URL Qdrant; локально `http://localhost:6333`, в compose `http://qdrant:6333`
 - `QDRANT_API_KEY` — API key Qdrant; в production должен передаваться из secret manager
 - `QDRANT_COLLECTION` — имя коллекции vector store, по умолчанию `documents`
-- `RAG_INPUT_DIR` — каталог корпуса для Block 03 RAG, по умолчанию `data/rag-block-03`
-- `RAG_COLLECTION` — отдельная LlamaIndex-коллекция Qdrant, по умолчанию `rag_block_03_diploma`
+- `RAG_INPUT_DIR` — каталог основного RAG-корпуса, по умолчанию `data`
+- `RAG_PIPELINE_STORAGE_DIR` — постоянный LlamaIndex docstore для определения changed/unchanged, по умолчанию `var/ingestion`
+- `RAG_COLLECTION` — основная LlamaIndex-коллекция Qdrant, по умолчанию `corporate_rag`
 - `RAG_BAREMETAL_COLLECTION` — отдельная bare-metal коллекция Qdrant, по умолчанию `rag_block_03_diploma_baremetal`
-- `RAG_CHUNK_SIZE` и `RAG_CHUNK_OVERLAP` — параметры чанкинга, по умолчанию `512` и `64`
+- `RAG_CHUNK_SIZE` и `RAG_CHUNK_OVERLAP` — параметры чанкинга, по умолчанию `256` и `32`
 - `RAG_SIMILARITY_TOP_K` — число retrieval-кандидатов, по умолчанию `10`, минимум `3`
-- `RAG_MIN_TOP_SCORE` — порог честного fallback-а для вопросов вне корпуса, по умолчанию `0.2`
+- `RAG_SCORE_THRESHOLD` — порог честного fallback-а до вызова LLM: кодовый default `0.3`, для `qwen3-embedding:4b` откалибровано `0.5`
+- `RAG_CONDENSE_ENABLED` — переписывает короткий follow-up в самостоятельный поисковый запрос с учётом истории
+- `RAG_RERANKER_ENABLED` — включает optional BGE re-ranking после score guard
 - `RAG_RERANKER_MODEL` — optional cross-encoder для retrieval evaluation, по умолчанию `BAAI/bge-reranker-v2-m3`
-- `RAG_RERANKER_TOP_N` — число кандидатов после re-rank, по умолчанию `10`
+- `RAG_RERANKER_TOP_N` — число кандидатов после re-rank, по умолчанию `5`
 - `VISION_MODEL` — модель для stateful-чата с изображениями; если не задана, используется `DEFAULT_MODEL`
 - `LLM_NUM_CTX` — опциональный размер контекста для OpenAI-compatible backend'ов, которые принимают `extra_body.options.num_ctx`
 - `LLM_MAX_CONCURRENCY` — ограничение параллелизма
@@ -245,7 +259,10 @@ redaction. Вместо полного prompt используются:
 - `input.value` и `output.value` в `chat.request` заменяются на `[redacted]`;
 - auto-instrumented span `ChatCompletion` скрывает сырой `LLM Input` и `LLM Output`; в Phoenix эти поля отображаются как `__REDACTED__`.
 
-Trace Phoenix хранятся в docker volume `phoenix-data` в базе `/data/phoenix.db`.
+При запуске optional observability-стека из `Review_bot/compose.yaml` trace
+Phoenix хранятся в volume `phoenix-data` в базе `/data/phoenix.db`. Корневой
+дипломный Compose Phoenix не поднимает и использует
+`PHOENIX_TRACING_ENABLED=false` из `.env.example`.
 Structured logs сохраняются в stdout контейнера `app`. Кеш ответов хранится
 отдельно в `Redis`.
 
@@ -307,32 +324,20 @@ uv run python scripts/run_chunking_experiment.py \
 `qwen3-embedding:4b`/`0.6b` зафиксированы в
 `docs/chunking_experiment.md`.
 
-Основная Qdrant-коллекция `documents` загружается из
-`data/review_knowledge.json`. Отдельный endpoint `/rag/query` использует
-Block 03 corpus и коллекцию `rag_block_03_diploma`. Payload schema, фильтры и
-результаты сравнения `COSINE`/`DOT` описаны в `docs/vector_store.md`.
+Основная Qdrant-коллекция `/rag/query` называется `corporate_rag` и загружается
+из multi-format корпуса `data/`. Архитектура, калибровка score guard и HTTP/SSE
+контракты описаны в `docs/rag.md`.
 
-## Block 03 RAG
+## Multi-format RAG
 
-Учебный RAG-инкремент использует отдельный корпус `data/rag-block-03` из 10 Markdown-документов: 9 доменных code-review чеклистов и 1 заведомо нерелевантный документ для fallback-проверки. Основная реализация построена на LlamaIndex, а рядом лежит bare-metal версия для сравнения того же pipeline без фреймворка.
+Основной корпус содержит 56 профильных документов по Python/PEP, Ansible и
+code review. Ingestion поддерживает PDF, DOCX, HTML и Markdown, обогащает
+metadata и использует постоянный docstore с `DocstoreStrategy.UPSERTS`.
 
-Основной путь:
-
-```bash
-docker compose run --rm --no-deps \
-  -e OPENAI_BASE_URL=http://host.docker.internal:11434/v1 \
-  -e QDRANT_URL=http://host.docker.internal:6333 \
-  app python -m app.services.rag
-```
-
-Сравнительный bare-metal путь:
+Индексирование:
 
 ```bash
-docker compose run --rm --no-deps \
-  -e OPENAI_BASE_URL=http://host.docker.internal:11434/v1 \
-  -e QDRANT_URL=http://host.docker.internal:6333 \
-  -e EMBEDDING_CACHE_PATH=/tmp/embeddings.sqlite \
-  app python -m app.services.rag_baremetal
+python scripts/ingest.py data/
 ```
 
 HTTP endpoint:
@@ -343,23 +348,20 @@ curl -sS -X POST http://localhost:8000/rag/query \
   -d '{"question":"Что делать, если секрет уже попал в diff?"}'
 ```
 
-Ответ содержит `answer`, `top_score` и до `RAG_SIMILARITY_TOP_K`
-элементов в `sources`; текущий default равен `10`. Индекс создаётся
-один раз в `lifespan`; если RAG недоступен на старте, `/rag/query`
+Ответ содержит `answer`, `confident`, `top_score` и до
+`RAG_RERANKER_TOP_N` элементов в `sources`; ограничение применяется и при
+выключенном re-ranker. Индекс подключается
+в `lifespan`; если RAG недоступен на старте, `/rag/query`
 возвращает `503` с `detail.code == "rag_unavailable"`, не останавливая
 весь FastAPI-сервис.
 
-Повторяемый живой прогон 3 хороших / 1 среднего / 1 внебазового вопроса:
+Профильная multi-turn проверка:
 
 ```bash
-docker compose run --rm --no-deps \
-  -e OPENAI_BASE_URL=http://host.docker.internal:11434/v1 \
-  -e QDRANT_URL=http://host.docker.internal:6333 \
-  -v ./scripts:/app/scripts:ro \
-  app python scripts/verify_rag_block03.py
+python scripts/verify_multiturn.py
 ```
 
-Фактические результаты, решение по коллекциям и сравнение LlamaIndex vs bare-metal описаны в `docs/rag.md`.
+Фактические параметры и результаты калибровки описаны в `docs/rag.md`.
 
 Для локального smoke/full-прогона через Ollama можно использовать проверенную пару `qwen2.5:14b` + `qwen2.5:14b`:
 
@@ -444,7 +446,8 @@ OLLAMA_BASE_URL=http://host.docker.internal:11434/v1
 OLLAMA_API_KEY=ollama
 ```
 
-4. При необходимости поднять Phoenix UI для локального просмотра trace:
+4. При необходимости поднять Phoenix UI для локального просмотра trace из
+   каталога `Review_bot/`:
 
 ```bash
 docker compose up -d phoenix
@@ -473,33 +476,38 @@ http://localhost:8000/docs
 
 ## Запуск через Docker Compose
 
-Каноничный compose-файл хранится в backend-репозитории: `Review_bot/compose.yaml`.
-Он поднимает полный контур: `app`, `bot`, `postgres`, `redis` и `phoenix`.
-Данные Postgres сохраняются в volume `pg-data`; Redis и Phoenix используют
-отдельные volume.
+Каноничный compose-файл находится в корне workspace рядом с каталогами
+`Review_bot/` и `telegram-review-bot/`. Он поднимает `app`, `bot`, `postgres`,
+`redis` и `qdrant`. Корпус, ingestion docstore и данные сервисов сохраняются
+в именованных volumes.
 
-1. Подготовить `.env`:
+1. Из корня workspace подготовить `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-2. Заполнить в `.env` как минимум `OPENAI_API_KEY` и при необходимости `OPENAI_BASE_URL`.
+2. Заполнить `BOT_TOKEN` и параметры OpenAI-compatible backend. Локальная
+   конфигурация рассчитана на уже запущенный Ollama с `qwen3:8b` и
+   `qwen3-embedding:4b`.
 
 3. Поднять стек:
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
-Команда из `Review_bot/` поднимет backend-стек: `app`, `redis`, `postgres`,
-`phoenix` и Telegram-бота из соседнего каталога `telegram-review-bot`.
+На первом запуске контейнер `app` индексирует встроенный корпус до запуска
+Uvicorn. Для локальной 4B embedding-модели cold start может занимать несколько
+минут, поэтому healthcheck имеет `start_period=5m`. Следующие старты используют
+постоянный docstore и завершают ingestion с `0 changed, N unchanged`.
 
 В `compose.yaml` для сервиса `app` добавлен alias `host.docker.internal:host-gateway`. Он нужен в Linux-сценарии, когда OpenAI-compatible backend работает на хосте, например локальная `Ollama`. Для удалённых backend'ов или контейнерных endpoint'ов эта запись не влияет на работу, если `host.docker.internal` не используется в `OPENAI_BASE_URL`.
 
 4. Проверить сервис:
 
 ```bash
+docker compose ps
 curl http://127.0.0.1:8000/health
 curl http://127.0.0.1:8000/ready
 curl http://127.0.0.1:8000/docs
@@ -507,45 +515,16 @@ curl http://127.0.0.1:8000/docs
 
 `/health` всегда отвечает `200`, пока жив процесс FastAPI. `/ready` отвечает `200`, только когда доступен `Redis`; если Redis недоступен, endpoint вернёт `503`.
 
-Phoenix UI после старта доступен на `http://127.0.0.1:6006`. Для появления trace достаточно выполнить любой запрос в `/chat` или `/chat/stream`.
-
-`compose.override.yaml` используется для локальной разработки: при обычном `docker compose up` он включает `uvicorn --reload` и bind mount только для каталога `app/`, чтобы изменения Python-кода подхватывались без пересборки образа.
-
 ## Самопроверка контейнеризации
 
-После `docker compose up -d --build` можно проверить стек так:
+После `docker compose up -d` ожидается:
 
-```bash
-docker compose ps
-curl -s http://127.0.0.1:8000/health
-curl -s http://127.0.0.1:8000/ready
-curl -s http://127.0.0.1:8000/docs > /dev/null
-docker compose exec -T app id
-docker compose exec -T redis redis-cli ping
-curl -s http://127.0.0.1:6006 > /dev/null
-docker images llm-service:v1
-docker run --rm --entrypoint ls llm-service:v1 -la /app
-git ls-files | grep -E '\.env$'
-```
-
-Ожидаемый результат:
-
-- `app` и `redis` в статусе `healthy`
-- `postgres` в статусе `healthy`, а данные сохраняются в volume `pg-data`
-- `phoenix` в статусе `running`
-- `/health` -> `200` и `{"status":"ok"}`
-- `/ready` -> `200` и `{"status":"ok","redis":"up"}`
-- UI Phoenix открывается на `http://127.0.0.1:6006`
-- `docker compose exec -T app id` показывает `uid=1000(appuser)`
-- `docker compose exec -T redis redis-cli ping` возвращает `PONG`
-- в `/app` внутри образа нет `.env`, `.git`, `tests/`
-- `git ls-files | grep -E '\.env$'` ничего не выводит
-
-Проверка на локальной машине показала:
-
-- `docker compose up -d --build` поднимает стек одной командой
-- размер итогового образа `llm-service:v1` — `163 MB`
-- при остановке `redis` endpoint `/health` остаётся `200`, а `/ready` становится `503`
+- `app`, `postgres`, `qdrant` и `redis` работают, healthcheck приложения
+  проходит;
+- bot запускает Telegram polling и обращается к backend по `http://app:8000`;
+- `/ready` возвращает `{"status":"ok","redis":"up"}`;
+- startup-log повторного запуска содержит `0 changed, N unchanged`;
+- ручные `docker exec` и `pip install` для запуска стека не требуются.
 
 ## Быстрый старт через Ollama
 
@@ -654,7 +633,7 @@ Feedback по ответу ассистента:
 curl -X POST \
   http://127.0.0.1:8000/chats/<chat_id>/messages/<message_id>/feedback \
   -H 'Content-Type: application/json' \
-  -d '{"value":"up"}'
+  -d '{"value":"up","sources":[{"id":1,"file_name":"ansible.md","page":1,"score":0.73,"snippet":"..."}]}'
 ```
 
 Подробности по архитектуре, стратегии контекста, Alembic-миграции и переключению
@@ -681,6 +660,9 @@ LiteLLM virtual keys/teams. Решение и границы ответстве�
 uv run pytest
 uv run python -m ruff check app tests scripts
 ```
+
+Финальный проверенный результат основной suite: `93 passed, 6 skipped`.
+RAG-приёмка и фактические score приведены в [docs/rag.md](docs/rag.md).
 
 ## Smoke-проверка через uvicorn + curl
 
