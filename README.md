@@ -259,10 +259,9 @@ redaction. Вместо полного prompt используются:
 - `input.value` и `output.value` в `chat.request` заменяются на `[redacted]`;
 - auto-instrumented span `ChatCompletion` скрывает сырой `LLM Input` и `LLM Output`; в Phoenix эти поля отображаются как `__REDACTED__`.
 
-При запуске optional observability-стека из `Review_bot/compose.yaml` trace
-Phoenix хранятся в volume `phoenix-data` в базе `/data/phoenix.db`. Корневой
-дипломный Compose Phoenix не поднимает и использует
-`PHOENIX_TRACING_ENABLED=false` из `.env.example`.
+При запуске observability-стека из `Review_bot/compose.yaml` или корневого
+`compose.yaml` trace Phoenix хранятся в volume `phoenix-data` в базе
+`/data/phoenix.db`.
 Structured logs сохраняются в stdout контейнера `app`. Кеш ответов хранится
 отдельно в `Redis`.
 
@@ -271,19 +270,31 @@ Structured logs сохраняются в stdout контейнера `app`. К�
 
 ## Testing и evaluation
 
-Быстрые unit-тесты запускаются без API-ключей и без сети:
+Eval-зависимости не устанавливаются на хост и не входят в production image.
+Проверка импортов и полный A/B-прогон выполняются в одноразовом Docker image:
 
 ```bash
-uv run pytest tests/unit/ -m "not llm"
+docker compose up -d qdrant phoenix
+docker compose --profile eval run --rm eval python scripts/verify_eval.py
+docker compose --profile eval run --rm eval python scripts/prepare_eval_collections.py
+docker compose --profile eval run --rm eval python scripts/run_ab_evals.py
+docker compose --profile eval run --rm eval python scripts/build_eval_report.py
 ```
 
-Generation evaluation живёт отдельно от `tests/`, потому что это
-медленный ручной прогон с production model и judge model:
+Локальный judge использует OpenAI-compatible endpoint Ollama:
+`qwen2.5:14b`; judge embeddings — `qwen3-embedding:4b`. Облачные ключи не
+требуются. Golden dataset и timestamped CSV/JSON лежат в `tests/eval/`,
+итоговый отчёт — в `docs/rag_evaluation.md`.
+
+Сырые пары TestsetGenerator также создаются внутри eval image:
 
 ```bash
-uv run python eval/run_evaluation.py --golden eval/golden_dataset.json --judge gpt-5.2 --out eval/runs/$(date +%F).json
-uv run python eval/check_thresholds.py
+docker compose --profile eval run --rm eval \
+  python scripts/generate_golden.py --size 32 --model qwen2.5:14b
 ```
+
+После генерации `tests/eval/golden_dataset_raw.csv` обязательно вычитывается
+вручную; рабочий `golden_dataset.json` не заменяется сырым CSV автоматически.
 
 Embedding mini-benchmark проверяет, что выбранная embedding-модель ставит
 релевантный фрагмент выше нерелевантного для review-вопросов по Python, Ansible,

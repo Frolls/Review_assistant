@@ -1,0 +1,32 @@
+{
+  "generated_at": "2026-07-28T17:32:21.215834+00:00",
+  "label": "generation_qwen35",
+  "golden": "tests/eval/golden_dataset.json",
+  "rows": 35,
+  "successful_rows": 35,
+  "configuration": {
+    "production_model": "qwen3.5:9b",
+    "request_timeout": 180.0,
+    "judge_provider": "openai",
+    "judge_model": "qwen2.5:14b",
+    "judge_embedding_model": "qwen3-embedding:4b",
+    "judge_cache": "tests/eval/.ragas_cache",
+    "rag_collection": "rag_eval_chunk_512",
+    "chunk_size": 512,
+    "chunk_overlap": 32,
+    "top_k": 10,
+    "reranker_enabled": false,
+    "reranker_model": "BAAI/bge-reranker-v2-m3",
+    "reranker_top_n": 5,
+    "score_threshold": 0.3
+  },
+  "aggregates": {
+    "faithfulness": 0.795986394557823,
+    "answer_relevancy": 0.6208123957546872,
+    "context_precision": 0.9616666666290812,
+    "context_recall": 0.9885714285714287,
+    "has_citation": 0.8857142857142857,
+    "average_latency_ms": 61355.86565714286
+  },
+  "csv": "tests/eval/results/2026-07-28_173221_generation_qwen35.csv"
+}

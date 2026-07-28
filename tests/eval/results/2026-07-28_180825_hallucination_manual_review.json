@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-07-28T18:08:25Z",
+  "source_csv": "tests/eval/results/2026-07-28_180237_hallucination_live.csv",
+  "rows": 23,
+  "evaluator_hallucinated": 1,
+  "confirmed_hallucinated": 0,
+  "false_positives": 1,
+  "reviewed_cases": [
+    {
+      "span_id": "b318e6b04a70c75e",
+      "trace_id": "d15e55bc2a38a265dd1c03f263c674e7",
+      "evaluator_label": "hallucinated",
+      "manual_label": "factual",
+      "diagnosis": "Ответ корректно указывает, что список failed_when объединяется неявным AND, а для срабатывания при любом условии нужен явный OR. Explanation evaluator противоречит этому и является false positive."
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-07-28T16:33:28.879318+00:00",
+  "label": "chunk_512",
+  "golden": "tests/eval/golden_dataset.json",
+  "rows": 35,
+  "successful_rows": 35,
+  "configuration": {
+    "production_model": "qwen3:latest",
+    "judge_provider": "openai",
+    "judge_model": "qwen2.5:14b",
+    "judge_embedding_model": "qwen3-embedding:4b",
+    "judge_cache": "tests/eval/.ragas_cache",
+    "rag_collection": "rag_eval_chunk_512",
+    "chunk_size": 512,
+    "chunk_overlap": 32,
+    "top_k": 10,
+    "reranker_enabled": false,
+    "reranker_model": "BAAI/bge-reranker-v2-m3",
+    "reranker_top_n": 5,
+    "score_threshold": 0.3
+  },
+  "aggregates": {
+    "faithfulness": 0.7667913832199547,
+    "answer_relevancy": 0.7915824611588702,
+    "context_precision": 0.9592857142481884,
+    "context_recall": 0.9885714285714287,
+    "has_citation": 1.0,
+    "average_latency_ms": 34106.511628571425
+  },
+  "csv": "tests/eval/results/2026-07-28_163328_chunk_512.csv"
+}

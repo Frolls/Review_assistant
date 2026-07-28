@@ -1,5 +1,37 @@
 # Changelog
 
+## [2026-07-28]
+
+### Added
+
+- Added a 35-question, manually reviewed RAGAS golden dataset alongside the raw `TestsetGenerator` output and timestamped per-row CSV/aggregate JSON artifacts.
+- Added Docker-only evaluation tooling for RAGAS 0.4 `Faithfulness`, `AnswerRelevancy`, `ContextPrecision`, `ContextRecall`, and a structured `has_citation` discrete metric backed by a local Ollama judge.
+- Added reproducible Python orchestration for eval collection preparation, chunking and generation A/B experiments, report generation, dependency verification, and a 23-query Phoenix trace smoke run.
+- Added Phoenix/OpenInference tracing for the FastAPI RAG lifespan, including RAG root spans, LlamaIndex retriever and embedding spans, LLM prompt/response spans, similarity scores, and token usage.
+- Added post-factum Phoenix `HallucinationEvaluator` annotations, a manual-review annotation for the single evaluator false positive, and screenshots of retrieval and annotation diagnostics.
+
+### Changed
+
+- Split evaluation and tracing packages into the `eval` and `tracing` optional dependency extras and added dedicated Docker build targets so production dependencies remain isolated.
+- Replaced the legacy LlamaIndex OpenAI embedding integration with the project embedding adapter and pinned compatible LlamaIndex/OpenInference dependency lines.
+- Added `RAGService.evaluate_inputs()` to return one generated answer and the full retrieved contexts from a single retrieval while leaving the `/rag/query` response contract unchanged.
+- Replaced shell evaluation wrappers with project-native Python entry points and documented the Docker/Ollama workflow.
+- Kept the final production baseline on `qwen3:latest`, `qwen3-embedding:4b`, chunk size/overlap `256/32`, top-K `10`, and re-ranking disabled.
+
+### Fixed
+
+- Fixed citation fallback detection so Python type syntax such as `list[str]` is not mistaken for a source marker and explicit numeric citations are scored deterministically.
+- Fixed the hallucination workflow so evaluator labels, scores, explanations, and model metadata are written back to Phoenix span annotations instead of existing only in CSV files.
+- Corrected the sole positive hallucination verdict through a separate human annotation after manual review showed that the answer correctly described Ansible `failed_when` AND/OR semantics.
+
+### Verified
+
+- Verified all three primary RAGAS runs at `35/35` successful rows: baseline, chunk size `512`, and `qwen3.5:9b` generation.
+- Verified the selected baseline at faithfulness `0.777`, answer relevancy `0.810`, context precision `0.929`, context recall `0.981`, citation rate `1.000`, and mean latency `32.7 s`.
+- Verified `23/23` final trace-smoke requests produce 23 RAG roots and 161 spans, including 46 retriever, 69 embedding, and 23 LLM spans with document scores and token usage.
+- Verified Phoenix stores 23 hallucination annotations: the local judge marked `1/23`, while manual review confirmed `0/23` hallucinations and one evaluator false positive.
+- Verified evaluation/tracing imports, `51` relevant tests, Ruff on every changed Python file, Compose validation, and successful production/eval Docker target builds.
+
 ## [2026-07-27]
 
 ### Added
