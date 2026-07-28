@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, AsyncIterator, Sequence
@@ -11,6 +13,8 @@ from openai import AsyncOpenAI
 
 from app.core.config import Settings, get_settings
 from app.observability.logging import get_logger
+from app.observability.tracing import rag_span
+from app.services.embeddings import EmbeddingConfig, LlamaIndexEmbeddingAdapter
 from app.services.reranker import BGEReranker
 
 
@@ -38,6 +42,7 @@ class PreparedRAG:
     top_score: float | None
     confident: bool
     context: str
+    retrieved_contexts: list[str]
 
 
 class RAGService:
@@ -91,6 +96,7 @@ class RAGService:
                 top_score=top_score,
                 confident=False,
                 context="",
+                retrieved_contexts=[_node_text(node) for node in nodes],
             )
 
         ranked_nodes = await asyncio.to_thread(
@@ -99,10 +105,11 @@ class RAGService:
             nodes,
         )
         sources = [_source_payload(node, index) for index, node in enumerate(ranked_nodes, 1)]
+        retrieved_contexts = [_node_text(node) for node in ranked_nodes]
         context = "\n\n".join(
             f"[{source['id']}] Файл: {source['file_name']}; "
-            f"страница: {source['page'] or '—'}\n{source['snippet']}"
-            for source in sources
+            f"страница: {source['page'] or '—'}\n{full_text}"
+            for source, full_text in zip(sources, retrieved_contexts)
         )
         return PreparedRAG(
             original_question=question,
@@ -111,6 +118,7 @@ class RAGService:
             top_score=top_score,
             confident=True,
             context=context,
+            retrieved_contexts=retrieved_contexts,
         )
 
     async def answer(
@@ -120,17 +128,52 @@ class RAGService:
         history: Sequence[dict[str, Any]] | None = None,
         chat_id: UUID | str | None = None,
     ) -> dict[str, Any]:
-        prepared = await self.prepare(question, history=history, chat_id=chat_id)
-        if not prepared.confident:
-            return _result(UNKNOWN_ANSWER, prepared)
+        with rag_span(
+            "rag.answer",
+            **{"input.value": question, "rag.model": self.settings.default_model},
+        ) as span:
+            prepared = await self.prepare(question, history=history, chat_id=chat_id)
+            answer = await self._answer_prepared(prepared, history=history)
+            _set_span_attributes(
+                span,
+                {
+                    "output.value": answer,
+                    "rag.retrieved_contexts.count": len(prepared.retrieved_contexts),
+                    "rag.confident": prepared.confident,
+                    "rag.top_score": prepared.top_score,
+                },
+            )
+            return _result(answer, prepared)
 
-        response = await self._llm.chat.completions.create(
-            model=self.settings.default_model,
-            messages=self.generation_messages(prepared, history=history),
-            temperature=0,
-        )
-        answer = _completion_text(response) or UNKNOWN_ANSWER
-        return _result(answer, prepared)
+    async def evaluate_inputs(self, question: str) -> dict[str, Any]:
+        """Run one production RAG pass and expose the full retrieved chunks for eval."""
+
+        started_at = time.perf_counter()
+        with rag_span(
+            "rag.evaluate",
+            **{"input.value": question, "rag.model": self.settings.default_model},
+        ) as span:
+            prepared = await self.prepare(question)
+            answer = await self._answer_prepared(prepared)
+            latency_ms = round((time.perf_counter() - started_at) * 1000, 3)
+            result = {
+                "answer": answer,
+                "retrieved_contexts": prepared.retrieved_contexts,
+                "latency_ms": latency_ms,
+                "top_score": _rounded_score(prepared.top_score),
+                "confident": prepared.confident,
+            }
+            _set_span_attributes(
+                span,
+                {
+                    "output.value": answer,
+                    "rag.retrieved_contexts.count": len(prepared.retrieved_contexts),
+                    "rag.latency_ms": latency_ms,
+                    "rag.confident": prepared.confident,
+                    "rag.top_score": prepared.top_score,
+                },
+            )
+            return result
 
     async def stream_answer(
         self,
@@ -147,6 +190,7 @@ class RAGService:
             model=self.settings.default_model,
             messages=self.generation_messages(prepared, history=history),
             temperature=0,
+            **_ollama_model_args(self.settings.openai_base_url),
             stream=True,
         )
 
@@ -175,6 +219,23 @@ class RAGService:
             messages.append({"role": "user", "content": prepared.original_question})
         return messages
 
+    async def _answer_prepared(
+        self,
+        prepared: PreparedRAG,
+        *,
+        history: Sequence[dict[str, Any]] | None = None,
+    ) -> str:
+        if not prepared.confident:
+            return UNKNOWN_ANSWER
+        response = await self._llm.chat.completions.create(
+            model=self.settings.default_model,
+            messages=self.generation_messages(prepared, history=history),
+            temperature=0,
+            **_ollama_model_args(self.settings.openai_base_url),
+        )
+        answer = _completion_text(response) or UNKNOWN_ANSWER
+        return _ensure_source_marker(answer, prepared)
+
     async def close(self) -> None:
         await self._llm.close()
         client = self._qdrant_client
@@ -188,7 +249,6 @@ class RAGService:
             return
         try:
             from llama_index.core import VectorStoreIndex
-            from llama_index.embeddings.openai import OpenAIEmbedding
             from llama_index.vector_stores.qdrant import QdrantVectorStore
             from qdrant_client import QdrantClient
         except ImportError as exc:  # pragma: no cover
@@ -219,22 +279,15 @@ class RAGService:
                 "Run `python scripts/ingest.py data/` first."
             )
 
-        embed_kwargs: dict[str, Any] = {
-            "model_name": self.settings.embedding_model,
-            "api_key": self.settings.openai_api_key.get_secret_value(),
-            "api_base": self.settings.openai_base_url,
-            "timeout": self.settings.embedding_request_timeout,
-            "embed_batch_size": self.settings.embedding_batch_size,
-        }
-        if self.settings.embedding_dimensions is not None:
-            embed_kwargs["dimensions"] = self.settings.embedding_dimensions
         vector_store = QdrantVectorStore(
             client=self._qdrant_client,
             collection_name=self.settings.rag_collection,
         )
         index = VectorStoreIndex.from_vector_store(
             vector_store=vector_store,
-            embed_model=OpenAIEmbedding(**embed_kwargs),
+            embed_model=LlamaIndexEmbeddingAdapter(
+                EmbeddingConfig.from_settings(self.settings)
+            ),
         )
         self._retriever = index.as_retriever(
             similarity_top_k=self.settings.rag_similarity_top_k
@@ -285,6 +338,7 @@ class RAGService:
             ],
             temperature=0,
             max_tokens=256,
+            **_ollama_model_args(self.settings.openai_base_url),
         )
         condensed = _completion_text(response).strip() or question
         anchor = _last_user_text(history)
@@ -306,7 +360,7 @@ class RAGService:
 def _source_payload(node_with_score: Any, citation_id: int) -> dict[str, Any]:
     node = getattr(node_with_score, "node", node_with_score)
     metadata = getattr(node, "metadata", None) or {}
-    text = str(getattr(node, "text", "") or node.get_content()).strip()
+    text = _node_text(node_with_score)
     page = metadata.get("page") or metadata.get("page_label")
     try:
         page = int(page) if page is not None else None
@@ -319,6 +373,15 @@ def _source_payload(node_with_score: Any, citation_id: int) -> dict[str, Any]:
         "score": _rounded_score(getattr(node_with_score, "score", None)),
         "snippet": text[:700],
     }
+
+
+def _node_text(node_with_score: Any) -> str:
+    node = getattr(node_with_score, "node", node_with_score)
+    text = getattr(node, "text", "")
+    if not text:
+        get_content = getattr(node, "get_content", None)
+        text = get_content() if get_content is not None else ""
+    return str(text).strip()
 
 
 def _result(answer: str, prepared: PreparedRAG) -> dict[str, Any]:
@@ -340,6 +403,14 @@ def _rounded_score(score: float | None) -> float | None:
     return round(float(score), 4) if score is not None else None
 
 
+def _set_span_attributes(span: Any, attributes: dict[str, Any]) -> None:
+    if span is None:
+        return
+    for key, value in attributes.items():
+        if value is not None:
+            span.set_attribute(key, value)
+
+
 def _source_name(metadata: dict[str, Any]) -> str:
     for key in ("file_name", "source", "file_path"):
         value = metadata.get(key)
@@ -353,6 +424,25 @@ def _completion_text(response: Any) -> str:
     if not choices:
         return ""
     return _message_text(getattr(choices[0].message, "content", ""))
+
+
+def _ollama_model_args(base_url: str) -> dict[str, Any]:
+    if "11434" in base_url or "ollama" in base_url.casefold():
+        return {"extra_body": {"think": False}}
+    return {}
+
+
+def _ensure_source_marker(answer: str, prepared: PreparedRAG) -> str:
+    """Keep the answer auditable when a local model ignores citation syntax."""
+
+    if (
+        not prepared.confident
+        or not prepared.sources
+        or answer == UNKNOWN_ANSWER
+        or re.search(r"\[\d+\]", answer)
+    ):
+        return answer
+    return f"{answer.rstrip()}\n\nИсточник: [1]"
 
 
 def _stream_delta(chunk: Any) -> str:

@@ -12,8 +12,10 @@ class FakeRetriever:
     def __init__(self, nodes: list[object]) -> None:
         self.nodes = nodes
         self.last_query: str | None = None
+        self.calls = 0
 
     def retrieve(self, question: str) -> list[object]:
+        self.calls += 1
         self.last_query = question
         return self.nodes
 
@@ -93,6 +95,45 @@ async def test_confident_answer_has_numbered_structured_source() -> None:
     }
     prompt = fake_llm.chat.completions.calls[0]["messages"][0]["content"]
     assert "[1] Файл: ansible.md" in prompt
+
+
+@pytest.mark.asyncio
+async def test_confident_answer_gets_source_marker_when_local_model_omits_it() -> None:
+    service = RAGService(settings())
+    service._retriever = FakeRetriever([scored_node(0.71)])
+    service._llm = FakeLLM("Use a dedicated module.")
+
+    result = await service.answer("How should an Ansible task be written?")
+
+    assert result["answer"] == "Use a dedicated module.\n\nИсточник: [1]"
+
+
+@pytest.mark.asyncio
+async def test_type_annotation_is_not_mistaken_for_source_marker() -> None:
+    service = RAGService(settings())
+    service._retriever = FakeRetriever([scored_node(0.71)])
+    service._llm = FakeLLM("Return list[str].")
+
+    result = await service.answer("What does the function return?")
+
+    assert result["answer"] == "Return list[str].\n\nИсточник: [1]"
+
+
+@pytest.mark.asyncio
+async def test_evaluate_inputs_returns_full_context_after_one_retrieval() -> None:
+    service = RAGService(settings())
+    node = scored_node(0.71)
+    node.node.text = "A" * 900
+    retriever = FakeRetriever([node])
+    service._retriever = retriever
+    service._llm = FakeLLM("Grounded answer [1].")
+
+    result = await service.evaluate_inputs("How should this task be reviewed?")
+
+    assert retriever.calls == 1
+    assert result["answer"] == "Grounded answer [1]."
+    assert result["retrieved_contexts"] == ["A" * 900]
+    assert result["latency_ms"] >= 0
 
 
 @pytest.mark.asyncio

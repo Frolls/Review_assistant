@@ -11,6 +11,7 @@ from typing import Any, Iterable, Sequence
 
 from app.core.config import Settings
 from app.services.chunking import split_russian_sentences
+from app.services.embeddings import EmbeddingConfig, LlamaIndexEmbeddingAdapter
 
 
 logger = logging.getLogger(__name__)
@@ -156,7 +157,6 @@ class IngestionService:
         from llama_index.core.ingestion import DocstoreStrategy, IngestionPipeline
         from llama_index.core.node_parser import SentenceSplitter
         from llama_index.core.storage.docstore import SimpleDocumentStore
-        from llama_index.embeddings.openai import OpenAIEmbedding
         from llama_index.vector_stores.qdrant import QdrantVectorStore
         from qdrant_client import QdrantClient
 
@@ -175,16 +175,6 @@ class IngestionService:
             client=client,
             collection_name=self.settings.rag_collection,
         )
-        embed_kwargs: dict[str, Any] = {
-            "model_name": self.settings.embedding_model,
-            "api_key": self.settings.openai_api_key.get_secret_value(),
-            "api_base": self.settings.openai_base_url,
-            "timeout": self.settings.embedding_request_timeout,
-            "embed_batch_size": self.settings.embedding_batch_size,
-        }
-        if self.settings.embedding_dimensions is not None:
-            embed_kwargs["dimensions"] = self.settings.embedding_dimensions
-
         pipeline = IngestionPipeline(
             transformations=[
                 SentenceSplitter(
@@ -193,7 +183,9 @@ class IngestionService:
                     paragraph_separator="\n\n",
                     chunking_tokenizer_fn=split_russian_sentences,
                 ),
-                OpenAIEmbedding(**embed_kwargs),
+                LlamaIndexEmbeddingAdapter(
+                    EmbeddingConfig.from_settings(self.settings)
+                ),
             ],
             docstore=docstore,
             vector_store=vector_store,

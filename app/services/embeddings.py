@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
 import logging
@@ -12,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+from llama_index.core.base.embeddings.base import BaseEmbedding
 from openai import (
     APIConnectionError,
     APITimeoutError,
@@ -19,6 +21,7 @@ from openai import (
     OpenAIError,
     RateLimitError,
 )
+from pydantic import PrivateAttr
 
 
 logger = logging.getLogger(__name__)
@@ -101,6 +104,39 @@ class EmbeddingConfig:
             api_key=settings.openai_api_key.get_secret_value(),
             base_url=_blank_to_none(settings.openai_base_url),
         )
+
+
+class LlamaIndexEmbeddingAdapter(BaseEmbedding):
+    """Expose the project's embedding client through LlamaIndex core.
+
+    This avoids the optional ``llama-index-embeddings-openai`` integration,
+    whose 0.12-compatible releases require the legacy OpenAI client.
+    """
+
+    _embedding_config: EmbeddingConfig = PrivateAttr()
+
+    def __init__(self, config: EmbeddingConfig) -> None:
+        super().__init__(
+            model_name=config.model,
+            embed_batch_size=config.batch_size,
+        )
+        self._embedding_config = config
+
+    def _get_query_embedding(self, query: str) -> list[float]:
+        return embed_query(query, config=self._embedding_config)
+
+    async def _aget_query_embedding(self, query: str) -> list[float]:
+        return await asyncio.to_thread(
+            embed_query,
+            query,
+            config=self._embedding_config,
+        )
+
+    def _get_text_embedding(self, text: str) -> list[float]:
+        return embed_documents([text], config=self._embedding_config)[0]
+
+    def _get_text_embeddings(self, texts: list[str]) -> list[list[float]]:
+        return embed_documents(texts, config=self._embedding_config)
 
 
 class EmbeddingCache:
