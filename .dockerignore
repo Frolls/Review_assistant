@@ -24,6 +24,8 @@ __pycache__/
 *.egg-info/
 
 tests/
+!tests/eval/
+!tests/eval/**
 docs/
 examples/
 notebooks/

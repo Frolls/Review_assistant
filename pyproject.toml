@@ -11,16 +11,17 @@ requires-python = ">=3.11,<3.14"
 dependencies = [
     "aiofiles>=24.1.0",
     "alembic>=1.13.0",
-    "arize-phoenix-otel>=0.13.0",
     "asyncpg>=0.29.0",
     "beautifulsoup4>=4.12.0",
     "diskcache>=5.6",
     "fastapi>=0.115.0",
-    "llama-index>=0.12.0",
+    # OpenInference LlamaIndex instrumentation 3.x still imports the 0.12
+    # instrumentation API. Keep the compatible minor line until tracing can
+    # be migrated to OpenInference 4.x.
+    "llama-index-core>=0.12.0,<0.13",
     "llama-index-readers-file>=0.4.0",
     "llama-index-vector-stores-qdrant>=0.4.0",
     "docx2txt>=0.8",
-    "openinference-instrumentation-openai>=0.1.35",
     "openai>=2.38.0,<3",
     "presidio-analyzer>=2.2.360",
     "presidio-anonymizer>=2.2.360",
@@ -52,6 +53,23 @@ dev = [
 ]
 
 [project.optional-dependencies]
+eval = [
+    "anthropic>=0.40",
+    "arize-phoenix>=5",
+    "langchain-community<0.4",
+    "pandas>=2",
+    "ragas>=0.4,<0.5",
+    "rapidfuzz>=3",
+]
+
+tracing = [
+    "arize-phoenix-otel>=0.13.0",
+    "openinference-instrumentation-llama-index>=3,<4",
+    "openinference-instrumentation-openai>=0.1.35",
+    "opentelemetry-exporter-otlp",
+    "opentelemetry-sdk",
+]
+
 local-embeddings = [
     "sentence-transformers>=3.0",
 ]

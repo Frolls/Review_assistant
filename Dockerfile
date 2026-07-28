@@ -23,6 +23,7 @@ COPY README.md .env.example ./
 COPY data ./data
 COPY scripts ./scripts
 COPY app ./app
+COPY tests/eval ./tests/eval
 COPY alembic.ini ./
 COPY alembic ./alembic
 
@@ -48,3 +49,21 @@ USER appuser
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+FROM builder AS tracing-builder
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --extra tracing --inexact
+
+FROM runtime AS tracing
+
+COPY --from=tracing-builder --chown=appuser:appuser /app/.venv /app/.venv
+
+FROM tracing-builder AS eval-builder
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --extra eval --extra tracing --inexact
+
+FROM runtime AS eval
+
+COPY --from=eval-builder --chown=appuser:appuser /app/.venv /app/.venv

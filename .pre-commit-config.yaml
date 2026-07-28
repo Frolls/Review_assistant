@@ -5,6 +5,7 @@ repos:
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
+        exclude: ^tests/eval/results/.*\.csv$
       - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: detect-private-key
