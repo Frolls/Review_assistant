@@ -1,0 +1,68 @@
+/app/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2274: UnsupportedFieldAttributeWarning: The 'validate_default' attribute with value True was provided to the `Field()` function, which has no effect in the context it was used. 'validate_default' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+  warnings.warn(
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions "HTTP/1.1 200 OK"
+INFO agent step=1 tool=get_current_time duration_ms=20856.46
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions "HTTP/1.1 200 OK"
+/app/app/services/rag.py:259: UserWarning: Api key is used with an insecure connection.
+  self._qdrant_client = QdrantClient(
+INFO HTTP Request: GET http://qdrant:6333 "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag/exists "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag/exists "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag "HTTP/1.1 200 OK"
+INFO embedding.cache_miss
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/embeddings "HTTP/1.1 200 OK"
+INFO HTTP Request: POST http://qdrant:6333/collections/corporate_rag/points/search "HTTP/1.1 200 OK"
+INFO agent step=2 tool=search_knowledge_base duration_ms=23364.51
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333 "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag/exists "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag/exists "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag "HTTP/1.1 200 OK"
+INFO embedding.cache_miss
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/embeddings "HTTP/1.1 200 OK"
+INFO HTTP Request: POST http://qdrant:6333/collections/corporate_rag/points/search "HTTP/1.1 200 OK"
+INFO agent step=3 tool=search_knowledge_base duration_ms=23479.22
+INFO Retrying request to /chat/completions in 0.477220 seconds
+INFO Retrying request to /chat/completions in 0.852255 seconds
+INFO agent step=4 provider_error=Request timed out. duration_ms=91401.01
+Агент остановлен из-за ошибки LLM.
+[
+  {
+    "step": 1,
+    "tool_name": "get_current_time",
+    "tool_args": "{\"timezone\":\"Asia/Yekaterinburg\"}",
+    "tool_result": "2026-08-06T20:41:21.509783+05:00",
+    "llm_input_tokens": 504,
+    "llm_output_tokens": 645,
+    "duration_ms": 20856.46
+  },
+  {
+    "step": 2,
+    "tool_name": "search_knowledge_base",
+    "tool_args": "{\"query\":\"правила тестирования Python-кода\"}",
+    "tool_result": "Python Tests Review\nТесты в PR должны покрывать поведение, которое реально изменилось.Если автор меняет ветвление, обработку ошибок, формат ответа или контракт API, ревьюер должен искать тест на новую",
+    "llm_input_tokens": 1194,
+    "llm_output_tokens": 419,
+    "duration_ms": 23364.51
+  },
+  {
+    "step": 3,
+    "tool_name": "search_knowledge_base",
+    "tool_args": "{\"query\":\"правила защиты от SQL injection\"}",
+    "tool_result": "Для SQL используются параметры запроса, для shell лучше избегать shell=True, для путей нужна нормализация и проверка базовой директории.Логи не должны содержать пароли, токены, приватные diff, персона",
+    "llm_input_tokens": 1789,
+    "llm_output_tokens": 259,
+    "duration_ms": 23479.22
+  },
+  {
+    "step": 4,
+    "tool_name": null,
+    "tool_args": "{}",
+    "tool_result": "Request timed out.",
+    "llm_input_tokens": 0,
+    "llm_output_tokens": 0,
+    "duration_ms": 91401.01
+  }
+]

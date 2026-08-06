@@ -1,0 +1,38 @@
+/app/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2274: UnsupportedFieldAttributeWarning: The 'validate_default' attribute with value True was provided to the `Field()` function, which has no effect in the context it was used. 'validate_default' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+  warnings.warn(
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions "HTTP/1.1 200 OK"
+/app/app/services/rag.py:259: UserWarning: Api key is used with an insecure connection.
+  self._qdrant_client = QdrantClient(
+INFO HTTP Request: GET http://qdrant:6333 "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag/exists "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag/exists "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag "HTTP/1.1 200 OK"
+INFO embedding.cache_miss
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/embeddings "HTTP/1.1 200 OK"
+INFO HTTP Request: POST http://qdrant:6333/collections/corporate_rag/points/search "HTTP/1.1 200 OK"
+2026-08-06 15:38:56 [info     ] rag.score_guard_refusal        chat_id=None retrieval_question='правила выращивания редких орхидей на Марсе' threshold=0.5 top_score=0.29229343
+INFO agent step=1 tool=search_knowledge_base duration_ms=19331.19
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions "HTTP/1.1 200 OK"
+INFO agent step=2 final duration_ms=10205.62
+Данные о выращивании редких орхидей на Марсе в базе знаний отсутствуют. Информация по данной теме не найдена.
+[
+  {
+    "step": 1,
+    "tool_name": "search_knowledge_base",
+    "tool_args": "{\"query\":\"правила выращивания редких орхидей на Марсе\"}",
+    "tool_result": "по базе не нашёл, могу эскалировать",
+    "llm_input_tokens": 453,
+    "llm_output_tokens": 623,
+    "duration_ms": 19331.19
+  },
+  {
+    "step": 2,
+    "tool_name": null,
+    "tool_args": "{}",
+    "tool_result": "Данные о выращивании редких орхидей на Марсе в базе знаний отсутствуют. Информация по данной теме не найдена.",
+    "llm_input_tokens": 1103,
+    "llm_output_tokens": 328,
+    "duration_ms": 10205.62
+  }
+]

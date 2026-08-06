@@ -1,0 +1,50 @@
+/app/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2274: UnsupportedFieldAttributeWarning: The 'validate_default' attribute with value True was provided to the `Field()` function, which has no effect in the context it was used. 'validate_default' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+  warnings.warn(
+INFO Retrying request to /chat/completions in 0.464201 seconds
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions "HTTP/1.1 200 OK"
+/app/app/services/rag.py:259: UserWarning: Api key is used with an insecure connection.
+  self._qdrant_client = QdrantClient(
+INFO HTTP Request: GET http://qdrant:6333 "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag/exists "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag/exists "HTTP/1.1 200 OK"
+INFO HTTP Request: GET http://qdrant:6333/collections/corporate_rag "HTTP/1.1 200 OK"
+INFO embedding.cache_miss
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/embeddings "HTTP/1.1 200 OK"
+INFO HTTP Request: POST http://qdrant:6333/collections/corporate_rag/points/search "HTTP/1.1 200 OK"
+INFO agent step=1 tool=search_knowledge_base duration_ms=50934.79
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions "HTTP/1.1 200 OK"
+[TELEGRAM → 12345] В PR нельзя добавлять секреты (токены, ключи, credentials). При обнаружении — запросить ротацию и удалить из истории.
+INFO agent step=2 tool=send_telegram_message duration_ms=13146.81
+INFO HTTP Request: POST http://host.docker.internal:11434/v1/chat/completions "HTTP/1.1 200 OK"
+INFO agent step=3 final duration_ms=8535.48
+Сообщение успешно отправлено в чат 12345. Правило: «В PR нельзя добавлять секреты (токены, ключи, credentials). При обнаружении — запросить ротацию и удалить из истории».
+[
+  {
+    "step": 1,
+    "tool_name": "search_knowledge_base",
+    "tool_args": "{\"query\":\"правила безопасной обработки секретов при ревью кода\"}",
+    "tool_result": "Secure Code Review\nВ PR нельзя добавлять секреты, токены, приватные ключи, cookie и реальные credentials.Если секрет уже попал в diff, ревьюер обязан попросить ротацию секрета и убедиться, что значени",
+    "llm_input_tokens": 450,
+    "llm_output_tokens": 708,
+    "duration_ms": 50934.79
+  },
+  {
+    "step": 2,
+    "tool_name": "send_telegram_message",
+    "tool_args": "{\"chat_id\":\"12345\",\"text\":\"В PR нельзя добавлять секреты (токены, ключи, credentials). При обнаружении — запросить ротацию и удалить из истории.\"}",
+    "tool_result": "Сообщение отправлено в 12345",
+    "llm_input_tokens": 1339,
+    "llm_output_tokens": 340,
+    "duration_ms": 13146.81
+  },
+  {
+    "step": 3,
+    "tool_name": null,
+    "tool_args": "{}",
+    "tool_result": "Сообщение успешно отправлено в чат 12345. Правило: «В PR нельзя добавлять секреты (токены, ключи, credentials). При обнаружении — запросить ротацию и удалить из истории».",
+    "llm_input_tokens": 1704,
+    "llm_output_tokens": 284,
+    "duration_ms": 8535.48
+  }
+]

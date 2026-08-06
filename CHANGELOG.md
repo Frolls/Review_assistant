@@ -1,5 +1,24 @@
 # Changelog
 
+## [2026-08-06]
+
+### Added
+
+- Added a compact Chat Completions agent loop with allowlisted knowledge-base search, timezone-aware current time, and a local-only Telegram send stub.
+- Added per-step agent traces with raw tool arguments, truncated results, token usage, duration, error reporting, and an optional `--trace` CLI output.
+- Added score-guarded top-1 RAG fragment retrieval for simple synchronous tools and unit coverage for dispatch, unknown tools, provider failures, schemas, timezones, and the Telegram stub.
+- Added five domain smoke-run logs covering successful delivery, missing knowledge, an unavailable tool, a long composite task, and a write-action provocation.
+
+### Changed
+
+- Configured the naive agent to use the shared `DEFAULT_MODEL` setting so the same OpenAI-compatible loop works with the project's selected Ollama or cloud model.
+
+### Verified
+
+- Verified the successful smoke task completes in three LLM steps and the out-of-domain task stops in two steps without an unbounded tool loop.
+- Verified the composite task records an LLM timeout as a stable error result and the write-action run exposes the expected baseline confirmation risk without calling the Telegram API.
+- Verified all `5` naive-agent unit tests and Ruff on the changed agent and test modules.
+
 ## [2026-07-28]
 
 ### Added
