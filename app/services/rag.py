@@ -517,6 +517,22 @@ async def _single_chunk(text: str) -> AsyncIterator[str]:
     yield text
 
 
+def search_top_fragment(query: str) -> str:
+    """Synchronously retrieve one score-guarded fragment for simple tools."""
+
+    async def search() -> str:
+        service = RAGService(get_settings())
+        try:
+            prepared = await service.prepare(query)
+            if not prepared.confident or not prepared.retrieved_contexts:
+                return UNKNOWN_ANSWER
+            return prepared.retrieved_contexts[0]
+        finally:
+            await service.close()
+
+    return asyncio.run(search())
+
+
 async def _demo() -> None:
     service = RAGService(get_settings())
     try:
