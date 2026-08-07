@@ -45,6 +45,7 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - optional re-ranker `BAAI/bge-reranker-v2-m3` для offline retrieval evaluation
 - mini-benchmark для проверки retrieval-поведения на проектных вопросах из области PR-review ассистента
 - быстрый unit testing layer вокруг LLM-adjacent логики и отдельный offline evaluation layer в `eval/`
+- standalone-сравнение naive и управляемого ReAct tool loop с жёсткими лимитами, self-reflection и полным token usage
 - security evaluation layer на базе NVIDIA garak с baseline/after отчётами
 
 ## Архитектура
@@ -98,6 +99,8 @@ app/
     models.py
     rag.py
   services/
+    agent_naive.py
+    agent_react.py
     chunking.py
     embeddings.py
     ingestion.py
@@ -125,6 +128,8 @@ app/
     auth.py
     routes.py
 docs/
+  agent-react-report.md
+  agent-react-results.json
   chat.md
   architecture.md
   chunking_experiment.md
@@ -144,6 +149,7 @@ docs/
     config.yaml
     config.production_like.yaml
 scripts/
+  compare_agents.py
   calibrate_rag_threshold.py
   compare_embedding_latency.py
   download_data.py
@@ -338,6 +344,57 @@ uv run python scripts/run_chunking_experiment.py \
 Основная Qdrant-коллекция `/rag/query` называется `corporate_rag` и загружается
 из multi-format корпуса `data/`. Архитектура, калибровка score guard и HTTP/SSE
 контракты описаны в `docs/rag.md`.
+
+## Naive и ReAct агенты
+
+Для сравнения orchestration-подходов рядом существуют два standalone-модуля:
+
+- `app/services/agent_naive.py` — baseline с обычным `for`-циклом по
+  `max_steps`; файл сохраняется без изменений для регрессионного контроля;
+- `app/services/agent_react.py` — native ReAct поверх Chat Completions tool
+  calling: один tool за итерацию, строгие JSON Schema, critic после каждого
+  observation, не более двух ревизий и явные остановки по timeout/числу
+  итераций.
+
+ReAct использует `gpt-5.4-mini` для main/critic и `gpt-5.4` для следующего шага
+после `REVISE`. Диапазоны параметров ограничены в коде:
+`max_iterations=8..20`, `timeout_per_iteration_sec=5..15`,
+`max_revisions=0..2`. Эти модули не подключены к HTTP endpoint'ам и служат
+проверяемым прототипом application-layer orchestrator.
+
+Локальный запуск обоих вариантов через установленную модель Ollama
+`qwen3:latest`:
+
+```bash
+DEFAULT_MODEL=qwen3:latest uv run python -m app.services.agent_naive \
+  "Какое сейчас время в Asia/Yekaterinburg?" --trace
+
+uv run python -m app.services.agent_react \
+  "Какое сейчас время в Asia/Yekaterinburg?" \
+  --timeout 15 \
+  --model-main qwen3:latest \
+  --model-critic qwen3:latest \
+  --model-revision qwen3:latest \
+  --trace
+```
+
+Полный повторяемый A/B-прогон пяти задач, включая две composability-задачи и
+провокацию без tool call:
+
+```bash
+docker compose up -d qdrant
+docker compose --profile eval run --rm --no-deps eval \
+  python scripts/compare_agents.py \
+  --model qwen3:latest \
+  --react-timeout 15 \
+  --output docs/agent-react-results.json
+```
+
+Итоговая таблица и наблюдения находятся в
+[docs/agent-react-report.md](docs/agent-react-report.md), полные traces — в
+[docs/agent-react-results.json](docs/agent-react-results.json). В проверенном
+прогоне ReAct решил `5/5` задач, naive — `2/5`; суммарный usage ReAct включает
+вызовы main и critic.
 
 ## Multi-format RAG
 

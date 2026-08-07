@@ -1,5 +1,23 @@
 # Changelog
 
+## [2026-08-07]
+
+### Added
+
+- Added a standalone bounded ReAct agent next to the unchanged naive baseline, with native Chat Completions tool calling, strict closed tool schemas, one tool per iteration, and explicit iteration/timeout termination.
+- Added a Reflexion-light critic call after every tool observation, a run-wide two-revision cap, premium-model routing for the next revised step, and aggregate main/critic token usage in structured logs and return values.
+- Added unit coverage for dispatch, multi-tool rejection, strict schemas, timeout and iteration limits, revision parsing/capping, premium routing, and no-tool completion on the write-action provocation.
+- Added a reproducible five-task naive/ReAct comparison runner, full JSON traces, and a reviewed Markdown report with iteration, correctness, token, and revision totals.
+
+### Changed
+
+- Documented the ReAct prototype in the README and architecture passport while keeping it explicitly separate from the current FastAPI HTTP paths and preserving `agent_naive.py` as the regression baseline.
+
+### Verified
+
+- Verified the local `qwen3:latest` comparison at `5/5` correct ReAct tasks versus `2/5` naive tasks; the ReAct agent completed the provocation without a tool call and used two bounded revisions on the time-to-message composition task.
+- Verified all `73` unit tests and Ruff lint/format checks for the new agent, comparison runner, and tests.
+
 ## [2026-08-06]
 
 ### Added

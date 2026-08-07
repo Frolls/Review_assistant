@@ -299,6 +299,54 @@ batch-нагрузки. Один универсальный limiter в прил�
 
 **Alternatives considered.** **Streaming** отвергнут как основной паттерн: пользователь увидит токены раньше, но в интерактивном `review`-сценарии финальный текст часто появляется только после завершения retrieval/анализа контекста, а для `full_pr_review` streaming вообще не решает главную проблему длинной обработки. **Queue-based** отвергнут как единственный глобальный паттерн: polling/webhook completion избыточны для `chat` и короткого review-вопроса по PR. **Fan-out** отвергнут из-за лишней стоимости: параллельный запуск нескольких провайдеров ради каждого chunk review быстро съест бюджет.
 
+## ADR-005: Управляемый ReAct-цикл для interactive review
+
+**Status:** Accepted (2026-08-07)
+
+**Context.** Первый standalone-прототип `agent_naive.py` использует прямой
+Chat Completions tool loop и исполняет все `tool_calls`, которые модель вернула
+за шаг. Baseline полезен для сравнения, но допускает параллельную отправку
+зависимых tools, повтор usage в trace для одного LLM-ответа и рост контекста до
+provider timeout. Для interactive review нужен ограниченный цикл, который не
+подставляет placeholder вместо observation, не продолжает работу бесконечно и
+проверяет выбранный шаг до формирования финального ответа.
+
+**Decision.** Рядом с baseline вводится standalone-модуль
+`app/services/agent_react.py`. Он реализует native ReAct поверх
+`client.chat.completions.create(..., tools=..., tool_choice="auto")`, поэтому
+Action и Observation передаются стандартным tool-calling протоколом, без
+текстового парсинга `Thought/Action/Observation`. За одну итерацию исполняется
+ровно один allowlisted tool; schemas закрыты через `strict: true` и
+`additionalProperties: false`.
+
+Main и critic по умолчанию используют `gpt-5.4-mini`. После принятого
+`REVISE` следующий main-шаг переключается на `gpt-5.4`; critic feedback
+добавляется в контекст следующей итерации. Общий счётчик ограничен двумя
+ревизиями и не сбрасывается между шагами. `max_iterations` допускает значения
+`8..20`, timeout одной итерации — `5..15` секунд. При достижении границы агент
+возвращает явные `Превышен лимит итераций` или `Timeout`.
+
+Каждая итерация создаёт отдельное событие `react.step` с номером шага, моделью,
+tool name/arguments, observation, latency, critic verdict, числом ревизий и
+usage. Итоговое событие `react.run.complete` содержит суммарные
+`prompt_tokens`, `completion_tokens` и `total_tokens`, включая critic.
+
+**Consequences.** Зависимые действия становятся последовательными: результат
+поиска или времени появляется в messages до построения аргументов следующего
+tool. Провокационная задача может завершиться финальным отказом без tool call, а
+runaway ограничен независимо от поведения модели или provider. Цена решения —
+дополнительный critic-вызов после каждого observation и больший расход токенов
+на простых задачах. Реализация пока не подключена к FastAPI endpoint'ам: это
+проверяемый прототип будущего application-layer orchestrator, а
+`agent_naive.py` остаётся неизменным baseline.
+
+**Alternatives considered.** Текстовый ReAct отвергнут, потому что потребовал бы
+парсить свободный формат модели при наличии native tool calling. LangGraph не
+используется: текущий линейный цикл, два лимита и одна critic-ветка не требуют
+отдельного graph runtime. Plan-and-Execute отложен для длинных задач с заранее
+известным планом; для короткого interactive review последовательный ReAct проще
+и позволяет менять следующий шаг сразу после observation.
+
 ## Unified Orchestrator
 
 Вариант 2 вводит единый application-layer orchestrator, который управляет сценариями, а не перекладывает orchestration на `LLMService`.
