@@ -15,6 +15,9 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 from structlog.contextvars import bind_contextvars, clear_contextvars
 
+from app.admin.routes import router as admin_router
+from app.chat.feedback import router as feedback_router
+from app.chat.routes import router as stateful_chat_router
 from app.core.config import get_settings
 from app.core.exceptions import (
     LLMAuthError,
@@ -27,15 +30,12 @@ from app.core.exceptions import (
 )
 from app.observability.logging import get_logger, setup_logging
 from app.observability.tracing import setup_tracing
-from app.admin.routes import router as admin_router
-from app.chat.feedback import router as feedback_router
-from app.chat.routes import router as stateful_chat_router
+from app.routers.agent import router as agent_router
 from app.routers.chat import router as chat_router
+from app.routers.documents import router as documents_router
 from app.routers.health import router as health_router
 from app.routers.models import router as models_router
 from app.routers.rag import router as rag_router
-from app.routers.documents import router as documents_router
-
 
 logger = get_logger(__name__)
 
@@ -82,8 +82,12 @@ async def lifespan(app: FastAPI):
         db_engine = create_async_engine(settings.database_url)
         app.state.db_engine = db_engine
         app.state.db_sessionmaker = async_sessionmaker(db_engine, expire_on_commit=False)
+    from app.services.agent_persistent import agent_lifespan
+
     try:
-        yield
+        async with agent_lifespan(settings) as agent_graph:
+            app.state.agent_graph = agent_graph
+            yield
     finally:
         await vector_store.close()
         if rag_service is not None:
@@ -126,6 +130,7 @@ def create_app() -> FastAPI:
     app.include_router(chat_router)
     app.include_router(rag_router)
     app.include_router(documents_router)
+    app.include_router(agent_router)
     app.include_router(stateful_chat_router)
     app.include_router(feedback_router)
     app.include_router(admin_router)

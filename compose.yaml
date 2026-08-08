@@ -22,6 +22,13 @@ services:
       REDIS_URL: redis://redis:6379/0
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/review_bot
       CHAT_REPOSITORY: postgres
+      AGENT_CHECKPOINTER: postgres
+      BOT_URL: http://bot:8081
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: review_bot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin}
       PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
       OBSERVABILITY_INCLUDE_CONTENT: ${OBSERVABILITY_INCLUDE_CONTENT:-true}

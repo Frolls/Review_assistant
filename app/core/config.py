@@ -7,7 +7,14 @@ from pathlib import Path
 from typing import Annotated, Literal
 from urllib.parse import urlparse
 
-from pydantic import AliasChoices, BaseModel, Field, SecretStr, field_validator, model_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    Field,
+    SecretStr,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -111,6 +118,22 @@ class Settings(BaseSettings):
         validation_alias="OBSERVABILITY_INCLUDE_CONTENT",
     )
     database_url: str | None = Field(default=None, validation_alias="DATABASE_URL")
+    agent_checkpointer: Literal["memory", "sqlite", "postgres"] = Field(
+        default="sqlite",
+        validation_alias="AGENT_CHECKPOINTER",
+    )
+    agent_sqlite_path: Path = Field(
+        default=Path("./var/agent_checkpoints.sqlite"),
+        validation_alias="AGENT_SQLITE_PATH",
+    )
+    postgres_host: str = Field(default="localhost", validation_alias="POSTGRES_HOST")
+    postgres_port: int = Field(default=5432, validation_alias="POSTGRES_PORT")
+    postgres_db: str = Field(default="review_bot", validation_alias="POSTGRES_DB")
+    postgres_user: str = Field(default="postgres", validation_alias="POSTGRES_USER")
+    postgres_password: SecretStr = Field(
+        default=SecretStr("postgres"),
+        validation_alias="POSTGRES_PASSWORD",
+    )
     chat_repository: Literal["json", "postgres"] = Field(
         default="json",
         validation_alias="CHAT_REPOSITORY",
