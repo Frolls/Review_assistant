@@ -2,7 +2,11 @@
 
 HTTP-сервис на `FastAPI` для дипломного проекта «ИИ-ассистент для ревью кода». Цель ассистента — улучшать качество кода и сокращать время ревью pull request'ов. В качестве источников рекомендаций используются Python Enhancement Proposals (PEP), Ansible community documentation, внутренние руководства по стилю кода и архитектурные документы.
 
-Сервис поднимает `app.main:app`, принимает запросы на `POST /chat`, `POST /chat/stream`, `POST /rag/query` и stateful API `/chats`, кеширует обычные ответы в `Redis`, работает с OpenAI-совместимым backend через `AsyncOpenAI` и экспортирует trace/span-данные в Phoenix.
+Сервис поднимает `app.main:app`, принимает запросы на `POST /chat`,
+`POST /chat/stream`, `POST /rag/query`, persistent-agent endpoint
+`POST /agent/stream` и stateful API `/chats`, кеширует обычные ответы в
+`Redis`, работает с OpenAI-совместимым backend и экспортирует
+trace/span-данные в Phoenix.
 
 На текущем этапе сервис отвечает за HTTP API, eval/testing слой, интеграцию с LLM backend и RAG-индекс в Qdrant:
 
@@ -13,13 +17,19 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - Qdrant хранит индекс `documents` с metadata-фильтрами по `source`, `created_at`, `tenant_id`, `category`, `access_level` и `archived`
 - LlamaIndex RAG-индекс `corporate_rag` отвечает по 56 профильным HTML/Markdown-документам и принимает новые PDF/DOCX с цитатами на источники
 
-Сервис не реализует собственную модель. Его зона ответственности: HTTP-контракт, вызов backend, кеширование, RAG orchestration, служебные endpoint'ы и инфраструктура проверки качества ответов.
+Сервис не реализует собственную модель. Его зона ответственности:
+HTTP-контракт, вызов backend, кеширование, RAG и agent orchestration,
+checkpoint persistence, HIL-policy, служебные endpoint'ы и инфраструктура
+проверки качества ответов.
 
 ## Что реализовано
 
 - `POST /chat` — обычный completion-ответ с `cached: true/false`
 - `POST /chat/stream` — SSE-поток с `data: ...` и финальным `data: [DONE]`
 - `POST /rag/query` — синхронный RAG-ответ с `answer`, `confident`, `top_score` и списком цитируемых `sources`
+- `POST /agent/stream` — SSE-запуск persistent ReAct-графа с node updates,
+  LLM-токенами, dynamic interrupt и продолжением того же `thread_id`
+  через `resume=true|false`
 - `POST /documents/upload` — загрузка PDF/DOCX/HTML/Markdown с фоновой UPSERT-индексацией (`202 Accepted`)
 - `POST /chats` и `/chats/{chat_id}/messages` — stateful-чат с серверной историей, SSE-ответом и JSON/Postgres-хранилищем
 - `POST /chats/{chat_id}/messages` принимает `multipart/form-data`: поле `content` и опциональный файл `media` для изображений, аудио, PDF и DOCX
@@ -49,6 +59,8 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - standalone LangGraph 1.x orchestration в двух вариантах: явный типизированный
   `StateGraph` и prebuilt `langchain.agents.create_agent`, с единым набором tools,
   force-finish и сравнением с naive loop
+- persistent LangGraph 1.x orchestration с SQLite/PostgreSQL checkpoints,
+  human-in-the-loop для Telegram side effect, time travel и SSE-интеграцией
 - security evaluation layer на базе NVIDIA garak с baseline/after отчётами
 
 ## Архитектура
@@ -56,11 +68,16 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 ```text
 Client
   -> FastAPI app.main:app
-  -> Phoenix collector/UI
-  -> OpenAI-compatible backend
-     -> OpenAI API
-     -> LiteLLM Proxy
-     -> Ollama embeddings
+     -> Redis cache / rate limit
+     -> Qdrant RAG index
+     -> Persistent LangGraph agent
+        -> SQLite (local) / PostgreSQL (Compose) checkpoints
+        -> Telegram /notify only after approval
+     -> Phoenix collector/UI
+     -> OpenAI-compatible backend
+        -> OpenAI API
+        -> LiteLLM Proxy
+        -> Ollama chat / embeddings
 ```
 
 Для режима с LiteLLM приложение по-прежнему использует `AsyncOpenAI`, но:
@@ -92,6 +109,7 @@ app/
   deps/
     providers.py
   routers/
+    agent.py
     chat.py
     documents.py
     health.py
@@ -104,6 +122,7 @@ app/
   services/
     agent_graph.py
     agent_naive.py
+    agent_persistent.py
     agent_react.py
     chunking.py
     embeddings.py
@@ -132,6 +151,7 @@ app/
     auth.py
     routes.py
 docs/
+  agent-persistent-report.md
   agent-graph-custom.mmd
   agent-graph-prebuilt.mmd
   agent-graph-report.md
@@ -167,6 +187,7 @@ scripts/
   load_test.py
   run_chunking_experiment.py
   run_embedding_benchmark.py
+  time_travel_demo.py
   verify_multiturn.py
   visualize_graph.py
 data/
@@ -175,6 +196,7 @@ data/
   review_knowledge.json
   rag-block-03/
 tests/
+  test_agent_persistent.py
   eval/
     retrieval_dataset.json
   unit/
@@ -242,6 +264,13 @@ eval/
 - `CHAT_CONTEXT_STRATEGY` — стратегия контекста `sliding` или `hybrid`
 - `CHAT_CONTEXT_WINDOW` — количество последних сообщений, сохраняемых в prompt перед token-budget trimming
 - `DATABASE_URL` — async SQLAlchemy URL, обязателен для `CHAT_REPOSITORY=postgres`
+- `AGENT_CHECKPOINTER` — backend persistence агента: `memory`, `sqlite` или
+  `postgres`; локальный default — `sqlite`, Compose задаёт `postgres`
+- `AGENT_SQLITE_PATH` — путь к локальному checkpoint-файлу, по умолчанию
+  `./var/agent_checkpoints.sqlite`
+- `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `POSTGRES_USER` и
+  `POSTGRES_PASSWORD` — psycopg v3-параметры LangGraph saver; в Compose они
+  указывают на ту же БД `review_bot`, что и `DATABASE_URL`
 - `BOT_URL` — внутренний URL Telegram-бота для backchannel-уведомлений, по умолчанию `http://localhost:8081`
 - `INTERNAL_TOKEN` — общий внутренний токен backend/bot для `/notify`
 - `ADMIN_TOKEN` — общий admin-токен для `/chats/admin/*` и Telegram admin-команд
@@ -357,7 +386,8 @@ uv run python scripts/run_chunking_experiment.py \
 
 ## Naive, ReAct и LangGraph агенты
 
-Для сравнения orchestration-подходов сохранены три standalone-модуля:
+Для сравнения orchestration-подходов сохранены три standalone-модуля,
+а production-like инкремент вынесен отдельно:
 
 - `app/services/agent_naive.py` — baseline с обычным `for`-циклом по
   `max_steps`; алгоритм сохраняется как поведенческий regression baseline;
@@ -366,13 +396,16 @@ uv run python scripts/run_chunking_experiment.py \
   observation, не более двух ревизий и явные остановки по timeout/числу
   итераций;
 - `app/services/agent_graph.py` — LangGraph 1.x custom/prebuilt реализация,
-  описанная ниже.
+  описанная ниже;
+- `app/services/agent_persistent.py` — подключённый к FastAPI persistent
+  ReAct-граф с checkpointer, HIL и опасной Telegram-отправкой.
 
 ReAct использует `gpt-5.4-mini` для main/critic и `gpt-5.4` для следующего шага
 после `REVISE`. Диапазоны параметров ограничены в коде:
 `max_iterations=8..20`, `timeout_per_iteration_sec=5..15`,
-`max_revisions=0..2`. Все три реализации не подключены к HTTP endpoint'ам и
-служат проверяемыми прототипами application-layer orchestrator.
+`max_revisions=0..2`. Первые три реализации не подключены к HTTP
+endpoint'ам и служат regression/исследовательскими прототипами;
+`agent_persistent.py` доступен через `POST /agent/stream`.
 
 Локальный запуск naive/ReAct вариантов через установленную модель Ollama
 `qwen3:latest`:
@@ -420,9 +453,9 @@ ReAct+reflection прототип и содержит два независим�
 
 State custom-графа хранит только сериализуемые `messages`,
 `iteration_count` и накопительные `tool_results`. При шестом model-шаге router
-всегда направляет выполнение в `force_finish`. В benchmark custom-граф уже
-получает `thread_id`; пока graph compiled без checkpointer, это no-op, но
-интерфейс готов для `AsyncSqliteSaver` или `AsyncPostgresSaver`.
+всегда направляет выполнение в `force_finish`. Этот исходный benchmark-граф
+намеренно остаётся in-memory для регрессии; persistence реализована в
+новом модуле, чтобы не менять старые unit-контракты.
 
 Установка и проверка LangGraph 1.x:
 
@@ -460,6 +493,52 @@ state contract, stop conditions и вывод custom vs prebuilt находят�
 `qwen3:latest` дал `15/15` корректных запусков для custom и prebuilt; naive
 завершился без технических ошибок, но не прошёл composability и проверку
 безопасного отказа на провокации.
+
+### Persistent graph, HIL и SSE
+
+Production-like граф собирается фабрикой `build_agent(checkpointer)`, а saver
+открывается в общем FastAPI lifespan. `checkpointer.setup()` выполняется ровно
+один раз при старте приложения. Локально используется SQLite, в Compose —
+существующая PostgreSQL-база `review_bot`; режим `memory` оставлен для
+одноразовых экспериментов.
+
+Опасное действие `send_telegram_message` разделено на два узла:
+`prepare_telegram_message` только валидирует вход и формирует детерминированный
+draft, затем `confirm_and_execute_telegram_message` вызывает `interrupt()`.
+Для роли `write-with-approve` реальный `POST /notify` выполняется только после
+`Command(resume=True)`; при отказе side effect отсутствует. Policy задаётся
+через `user_role`: `read-only` всегда отклоняет запись, а `full` может
+выполнить её без паузы.
+
+Запуск до паузы:
+
+```bash
+curl -N -X POST http://localhost:8000/agent/stream \
+  -H 'Content-Type: application/json' \
+  -d '{"thread_id":"demo-1","user_role":"write-with-approve","input":{"messages":[{"role":"user","content":"Отправь в Telegram-чат 4242 сообщение: PR #42 готов к review."}]}}'
+```
+
+Продолжение того же thread после решения человека:
+
+```bash
+curl -N -X POST http://localhost:8000/agent/stream \
+  -H 'Content-Type: application/json' \
+  -d '{"thread_id":"demo-1","user_role":"write-with-approve","resume":true}'
+```
+
+`thread_id` должен оставаться стабильным между запросами; новый UUID для
+каждого resume разорвёт checkpoint lineage. Endpoint отдаёт SSE-события
+`updates` и `messages`, а также явные `interrupt`, `paused` и `done`.
+
+Офлайн-демо checkpoint history, чтения прошлого snapshot и двух независимых
+веток решения запускается без PostgreSQL и LLM:
+
+```bash
+uv run python scripts/time_travel_demo.py
+```
+
+Архитектура, логи проверок и известные ограничения описаны в
+[отчёте о persistent-агенте](docs/agent-persistent-report.md).
 
 ## Multi-format RAG
 
@@ -635,6 +714,19 @@ Uvicorn. Для локальной 4B embedding-модели cold start може
 минут, поэтому healthcheck имеет `start_period=5m`. Следующие старты используют
 постоянный docstore и завершают ingestion с `0 changed, N unchanged`.
 
+Compose задаёт `AGENT_CHECKPOINTER=postgres`, поэтому LangGraph использует тот
+же сервис PostgreSQL и ту же БД `review_bot`, что и FastAPI. При старте saver
+сам создаёт и обновляет свои служебные таблицы. Проверить их можно так:
+
+```bash
+docker compose exec -T postgres \
+  psql -U postgres -d review_bot -c '\dt checkpoint*'
+```
+
+Ожидаются `checkpoints`, `checkpoint_writes`, `checkpoint_blobs` и
+`checkpoint_migrations`. Эти таблицы исключены из Alembic autogenerate: их
+схемой управляет `checkpointer.setup()`, а доменной схемой — Alembic.
+
 В `compose.yaml` для сервиса `app` добавлен alias `host.docker.internal:host-gateway`. Он нужен в Linux-сценарии, когда OpenAI-compatible backend работает на хосте, например локальная `Ollama`. Для удалённых backend'ов или контейнерных endpoint'ов эта запись не влияет на работу, если `host.docker.internal` не используется в `OPENAI_BASE_URL`.
 
 4. Проверить сервис:
@@ -794,7 +886,7 @@ uv run pytest
 uv run python -m ruff check app tests scripts
 ```
 
-Финальный проверенный результат основной suite: `93 passed, 6 skipped`.
+Финальный проверенный результат основной suite: `127 passed, 6 skipped`.
 RAG-приёмка и фактические score приведены в [docs/rag.md](docs/rag.md).
 
 ## Smoke-проверка через uvicorn + curl

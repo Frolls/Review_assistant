@@ -205,9 +205,11 @@ sources вместе с feedback.
 После тестового PDF рабочая коллекция содержала 1727 точек. Этот upload хранится
 в runtime volume и не входит в репозиторный inventory из 56 файлов.
 
-Автоматические проверки финального состояния: backend — `93 passed, 6 skipped`;
-Telegram — `14 passed`. Отдельный Telegram-тест подтверждает схлопывание быстрых
-чанков при `MIN_EDIT_INTERVAL=0.7`.
+На этапе RAG-приёмки автоматические проверки дали: backend —
+`93 passed, 6 skipped`; Telegram — `14 passed`. После добавления persistent
+agent актуальная общая backend suite выросла до `127 passed, 6 skipped`.
+Отдельный Telegram-тест подтверждает схлопывание быстрых чанков при
+`MIN_EDIT_INTERVAL=0.7`.
 
 ## Запуск
 

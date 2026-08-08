@@ -7,25 +7,37 @@
 - Added a LangGraph 1.x standalone agent with a typed serializable state, explicit message/tool-result reducers, async model/tool/force-finish nodes, a side-effect-free conditional router, and a hard six-iteration stop.
 - Added the matching LangChain 1.x prebuilt agent through `langchain.agents.create_agent`, reusing the same model, system prompt, and three domain tools as the custom graph.
 - Added Mermaid generation for both runnable graphs, a balanced five-task/three-implementation/three-repeat benchmark, raw per-run artifacts, a reviewed comparison report, and focused graph unit coverage.
-- Added a persistence-compatible `thread_id` invocation contract and documented the remaining `AsyncSqliteSaver`/`AsyncPostgresSaver` and interrupt work.
+- Added a persistence-compatible `thread_id` invocation contract to the standalone benchmark before promoting that contract into the persistent graph.
+- Added a persistent ReAct graph with memory, SQLite, and PostgreSQL checkpointer backends selected through `AGENT_CHECKPOINTER` and initialized once during FastAPI lifespan.
+- Added guarded Telegram delivery through separate idempotent preparation and `interrupt()`-based confirmation/execution nodes, including `Command(resume=...)` support and configurable `read-only`, `write-with-approve`, and `full` roles.
+- Added `POST /agent/stream` for SSE projection of LangGraph `updates` and `messages`, with explicit interrupt, paused, completion, and error events.
+- Added an offline SQLite time-travel demo, three focused persistence/HIL smoke tests, and a reviewed implementation report with checkpoint history, branching, curl, and PostgreSQL evidence.
 
 ### Changed
 
 - Updated project dependencies with `langgraph`, `langchain`, `langchain-core`, and `langchain-openai` 1.x constraints and synchronized the uv lockfile.
 - Updated the local Ollama baseline to use temperature zero and `think=false` for comparable tool-routing latency, while preserving the naive loop as the behavioral regression baseline.
-- Superseded the manual-loop-only ADR with a LangGraph orchestration ADR and documented graph setup, visualization, benchmark reproduction, state boundaries, and future checkpointing in the README and architecture passport.
+- Superseded the manual-loop-only ADR with LangGraph orchestration ADRs and documented graph setup, visualization, benchmark reproduction, state boundaries, checkpointing, HIL, and streaming in the README and architecture passport.
+- Added direct SQLite/PostgreSQL checkpoint dependencies, `aiosqlite`, and psycopg v3 binary/pool extras, and synchronized the uv lockfile with the current 3.1 checkpoint package line.
+- Wired the persistent graph into FastAPI startup and Compose, reusing the existing `review_bot` PostgreSQL database and Telegram bot backchannel rather than adding separate infrastructure.
+- Excluded LangGraph-owned checkpoint tables from Alembic autogenerate and documented the persistence, HIL, SSE, time-travel, permission, and idempotency contracts in the README and ADR-007.
 
 ### Fixed
 
 - Fixed silent max-iteration completion by making `force_finish` append an explicit final AI message when the model requests another tool at the hard limit.
 - Deferred heavy RAG imports until `search_knowledge_base` is invoked, so graph construction, tests, and Mermaid rendering no longer require the embedding/Qdrant stack.
 - Converted unknown tools and runtime tool failures into `ToolMessage` observations instead of aborting the custom graph.
+- Prevented Telegram side effects from running before human approval and from running at all on rejected or read-only branches.
+- Filtered empty provider heartbeat/thinking chunks and compacted per-token metadata so the agent SSE stream remains usable with local Ollama models.
 
 ### Verified
 
 - Verified `45/45` benchmark runs through local `qwen3:latest` and the persisted Qdrant knowledge base: custom and prebuilt were behaviorally correct in `15/15` runs each, including dependent tool chains and no-tool safety refusals.
 - Measured mean custom/prebuilt latency at `10885.7/9985.3 ms` and mean prompt-plus-completion usage at `1992/1932` tokens per task; retained concrete per-task latency, prompt tokens, completion tokens, and step counts in the report.
 - Verified the repeated unknown-tool scenario stops exactly at six model iterations with an explicit answer, all `28` agent regression tests pass, Ruff reports no findings, and `uv lock --check` succeeds.
+- Verified PostgreSQL `setup()` creates `checkpoints`, `checkpoint_writes`, `checkpoint_blobs`, and `checkpoint_migrations` in `review_bot`, and a paused thread resumes after force-recreating the application container.
+- Verified live Ollama SSE reaches `__interrupt__`, rejection completes without a side effect, and approval performs a real HTTP `POST /notify`, streams the resumed model response, and ends with `sent=true` and `done`.
+- Verified the offline demo prints four checkpoints, reads the pre-send snapshot, and produces rejected and approved outcomes on separate thread lineages; verified the complete backend suite at `127 passed, 6 skipped` and Ruff on every changed Python file.
 
 ## [2026-08-07]
 

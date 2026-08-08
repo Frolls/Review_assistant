@@ -99,4 +99,13 @@ Custom-вариант потребовал вручную описать state/r
 
 ## 8. Переход к persistence/checkpointing
 
-Граф пока компилируется без checkpointer, поэтому `thread_id` является no-op. Benchmark уже передаёт `config={"configurable": {"thread_id": "bench-<task>-run-<n>"}}` в custom-граф. Для persistence остаётся создать `AsyncSqliteSaver` или `AsyncPostgresSaver` и передать его в `builder.compile(checkpointer=...)`; state и интерфейс вызова менять не потребуется. Для HITL затем потребуется выбрать узел прерывания и политику возобновления потока.
+В рамках этого benchmark `agent_graph.py` намеренно компилируется без
+checkpointer, поэтому его `thread_id` остаётся no-op. Benchmark передаёт
+`config={"configurable": {"thread_id": "bench-<task>-run-<n>"}}`, сохраняя
+совместимый invocation contract.
+
+Следующий инкремент выполнен в отдельном `agent_persistent.py`: он подключает
+`AsyncSqliteSaver`/`AsyncPostgresSaver`, dynamic `interrupt()`,
+`Command(resume=...)` и FastAPI SSE endpoint, не меняя regression-контракты
+этого графа. Реализация и проверенные логи описаны в
+[agent-persistent-report.md](agent-persistent-report.md).

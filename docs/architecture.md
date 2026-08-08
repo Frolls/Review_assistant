@@ -43,6 +43,11 @@ Postgres, вопрос проходит RAG retrieval/score guard, а ответ
 stateful SSE `POST /chats/{id}/messages`: top-10 retrieval по Qdrant, code-level
 score guard, optional top-5 re-ranking и генерация по нумерованному контексту.
 
+Отдельный `POST /agent/stream` реализует stateful ReAct-сценарий: прогресс
+узлов и токены модели передаются через SSE, checkpoint’ы сохраняются в SQLite
+или PostgreSQL, а опасная Telegram-отправка приостанавливается до решения
+человека через `interrupt()` и продолжается через `Command(resume=...)`.
+
 ### 3. Full PR Review
 
 Сервис получает целый PR и должен:
@@ -70,6 +75,8 @@ flowchart LR
         ORCH["Unified Orchestrator\nmode = chat | review | full_pr_review"]
         CHAT["Stateless chat\nsimple completion / stream"]
         REVIEW["Stateful / RAG review\ncondense + retrieval + score guard"]
+        PAGENT["Persistent ReAct agent\ncheckpoints + HIL + SSE"]
+        BOT["Telegram bot backchannel\nPOST /notify"]
         FULL["Full PR Review mode\nasync job orchestration"]
         PRFETCH["PR fetcher\nGitHub/GitLab API\ngit diff / patch loader"]
         CHUNK["Diff chunker\nsplit by file/hunk\ntoken budget per chunk"]
@@ -89,7 +96,7 @@ flowchart LR
 
     subgraph DL["4. Data Layer"]
         CACHE["Redis Cache-Aside\nTTL 15m\nkey = sha256(model_alias + normalized_messages + temperature + kb_version)"]
-        PG["Postgres\nchat history, feedback sources, audit"]
+        PG["Postgres\nchat history, LangGraph checkpoints, audit"]
         KB["Review retrieval\nQdrant corporate_rag\nPDF / DOCX / HTML / Markdown"]
         S3["S3 / MinIO optional\nlarge diff snapshots, prompt artifacts"]
     end
@@ -97,11 +104,14 @@ flowchart LR
     USER --> GW --> API --> ORCH
     ORCH --> CHAT
     ORCH --> REVIEW
+    API --> PAGENT
     ORCH --> FULL
     FULL -->|"full PR review request"| PRFETCH --> CHUNK --> QUEUE
     QUEUE -->|"chunk analysis jobs"| PROXY
     PROXY -->|"per-chunk findings"| AGG --> FULL
     REVIEW -->|"KB lookup / retrieval"| KB
+    PAGENT -->|"checkpoint / history"| PG
+    PAGENT -->|"approved side effect"| BOT
     FULL -->|"KB lookup / retrieval"| KB
     ORCH -->|"metrics / history"| PG
     FULL -->|"large diff snapshots (optional)"| S3
@@ -110,6 +120,7 @@ flowchart LR
     CACHE -.->|"miss"| PROXY
     CHAT -.->|"simple completion"| PROXY
     REVIEW -.->|"interactive review"| PROXY
+    PAGENT -.->|"model / tools"| PROXY
     FULL -.->|"full PR digest\ncost-critical, lower priority"| PROXY
     PROXY --> CB1 --> OA
     PROXY -.->|"fallback #1"| CB2 --> AN
@@ -122,7 +133,7 @@ flowchart LR
     classDef data fill:#fff8e1,stroke:#ef6c00,stroke-width:2px;
 
     class GW gateway;
-    class API,ORCH,CHAT,REVIEW,FULL,PRFETCH,CHUNK,QUEUE,AGG service;
+    class API,ORCH,CHAT,REVIEW,PAGENT,FULL,PRFETCH,CHUNK,QUEUE,AGG,BOT service;
     class PROXY,CB1,OA,CB2,AN,CB3,OL llm;
     class CACHE,PG,KB,S3 data;
 ```
@@ -407,6 +418,69 @@ schema/reducers в custom-варианте. Реализации пока ост
 будущего interrupt. Deprecated `langgraph.prebuilt.create_react_agent` не
 используется; выбран актуальный `langchain.agents.create_agent`.
 
+## ADR-007: Persistent LangGraph, human-in-the-loop и SSE
+
+**Status:** Accepted (2026-08-08)
+
+**Context.** Граф из ADR-006 делал переходы явными, но оставался standalone и
+in-memory: рестарт процесса терял state, опасное действие нельзя было надёжно
+остановить до подтверждения, а HTTP-клиент не получал прогресс длительного run.
+Для дипломного сценария также нужны история checkpoint’ов, replay прошлого
+состояния и один persistence contract для локальной разработки и Compose.
+
+**Decision.** Введён отдельный `app/services/agent_persistent.py`; исходный
+`agent_graph.py` намеренно сохранён как in-memory regression benchmark.
+Фабрика `build_agent(checkpointer)` компилирует граф с переданным saver, а
+`agent_lifespan()` выбирает backend через
+`AGENT_CHECKPOINTER=memory|sqlite|postgres`, открывает его и один раз выполняет
+`await checkpointer.setup()` при старте FastAPI. SQLite является локальным
+default, Compose использует существующий PostgreSQL и БД `review_bot`. Таблицы
+`checkpoints`, `checkpoint_writes`, `checkpoint_blobs` и
+`checkpoint_migrations` принадлежат LangGraph и исключены из Alembic
+autogenerate.
+
+Опасный tool `send_telegram_message` реализован двумя последовательными
+узлами. `prepare_telegram_message` валидирует данные и детерминированно строит
+draft без side effect. `confirm_and_execute_telegram_message` вызывает
+`interrupt()` для роли `write-with-approve`; в этом режиме HTTP `POST /notify`
+выполняется только после `Command(resume=True)`. Роль `read-only` отклоняет
+запись, а `full` может выполнить её без паузы. Такое разделение
+необходимо, потому что interrupt-узел при resume начинает выполнение заново:
+внешняя запись до `interrupt()` могла бы выполниться повторно.
+
+FastAPI endpoint `POST /agent/stream` принимает стабильный `thread_id`, ровно
+одно из полей `input` или `resume` и `user_role`. Он проецирует
+`graph.astream(..., stream_mode=["updates", "messages"])` в SSE, добавляя явные
+события `interrupt`, `paused`, `done` и `error`. `updates` выбран для прогресса
+по узлам и state delta, `messages` — для токенов и tool-call chunks. Более
+детальный `astream_events(version="v2")` не используется в базовом API, чтобы
+не увеличивать транспортный объём callback-событиями.
+
+Time travel использует `aget_state_history()` и чтение snapshot по
+`checkpoint_id`. Противоположные решения демонстрируются на разных стабильных
+`thread_id`: первое значение `Command(resume=...)` сохраняется как pending
+write и остаётся детерминированным внутри одного lineage.
+
+**Consequences.** Paused run переживает замену контейнера, критический side
+effect получает проверяемую human-approval границу, а клиент видит узловой и
+token-level прогресс. SQLite позволяет запускать тесты и демо без PostgreSQL;
+production-like Compose не требует нового database service или отдельной БД.
+
+Цена решения — четыре служебные таблицы, необходимость сохранять стабильный
+`thread_id` и поддерживать транспортный resume contract. Backchannel пока не
+принимает idempotency key: сбой после приёма `/notify`, но до записи checkpoint,
+остаётся неоднозначным для ручного retry. В SSE также ещё нет replay-буфера по
+`Last-Event-ID`, а роль `full` до публичного использования должна вычисляться
+из доверенной аутентификации, а не из клиентского JSON.
+
+**Alternatives considered.** Только `InMemorySaver` отвергнут из-за потери
+paused state при рестарте. Отдельная PostgreSQL-база не создаётся, поскольку
+служебные таблицы имеют собственные имена и схему ведёт saver. Статические
+`interrupt_before`/`interrupt_after` не выбраны: dynamic `interrupt()` передаёт
+preview и получает решение через `Command(resume=...)`. Side effect до паузы
+отвергнут из-за риска повтора. Использование только `astream_events(v2)`
+отклонено как избыточное для минимального внешнего SSE-контракта.
+
 ## Unified Orchestrator
 
 Вариант 2 вводит единый application-layer orchestrator, который управляет сценариями, а не перекладывает orchestration на `LLMService`.
@@ -661,18 +735,29 @@ curl -s http://127.0.0.1:4000/v1/chat/completions \
 
 ## Текущее состояние HTTP-сервиса
 
-На текущем этапе FastAPI приложение больше не держит app-level fallback между провайдерами. Оно работает как тонкий HTTP-слой поверх LiteLLM Proxy и фактически реализует `chat`-режим из целевой схемы:
+FastAPI больше не держит app-level fallback между провайдерами: модельные
+вызовы идут через OpenAI-compatible LiteLLM/Ollama contract. Поверх этого
+инфраструктурного слоя уже реализованы несколько application paths:
 
-- `POST /chat` и `POST /chat/stream` идут в LiteLLM через `AsyncOpenAI(base_url=OPENAI_BASE_URL)`;
-- fallback chain целиком живёт в `docs/litellm/config.production_like.yaml`;
-- Redis используется только для cache-aside слоя на `/chat`;
-- приложению достаточно OpenAI-совместимого контракта: `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `DEFAULT_MODEL`.
+- `POST /chat` и `POST /chat/stream` обеспечивают stateless chat, а Redis —
+  cache-aside для синхронного запроса;
+- `POST /rag/query` и `POST /chats/{id}/messages` реализуют interactive review
+  с retrieval, score guard, историей и citations;
+- `POST /agent/stream` запускает persistent ReAct-граф, стримит `updates` и
+  `messages`, сохраняет checkpoints и останавливает Telegram side effect на
+  dynamic interrupt;
+- fallback chain LLM-провайдеров целиком живёт в
+  `docs/litellm/config.production_like.yaml`.
 
-Следующие режимы — `review` и `full_pr_review` — остаются следующими этапами эволюции и должны быть реализованы уже в application-layer orchestrator, а не внутри `LLMService`.
+Таким образом, provider routing остаётся ответственностью proxy, а policy,
+retrieval, tools, HIL и persistence находятся в application layer. Persistent
+agent пока доступен как отдельный endpoint, а не как ветка единого публичного
+`mode`-dispatcher.
 
-То есть провайдерная маршрутизация теперь описывается конфигом proxy, а не Python-кодом FastAPI сервиса, а orchestration должна подниматься отдельным слоем поверх текущего HTTP-ядра.
-
-Итог: для дипломного проекта LiteLLM закрывает ключевую задачу LLM gateway без написания собственного маршрутизатора, а локальный demo-стенд воспроизводимо показывает ordered fallback при ошибке primary.
+Следующим крупным этапом остаётся `full_pr_review`: PR fetch, chunking,
+queue/workers и агрегация findings. Для дипломного проекта LiteLLM уже закрывает
+задачу LLM gateway, RAG — interactive review, а LangGraph — restart-safe
+orchestration критических действий.
 
 ## Observability и защита данных
 
