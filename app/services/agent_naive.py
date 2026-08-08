@@ -1,3 +1,6 @@
+# This legacy baseline deliberately converts provider/tool failures into trace rows.
+# ruff: noqa: BLE001, LOG015
+
 from __future__ import annotations
 
 import argparse
@@ -7,11 +10,15 @@ import time
 from datetime import datetime
 from typing import Any
 from zoneinfo import ZoneInfo
+
 from openai import OpenAI
+
 from app.core.config import get_settings
-from app.services.rag import search_top_fragment
+
 
 def search_knowledge_base(query: str) -> str:
+    from app.services.rag import search_top_fragment
+
     return search_top_fragment(query)
 
 def get_current_time(timezone: str = "Europe/Moscow") -> str:
@@ -41,7 +48,18 @@ def run_agent(task: str, max_steps: int = 6) -> dict:
     for step in range(max_steps):
         started = time.perf_counter()
         try:
-            response = client.chat.completions.create(model=settings.default_model, messages=messages, tools=TOOLS)
+            provider_options = (
+                {"extra_body": {"think": False}}
+                if "11434" in settings.openai_base_url
+                else {}
+            )
+            response = client.chat.completions.create(
+                model=settings.default_model,
+                messages=messages,
+                tools=TOOLS,
+                temperature=0,
+                **provider_options,
+            )
         except Exception as exc:
             _record(trace, step + 1, None, "{}", exc, None, started)
             return {"answer": "Агент остановлен из-за ошибки LLM.", "steps": step + 1, "trace": trace, "error": str(exc)}
