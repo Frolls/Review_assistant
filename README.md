@@ -46,6 +46,9 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 - mini-benchmark для проверки retrieval-поведения на проектных вопросах из области PR-review ассистента
 - быстрый unit testing layer вокруг LLM-adjacent логики и отдельный offline evaluation layer в `eval/`
 - standalone-сравнение naive и управляемого ReAct tool loop с жёсткими лимитами, self-reflection и полным token usage
+- standalone LangGraph 1.x orchestration в двух вариантах: явный типизированный
+  `StateGraph` и prebuilt `langchain.agents.create_agent`, с единым набором tools,
+  force-finish и сравнением с naive loop
 - security evaluation layer на базе NVIDIA garak с baseline/after отчётами
 
 ## Архитектура
@@ -99,6 +102,7 @@ app/
     models.py
     rag.py
   services/
+    agent_graph.py
     agent_naive.py
     agent_react.py
     chunking.py
@@ -128,6 +132,10 @@ app/
     auth.py
     routes.py
 docs/
+  agent-graph-custom.mmd
+  agent-graph-prebuilt.mmd
+  agent-graph-report.md
+  agent-graph-results.json
   agent-react-report.md
   agent-react-results.json
   chat.md
@@ -149,6 +157,7 @@ docs/
     config.yaml
     config.production_like.yaml
 scripts/
+  bench_agents.py
   compare_agents.py
   calibrate_rag_threshold.py
   compare_embedding_latency.py
@@ -159,6 +168,7 @@ scripts/
   run_chunking_experiment.py
   run_embedding_benchmark.py
   verify_multiturn.py
+  visualize_graph.py
 data/
   python-peps/
   retrieval-corpus/
@@ -345,24 +355,26 @@ uv run python scripts/run_chunking_experiment.py \
 из multi-format корпуса `data/`. Архитектура, калибровка score guard и HTTP/SSE
 контракты описаны в `docs/rag.md`.
 
-## Naive и ReAct агенты
+## Naive, ReAct и LangGraph агенты
 
-Для сравнения orchestration-подходов рядом существуют два standalone-модуля:
+Для сравнения orchestration-подходов сохранены три standalone-модуля:
 
 - `app/services/agent_naive.py` — baseline с обычным `for`-циклом по
-  `max_steps`; файл сохраняется без изменений для регрессионного контроля;
+  `max_steps`; алгоритм сохраняется как поведенческий regression baseline;
 - `app/services/agent_react.py` — native ReAct поверх Chat Completions tool
   calling: один tool за итерацию, строгие JSON Schema, critic после каждого
   observation, не более двух ревизий и явные остановки по timeout/числу
-  итераций.
+  итераций;
+- `app/services/agent_graph.py` — LangGraph 1.x custom/prebuilt реализация,
+  описанная ниже.
 
 ReAct использует `gpt-5.4-mini` для main/critic и `gpt-5.4` для следующего шага
 после `REVISE`. Диапазоны параметров ограничены в коде:
 `max_iterations=8..20`, `timeout_per_iteration_sec=5..15`,
-`max_revisions=0..2`. Эти модули не подключены к HTTP endpoint'ам и служат
-проверяемым прототипом application-layer orchestrator.
+`max_revisions=0..2`. Все три реализации не подключены к HTTP endpoint'ам и
+служат проверяемыми прототипами application-layer orchestrator.
 
-Локальный запуск обоих вариантов через установленную модель Ollama
+Локальный запуск naive/ReAct вариантов через установленную модель Ollama
 `qwen3:latest`:
 
 ```bash
@@ -395,6 +407,59 @@ docker compose --profile eval run --rm --no-deps eval \
 [docs/agent-react-results.json](docs/agent-react-results.json). В проверенном
 прогоне ReAct решил `5/5` задач, naive — `2/5`; суммарный usage ReAct включает
 вызовы main и critic.
+
+Следующий orchestration-инкремент находится в
+`app/services/agent_graph.py`. Он не заменяет HTTP-маршруты или предыдущий
+ReAct+reflection прототип и содержит два независимо вызываемых runnable с одним
+набором `@tool`:
+
+- `custom_graph` — ручной `StateGraph` с `AgentState`, узлами `call_model`,
+  `execute_tool`, `force_finish` и отдельным router;
+- `prebuilt_graph` — стандартный агент через
+  `langchain.agents.create_agent`.
+
+State custom-графа хранит только сериализуемые `messages`,
+`iteration_count` и накопительные `tool_results`. При шестом model-шаге router
+всегда направляет выполнение в `force_finish`. В benchmark custom-граф уже
+получает `thread_id`; пока graph compiled без checkpointer, это no-op, но
+интерфейс готов для `AsyncSqliteSaver` или `AsyncPostgresSaver`.
+
+Установка и проверка LangGraph 1.x:
+
+```bash
+uv sync
+uv run python -c \
+  "from importlib.metadata import version; print(version('langgraph'))"
+```
+
+Пакет `langgraph` 1.2 не экспортирует `langgraph.__version__`, поэтому версия
+читается через стандартный `importlib.metadata`.
+
+Генерация Mermaid-схем и полный benchmark через локальный Ollama/Qdrant:
+
+```bash
+docker compose up -d qdrant
+
+OPENAI_BASE_URL=http://localhost:11434/v1 \
+QDRANT_URL=http://localhost:6333 \
+uv run python scripts/visualize_graph.py
+
+OPENAI_BASE_URL=http://localhost:11434/v1 \
+QDRANT_URL=http://localhost:6333 \
+uv run python scripts/bench_agents.py \
+  --model qwen3:latest \
+  --base-url http://localhost:11434/v1 \
+  --repetitions 3
+```
+
+Benchmark выполняет `5 задач × 3 реализации × 3 повтора`, циклически меняет
+порядок реализаций и сохраняет сырые результаты в
+[docs/agent-graph-results.json](docs/agent-graph-results.json). Итоговый отчёт,
+state contract, stop conditions и вывод custom vs prebuilt находятся в
+[docs/agent-graph-report.md](docs/agent-graph-report.md). Проверенный прогон на
+`qwen3:latest` дал `15/15` корректных запусков для custom и prebuilt; naive
+завершился без технических ошибок, но не прошёл composability и проверку
+безопасного отказа на провокации.
 
 ## Multi-format RAG
 

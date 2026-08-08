@@ -1,5 +1,32 @@
 # Changelog
 
+## [2026-08-08]
+
+### Added
+
+- Added a LangGraph 1.x standalone agent with a typed serializable state, explicit message/tool-result reducers, async model/tool/force-finish nodes, a side-effect-free conditional router, and a hard six-iteration stop.
+- Added the matching LangChain 1.x prebuilt agent through `langchain.agents.create_agent`, reusing the same model, system prompt, and three domain tools as the custom graph.
+- Added Mermaid generation for both runnable graphs, a balanced five-task/three-implementation/three-repeat benchmark, raw per-run artifacts, a reviewed comparison report, and focused graph unit coverage.
+- Added a persistence-compatible `thread_id` invocation contract and documented the remaining `AsyncSqliteSaver`/`AsyncPostgresSaver` and interrupt work.
+
+### Changed
+
+- Updated project dependencies with `langgraph`, `langchain`, `langchain-core`, and `langchain-openai` 1.x constraints and synchronized the uv lockfile.
+- Updated the local Ollama baseline to use temperature zero and `think=false` for comparable tool-routing latency, while preserving the naive loop as the behavioral regression baseline.
+- Superseded the manual-loop-only ADR with a LangGraph orchestration ADR and documented graph setup, visualization, benchmark reproduction, state boundaries, and future checkpointing in the README and architecture passport.
+
+### Fixed
+
+- Fixed silent max-iteration completion by making `force_finish` append an explicit final AI message when the model requests another tool at the hard limit.
+- Deferred heavy RAG imports until `search_knowledge_base` is invoked, so graph construction, tests, and Mermaid rendering no longer require the embedding/Qdrant stack.
+- Converted unknown tools and runtime tool failures into `ToolMessage` observations instead of aborting the custom graph.
+
+### Verified
+
+- Verified `45/45` benchmark runs through local `qwen3:latest` and the persisted Qdrant knowledge base: custom and prebuilt were behaviorally correct in `15/15` runs each, including dependent tool chains and no-tool safety refusals.
+- Measured mean custom/prebuilt latency at `10885.7/9985.3 ms` and mean prompt-plus-completion usage at `1992/1932` tokens per task; retained concrete per-task latency, prompt tokens, completion tokens, and step counts in the report.
+- Verified the repeated unknown-tool scenario stops exactly at six model iterations with an explicit answer, all `28` agent regression tests pass, Ruff reports no findings, and `uv lock --check` succeeds.
+
 ## [2026-08-07]
 
 ### Added

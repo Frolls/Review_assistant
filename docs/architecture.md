@@ -301,7 +301,7 @@ batch-нагрузки. Один универсальный limiter в прил�
 
 ## ADR-005: Управляемый ReAct-цикл для interactive review
 
-**Status:** Accepted (2026-08-07)
+**Status:** Superseded by ADR-006 (2026-08-08)
 
 **Context.** Первый standalone-прототип `agent_naive.py` использует прямой
 Chat Completions tool loop и исполняет все `tool_calls`, которые модель вернула
@@ -338,14 +338,74 @@ runaway ограничен независимо от поведения моде
 дополнительный critic-вызов после каждого observation и больший расход токенов
 на простых задачах. Реализация пока не подключена к FastAPI endpoint'ам: это
 проверяемый прототип будущего application-layer orchestrator, а
-`agent_naive.py` остаётся неизменным baseline.
+`agent_naive.py` остаётся поведенческим baseline.
 
 **Alternatives considered.** Текстовый ReAct отвергнут, потому что потребовал бы
-парсить свободный формат модели при наличии native tool calling. LangGraph не
-используется: текущий линейный цикл, два лимита и одна critic-ветка не требуют
-отдельного graph runtime. Plan-and-Execute отложен для длинных задач с заранее
+парсить свободный формат модели при наличии native tool calling. На этапе
+ADR-005 LangGraph не использовался: текущий линейный цикл, два лимита и одна
+critic-ветка не требовали отдельного graph runtime; это решение пересмотрено в
+ADR-006. Plan-and-Execute отложен для длинных задач с заранее
 известным планом; для короткого interactive review последовательный ReAct проще
 и позволяет менять следующий шаг сразу после observation.
+
+## ADR-006: LangGraph как orchestration-слой агента
+
+**Status:** Accepted (2026-08-08)
+
+**Context.** Ручной ReAct+reflection цикл из ADR-005 подтвердил необходимость
+последовательного использования observations, явных лимитов и безопасного
+завершения без tool call. Следующий дипломный инкремент должен подготовить
+агента к checkpointing, human-in-the-loop и использованию как subgraph в
+supervisor-схеме. Обычный `for`-цикл скрывает переходы внутри функции и требует
+отдельного протокола для сохранения состояния и возобновления выполнения.
+
+**Decision.** Вводится standalone-модуль `app/services/agent_graph.py` на
+LangGraph 1.x. В нём собираются два runnable с одной моделью, system prompt и
+единым набором `@tool`:
+
+1. `custom_graph` — ручной `StateGraph` с типизированным `AgentState`;
+2. `prebuilt_graph` — рекомендуемый LangChain 1.x путь через
+   `langchain.agents.create_agent`.
+
+State custom-графа содержит только сериализуемые поля:
+
+- `messages` с reducer `add_messages`;
+- scalar `iteration_count` с replace-семантикой;
+- append-only `tool_results` с reducer `operator.add`.
+
+SDK-клиент, HTTP-сессии, provider settings и ключи остаются вне state. Граф
+состоит из async-узлов `call_model`, `execute_tool`, `force_finish`; чистая
+router-функция после model-узла выбирает `execute_tool` либо `force_finish`.
+При `iteration_count >= 6` срабатывает жёсткий stop-кран. Если модель на лимите
+снова запросила tool, `force_finish` добавляет явный AI-ответ и не исполняет
+последний вызов.
+
+Граф компилируется без checkpointer. Вызывающая сторона уже передаёт
+`config.configurable.thread_id`, поэтому подключение `AsyncSqliteSaver` или
+`AsyncPostgresSaver` потребует изменить только `builder.compile(...)`, а не
+state contract или invocation interface.
+
+**Consequences.** Узлы, edges, reducers и stop conditions становятся явными и
+визуализируются как Mermaid. Tool errors возвращаются в messages как
+observations, неизвестное имя tool не обрушает run, а `tool_results` даёт
+отдельный audit/trace слой. Custom-граф удобен для будущих interrupt/HITL и
+нестандартных ветвей; prebuilt сокращает application-код для стандартного
+model/tools цикла.
+
+Цена решения — новая runtime-зависимость и необходимость поддерживать state
+schema/reducers в custom-варианте. Реализации пока остаются standalone и не
+подключены к FastAPI endpoint'ам. В проверенном benchmark на пяти задачах и
+трёх повторах prebuilt показал среднюю latency `9985.3 ms` и `1932` tokens на
+задачу, custom — `10885.7 ms` и `1992` tokens; оба варианта дали `15/15`
+корректных запусков.
+
+**Alternatives considered.** Сохранение только ручного цикла отвергнуто из-за
+неявной модели переходов и будущего checkpoint protocol. Только custom-граф
+отклонён как единственный путь: он полезен для расширения, но добавляет код,
+который `create_agent` уже поддерживает для стандартного ReAct. Только prebuilt
+отклонён, потому что скрывает собственные поля state, force-finish и точки
+будущего interrupt. Deprecated `langgraph.prebuilt.create_react_agent` не
+используется; выбран актуальный `langchain.agents.create_agent`.
 
 ## Unified Orchestrator
 
