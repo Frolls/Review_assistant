@@ -48,6 +48,11 @@ score guard, optional top-5 re-ranking и генерация по нумеров
 или PostgreSQL, а опасная Telegram-отправка приостанавливается до решения
 человека через `interrupt()` и продолжается через `Command(resume=...)`.
 
+Для составных grounded review-запросов приложение также предоставляет
+`POST /agent/review`. Endpoint запускает supervisor LangGraph с агентами
+`researcher` и `writer`, использующими production `RAGService`; persistent ReAct
+и HIL-контракт `/agent/stream` остаются отдельным путём для write-действий.
+
 ### 3. Full PR Review
 
 Сервис получает целый PR и должен:
@@ -751,8 +756,8 @@ FastAPI больше не держит app-level fallback между прова�
 
 Таким образом, provider routing остаётся ответственностью proxy, а policy,
 retrieval, tools, HIL и persistence находятся в application layer. Persistent
-agent пока доступен как отдельный endpoint, а не как ветка единого публичного
-`mode`-dispatcher.
+agent и supervisor review доступны как отдельные endpoint’ы, а не как ветки
+единого публичного `mode`-dispatcher.
 
 Следующим крупным этапом остаётся `full_pr_review`: PR fetch, chunking,
 queue/workers и агрегация findings. Для дипломного проекта LiteLLM уже закрывает

@@ -4,7 +4,7 @@ HTTP-сервис на `FastAPI` для дипломного проекта «И
 
 Сервис поднимает `app.main:app`, принимает запросы на `POST /chat`,
 `POST /chat/stream`, `POST /rag/query`, persistent-agent endpoint
-`POST /agent/stream` и stateful API `/chats`, кеширует обычные ответы в
+`POST /agent/stream`, `POST /agent/review` и stateful API `/chats`, кеширует обычные ответы в
 `Redis`, работает с OpenAI-совместимым backend и экспортирует
 trace/span-данные в Phoenix.
 
@@ -30,6 +30,8 @@ checkpoint persistence, HIL-policy, служебные endpoint'ы и инфра
 - `POST /agent/stream` — SSE-запуск persistent ReAct-графа с node updates,
   LLM-токенами, dynamic interrupt и продолжением того же `thread_id`
   через `resume=true|false`
+- `POST /agent/review` — grounded review-ответ через supervisor LangGraph с
+  агентами `researcher` и `writer`; возвращает ответ и число handoff
 - `POST /documents/upload` — загрузка PDF/DOCX/HTML/Markdown с фоновой UPSERT-индексацией (`202 Accepted`)
 - `POST /chats` и `/chats/{chat_id}/messages` — stateful-чат с серверной историей, SSE-ответом и JSON/Postgres-хранилищем
 - `POST /chats/{chat_id}/messages` принимает `multipart/form-data`: поле `content` и опциональный файл `media` для изображений, аудио, PDF и DOCX
@@ -399,13 +401,16 @@ uv run python scripts/run_chunking_experiment.py \
   описанная ниже;
 - `app/services/agent_persistent.py` — подключённый к FastAPI persistent
   ReAct-граф с checkpointer, HIL и опасной Telegram-отправкой.
+- `app/agents/graph.py` — production supervisor для review-вопросов;
+  `app/agents/tools.py` адаптирует тот же `RAGService` в tool.
 
 ReAct использует `gpt-5.4-mini` для main/critic и `gpt-5.4` для следующего шага
 после `REVISE`. Диапазоны параметров ограничены в коде:
 `max_iterations=8..20`, `timeout_per_iteration_sec=5..15`,
 `max_revisions=0..2`. Первые три реализации не подключены к HTTP
 endpoint'ам и служат regression/исследовательскими прототипами;
-`agent_persistent.py` доступен через `POST /agent/stream`.
+`agent_persistent.py` доступен через `POST /agent/stream`, а supervisor из
+`app/agents/graph.py` — через `POST /agent/review`.
 
 Локальный запуск naive/ReAct вариантов через установленную модель Ollama
 `qwen3:latest`:
