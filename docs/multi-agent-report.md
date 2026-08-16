@@ -46,3 +46,5 @@ Anthropic в *How we built our multi-agent research system* сообщает п�
 ## Решение
 
 **Использую мультиагентность в дипломе для составных review-запросов.** Multi-agent дал +2,0 балла качества при 1,51× токенов, 1,40× p50 latency и 2 handoff. В диплом переходит supervisor LangGraph с агентами `researcher` и `writer`, message passing через состояние графа и бюджетом не более 2 handoff; single-agent остаётся fallback для коротких вопросов. Для tight-coupling и real-time путей baseline сохраняется.
+
+Production-заготовка этого слоя находится в `app/agents/graph.py`: модель и tool передаются в `build_supervisor_graph()`, а адаптер `app/agents/tools.py` использует тот же `RAGService`, что и HTTP-контур. Это позволяет подключить граф к application lifecycle без копирования retrieval-логики.

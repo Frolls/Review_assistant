@@ -67,6 +67,7 @@
 ### Changed
 
 - Documented the agent-layer decision: use the supervisor pattern for composite review requests, keep single-agent as the short-query fallback, and limit coordination to two handoffs per request.
+- Added the selected supervisor graph under `app/agents/` with injectable model and production `RAGService` tool adapter.
 
 ### Verified
 
