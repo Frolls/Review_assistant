@@ -56,6 +56,22 @@
 
 - Verified the local `qwen3:latest` comparison at `5/5` correct ReAct tasks versus `2/5` naive tasks; the ReAct agent completed the provocation without a tool call and used two bounded revisions on the time-to-message composition task.
 - Verified all `73` unit tests and Ruff lint/format checks for the new agent, comparison runner, and tests.
+## [2026-08-16]
+
+### Added
+
+- Added an isolated LangGraph supervisor experiment with `researcher` and `writer` agents, a single-agent baseline, the shared RAG search tool, and a five-question comparison set.
+- Added raw token, LLM-call, latency, handoff, and quality measurements in `experiments/results.json`.
+- Added the multi-agent comparison report and the generated supervisor graph in `docs/multi-agent-report.md` and `docs/architecture-multi-agent.md`.
+
+### Changed
+
+- Documented the agent-layer decision: use the supervisor pattern for composite review requests, keep single-agent as the short-query fallback, and limit coordination to two handoffs per request.
+
+### Verified
+
+- Verified both implementations against Ollama `qwen3:latest` and Qdrant in Docker: 10/10 question runs completed, with LLM-judge quality improving from `2.6/5` to `4.6/5` at 1.51× token cost.
+- Verified the LangGraph supervisor compiles, streams state updates, persists the Mermaid graph, and records reproducible measurements.
 
 ## [2026-08-06]
 
