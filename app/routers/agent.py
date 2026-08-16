@@ -28,6 +28,15 @@ class AgentStreamRequest(BaseModel):
         return self
 
 
+class AgentReviewRequest(BaseModel):
+    """Input for the production researcher → writer supervisor."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    question: str = Field(min_length=1, max_length=20_000)
+    thread_id: str = Field(default="agent-review", min_length=1, max_length=200)
+
+
 def _json_default(value: Any) -> Any:
     if hasattr(value, "model_dump"):
         return value.model_dump(mode="json")
@@ -164,3 +173,29 @@ async def stream_agent(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.post("/review", summary="Run the researcher → writer supervisor")
+async def review_agent(payload: AgentReviewRequest, request: Request) -> dict[str, Any]:
+    """Run the selected multi-agent graph for a grounded review question."""
+
+    graph = getattr(request.app.state, "multi_agent_graph", None)
+    if graph is None:
+        raise HTTPException(status_code=503, detail="multi-agent supervisor is not ready")
+
+    config = {"configurable": {"thread_id": payload.thread_id}}
+    initial = {
+        "messages": [],
+        "question": payload.question,
+        "research": "",
+        "final_answer": "",
+        "handoff_count": 0,
+    }
+    await graph.ainvoke(initial, config=config)
+    snapshot = await graph.aget_state(config)
+    values = snapshot.values
+    return {
+        "answer": values.get("final_answer", ""),
+        "handoff_count": values.get("handoff_count", 0),
+        "thread_id": payload.thread_id,
+    }

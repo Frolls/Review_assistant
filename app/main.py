@@ -82,11 +82,21 @@ async def lifespan(app: FastAPI):
         db_engine = create_async_engine(settings.database_url)
         app.state.db_engine = db_engine
         app.state.db_sessionmaker = async_sessionmaker(db_engine, expire_on_commit=False)
-    from app.services.agent_persistent import agent_lifespan
+    from app.services.agent_persistent import _build_model, agent_lifespan
+    from app.agents.graph import build_supervisor_graph
+    from app.agents.tools import make_search_knowledge_base_tool
 
     try:
         async with agent_lifespan(settings) as agent_graph:
             app.state.agent_graph = agent_graph
+            app.state.multi_agent_graph = (
+                build_supervisor_graph(
+                    model=_build_model(settings),
+                    search_tool=make_search_knowledge_base_tool(rag_service),
+                )
+                if rag_service is not None
+                else None
+            )
             yield
     finally:
         await vector_store.close()
