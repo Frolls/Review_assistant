@@ -87,11 +87,10 @@ async def upload_document(
 
 async def _index_uploaded_file(path: Path, settings: Settings, app: object) -> None:
     try:
-        result = await asyncio.to_thread(
-            IngestionService(settings).ingest_path,
-            path,
-            rename_failed=True,
-        )
+        async with app.state.ingestion_lock:
+            result = await asyncio.to_thread(
+                IngestionService(settings).ingest_path, path, rename_failed=True,
+            )
         if result.failed:
             logger.error(
                 "documents.upload_index_failed",
@@ -101,12 +100,19 @@ async def _index_uploaded_file(path: Path, settings: Settings, app: object) -> N
             return
         from app.services.rag import RAGService
 
-        refreshed = RAGService(settings)
-        await refreshed.build()
-        previous = getattr(getattr(app, "state"), "rag_service", None)
-        getattr(app, "state").rag_service = refreshed
-        if previous is not None:
-            await previous.close()
+        if getattr(app.state, "rag_service", None) is None:
+            async with app.state.rag_init_lock:
+                if app.state.rag_service is None:
+                    refreshed = RAGService(settings)
+                    await refreshed.build()
+                    app.state.rag_service = refreshed
+                    from app.agents.graph import build_supervisor_graph
+                    from app.agents.tools import make_search_knowledge_base_tool
+                    from app.services.agent_persistent import _build_model
+                    app.state.multi_agent_graph = build_supervisor_graph(
+                        model=_build_model(settings),
+                        search_tool=make_search_knowledge_base_tool(refreshed),
+                    )
         logger.info(
             "documents.upload_indexed",
             path=str(path),

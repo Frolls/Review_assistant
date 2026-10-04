@@ -52,6 +52,8 @@ async def lifespan(app: FastAPI):
         timeout=settings.request_timeout,
     )
     cache = Redis.from_url(settings.redis_url)
+    app.state.rag_init_lock = asyncio.Lock()
+    app.state.ingestion_lock = asyncio.Lock()
     app.state.openai = openai_client
     app.state.cache = cache
     app.state.llm_semaphore = asyncio.Semaphore(settings.max_concurrency)
@@ -100,8 +102,9 @@ async def lifespan(app: FastAPI):
             yield
     finally:
         await vector_store.close()
-        if rag_service is not None:
-            await rag_service.close()
+        current_rag = getattr(app.state, "rag_service", None)
+        if current_rag is not None:
+            await current_rag.close()
         await openai_client.close()
         await cache.aclose()
         if db_engine is not None:

@@ -114,25 +114,41 @@ class SettingsTests(unittest.IsolatedAsyncioTestCase):
 
 
 class HealthEndpointTests(unittest.IsolatedAsyncioTestCase):
+    def ready_request(self):
+        from unittest.mock import AsyncMock
+        from types import SimpleNamespace as NS
+        state = NS(settings=NS(chat_repository="json", rag_collection="test"),
+                   vector_store=NS(client=NS(get_collection=AsyncMock())),
+                   openai=NS(models=NS(list=AsyncMock())), rag_service=object(), agent_graph=object())
+        return NS(app=NS(state=state))
+
     async def test_healthcheck_returns_ok(self):
         response = await healthcheck()
 
         self.assertEqual(response.status, "ok")
 
     async def test_readiness_returns_ok_when_redis_is_available(self):
-        response = await readiness_check(FakeRedis())
+        response = await readiness_check(self.ready_request(), FakeRedis())
 
         self.assertEqual(response.status, "ok")
         self.assertEqual(response.redis, "up")
 
     async def test_readiness_returns_503_when_redis_is_unavailable(self):
-        response = await readiness_check(FailingRedis())
+        response = await readiness_check(self.ready_request(), FailingRedis())
 
         self.assertEqual(response.status_code, 503)
-        self.assertEqual(
-            loads(response.body),
-            {"status": "degraded", "redis": "down"},
-        )
+        payload = loads(response.body)
+        self.assertEqual(payload["status"], "degraded")
+        self.assertEqual(payload["redis"], "down")
+        self.assertEqual(payload["dependencies"]["model_api"], "up")
+
+
+    async def test_readiness_fails_when_model_api_is_unavailable(self):
+        request = self.ready_request()
+        request.app.state.openai.models.list.side_effect = ConnectionError()
+        response = await readiness_check(request, FakeRedis())
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(loads(response.body)["dependencies"]["model_api"], "down")
 
 
 class LLMServiceTests(unittest.IsolatedAsyncioTestCase):
