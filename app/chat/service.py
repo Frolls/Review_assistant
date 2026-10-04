@@ -17,7 +17,7 @@ from app.chat.repository import ChatRepository
 from app.moderation import ModerationResult, ModerationService
 from app.observability.logging import get_logger
 from app.observability.pii import prompt_hash, redact_pii
-from app.services.rag import UNKNOWN_ANSWER, PreparedRAG, RAGService, _ensure_source_marker
+from app.services.rag import PreparedRAG, RAGService, _ensure_source_marker
 
 
 logger = get_logger(__name__)
@@ -182,7 +182,7 @@ class ChatService:
                 if on_sources is not None:
                     on_sources(prepared.sources, prepared.confident)
                 if not prepared.confident:
-                    accumulated.append(UNKNOWN_ANSWER)
+                    accumulated.append(prepared.fallback_answer)
 
                 else:
                     rag_messages = self.rag_service.generation_messages(

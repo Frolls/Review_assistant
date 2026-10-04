@@ -76,6 +76,29 @@ class FakeLLM:
         self.chat = SimpleNamespace(completions=FakeCompletions())
 
 
+@pytest.mark.asyncio
+async def test_rag_clarification_is_saved_without_answer_generation():
+    from app.services.rag import CLARIFY_ANSWER, PreparedRAG
+
+    class ClarifyingRAG:
+        async def prepare(self, question, **kwargs):
+            return PreparedRAG(question, question, [], 0.9, False, "", [], CLARIFY_ANSWER)
+
+    chat = Chat(owner_external_id="owner", interface="telegram")
+    repo = FakeRepository(chat)
+    llm = FakeLLM()
+    service = ChatService(repo, llm, rag_service=ClarifyingRAG())
+    sources = []
+    answer = ''.join([part async for part in service.send_message(
+        chat.id, "Why is the unnamed component not idempotent?",
+        on_sources=lambda items, confident: sources.append((items, confident)),
+    )])
+    assert answer == CLARIFY_ANSWER
+    assert sources == [([], False)]
+    assert repo.messages[-1].content == CLARIFY_ANSWER
+    assert llm.chat.completions.calls == []
+
+
 def test_fit_to_budget_preserves_first_system_message():
     messages = [
         {"role": "system", "content": "rules"},
