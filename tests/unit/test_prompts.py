@@ -5,7 +5,7 @@ def test_review_prompt_roles_are_ordered_system_then_user():
     messages = build_review_messages("Как отревьюить PR с Ansible role?")
 
     assert [message.role for message in messages] == ["system", "user"]
-    assert "senior ИИ-ассистент для ревью кода" in messages[0].content
+    assert "ИИ-ассистент для разработки и ревью кода" in messages[0].content
     assert "Python Enhancement Proposals" in messages[0].content
     assert "Ansible community documentation" in messages[0].content
     assert "Как отревьюить PR с Ansible role?" in messages[1].content

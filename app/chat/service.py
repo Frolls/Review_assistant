@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from functools import lru_cache
 import time
+import asyncio
+from weakref import WeakValueDictionary
 from typing import Any, Literal
 from uuid import UUID
 
@@ -15,7 +17,7 @@ from app.chat.repository import ChatRepository
 from app.moderation import ModerationResult, ModerationService
 from app.observability.logging import get_logger
 from app.observability.pii import prompt_hash, redact_pii
-from app.services.rag import UNKNOWN_ANSWER, PreparedRAG, RAGService
+from app.services.rag import UNKNOWN_ANSWER, PreparedRAG, RAGService, _ensure_source_marker
 
 
 logger = get_logger(__name__)
@@ -27,6 +29,7 @@ DEFAULT_CONTEXT_WINDOW_TOKENS = 8_192
 DEFAULT_RESPONSE_TOKENS = 1_536
 DEFAULT_SAFETY_MARGIN = 256
 DEFAULT_HISTORY_LIMIT = 200
+_CHAT_LOCKS: WeakValueDictionary[str, asyncio.Lock] = WeakValueDictionary()
 SUMMARIZE_PROMPT = (
     "Сожми старую часть диалога для продолжения работы ассистента. "
     "Явно перечисли: темы, имена, числа, принятые решения и нерешенные вопросы. "
@@ -48,21 +51,20 @@ def count_tokens(messages: list[MessagePayload]) -> int:
 
 
 def fit_to_budget(messages: list[MessagePayload], budget: int) -> list[MessagePayload]:
-    if budget <= 0:
+    if not messages:
         return []
-    if count_tokens(messages) <= budget:
-        return messages
-
-    preserved_system = [messages[0]] if messages and messages[0]["role"] == "system" else []
-    rest = messages[1:] if preserved_system else messages[:]
-
-    while rest and count_tokens([*preserved_system, *rest]) > budget:
-        rest.pop(0)
-
-    fitted = [*preserved_system, *rest]
-    if fitted and count_tokens(fitted) <= budget:
-        return fitted
-    return preserved_system if preserved_system else fitted
+    active = list(enumerate(messages))
+    protected = {len(messages) - 1}
+    protected.update(i for i, m in active if m.get("role") == "system")
+    attachments = [i for i, m in active if m.get("role") == "user" and isinstance(m.get("content"), list)]
+    if attachments:
+        protected.add(attachments[-1])
+    while count_tokens([m for _, m in active]) > budget:
+        removable = next((i for i, _ in active if i not in protected), None)
+        if removable is None:
+            raise ValueError("Запрос или вложение превышает контекст модели. Пришлите меньший фрагмент кода или документа.")
+        active = [(i, m) for i, m in active if i != removable]
+    return [m for _, m in active]
 
 
 class ChatService:
@@ -81,6 +83,7 @@ class ChatService:
         response_tokens: int = DEFAULT_RESPONSE_TOKENS,
         safety_margin: int = DEFAULT_SAFETY_MARGIN,
         rag_service: RAGService | None = None,
+        semaphore: asyncio.Semaphore | None = None,
     ) -> None:
         self.repository = repository
         self.llm_client = llm_client
@@ -94,6 +97,7 @@ class ChatService:
         self.response_tokens = response_tokens
         self.safety_margin = safety_margin
         self.rag_service = rag_service
+        self.semaphore = semaphore or asyncio.Semaphore(4)
 
     async def create_chat(
         self,
@@ -111,6 +115,23 @@ class ChatService:
         return await self.repository.list_messages(chat_id, limit)
 
     async def send_message(
+        self, chat_id: UUID, user_content: str, media_ref: dict[str, Any] | None = None,
+        *, input_moderation_checked: bool = False, on_message_saved: Any | None = None,
+        on_sources: Any | None = None,
+    ) -> AsyncIterator[str]:
+        key = str(chat_id)
+        lock = _CHAT_LOCKS.get(key)
+        if lock is None:
+            lock = asyncio.Lock()
+            _CHAT_LOCKS[key] = lock
+        async with lock, self.semaphore:
+            async for chunk in self._send_message(
+                chat_id, user_content, media_ref, input_moderation_checked=input_moderation_checked,
+                on_message_saved=on_message_saved, on_sources=on_sources,
+            ):
+                yield chunk
+
+    async def _send_message(
         self,
         chat_id: UUID,
         user_content: str,
@@ -124,6 +145,8 @@ class ChatService:
         if chat is None:
             raise ChatNotFoundError(f"Chat {chat_id} was not found")
 
+        if media_ref and media_ref.get("part", {}).get("type") == "text":
+            await self.check_input(chat_id, media_ref["part"].get("text", ""))
         if not input_moderation_checked:
             await self.check_input(chat_id, user_content)
 
@@ -145,7 +168,12 @@ class ChatService:
         prepared: PreparedRAG | None = None
         started_at = time.perf_counter()
         try:
-            if self.rag_service is not None and media_ref is None:
+            has_local_context = any(
+                m.role == "user" and (m.media_refs or "```" in m.content
+                    or any(token in m.content for token in ("def ", "class ", "diff --git", "- name:")))
+                for m in history[-self.keep_recent:]
+            )
+            if self.rag_service is not None and not has_local_context:
                 prepared = await self.rag_service.prepare(
                     user_content,
                     history=messages[:-1],
@@ -155,12 +183,13 @@ class ChatService:
                     on_sources(prepared.sources, prepared.confident)
                 if not prepared.confident:
                     accumulated.append(UNKNOWN_ANSWER)
-                    yield UNKNOWN_ANSWER
+
                 else:
                     rag_messages = self.rag_service.generation_messages(
                         prepared,
                         history=messages,
                     )
+                    rag_messages = fit_to_budget(rag_messages, budget)
                     stream = await self.llm_client.chat.completions.create(
                         model=self._select_model(rag_messages),
                         messages=rag_messages,
@@ -173,7 +202,7 @@ class ChatService:
                         if not text:
                             continue
                         accumulated.append(text)
-                        yield text
+
             else:
                 stream = await self.llm_client.chat.completions.create(
                     model=self._select_model(messages),
@@ -187,11 +216,16 @@ class ChatService:
                     if not text:
                         continue
                     accumulated.append(text)
-                    yield text
+
             stream_completed = True
         finally:
             full_text = "".join(accumulated)
-            if full_text:
+            if stream_completed and full_text:
+                if prepared is not None and prepared.confident:
+                    checked_text = _ensure_source_marker(full_text, prepared)
+                    if checked_text != full_text:
+                        accumulated = [checked_text]
+                        full_text = checked_text
                 output_result = await self.moderation_service.check_output(full_text)
                 if not output_result.allowed:
                     await self._record_moderation_incident(
@@ -223,8 +257,9 @@ class ChatService:
                 )
                 if on_message_saved is not None:
                     on_message_saved(assistant_message)
-            if not stream_completed and full_text:
-                logger.warning("chat.stream_interrupted_saved_partial", chat_id=str(chat_id))
+        # No model output is visible before moderation and durable storage succeed.
+        for text in accumulated:
+            yield text
 
     async def check_input(self, chat_id: UUID, content: str) -> ModerationResult:
         result = await self.moderation_service.check_input(content)
@@ -300,9 +335,13 @@ class ChatService:
         return self.model
 
     def _completion_extra_kwargs(self) -> dict[str, Any]:
-        if self.num_ctx is None:
-            return {}
-        return {"extra_body": {"options": {"num_ctx": self.num_ctx}}}
+        result: dict[str, Any] = {"max_tokens": self.response_tokens}
+        base_url = str(getattr(self.llm_client, "base_url", ""))
+        if "11434" in base_url or "ollama" in base_url.lower():
+            result["extra_body"] = {"think": False}
+            if self.num_ctx is not None:
+                result["extra_body"]["options"] = {"num_ctx": self.num_ctx}
+        return result
 
     async def _record_moderation_incident(
         self,
@@ -329,9 +368,8 @@ class ChatService:
 
 
 def _system_messages(chat: Chat) -> list[MessagePayload]:
-    if not chat.system_prompt:
-        return []
-    return [{"role": "system", "content": chat.system_prompt}]
+    prompt = default_system_prompt("telegram", None) if chat.interface == "telegram" else chat.system_prompt
+    return [{"role": "system", "content": prompt}] if prompt else []
 
 
 def _to_payload(message: ChatMessage) -> MessagePayload:

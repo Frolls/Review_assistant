@@ -95,7 +95,7 @@ async def test_stream_message_route_refuses_entertainment_request(test_app):
         )
 
     assert response.status_code == 200
-    assert "Я помогаю только с ревью Python/Ansible-кода" in response.text
+    assert "Я помогаю с разработкой и ревью Python/Ansible-кода" in response.text
     assert service.sent_messages == []
 
 
@@ -109,7 +109,7 @@ async def test_stream_message_route_refuses_general_knowledge_request(test_app):
         )
 
     assert response.status_code == 200
-    assert "Я помогаю только с ревью Python/Ansible-кода" in response.text
+    assert "Я помогаю с разработкой и ревью Python/Ansible-кода" in response.text
     assert service.sent_messages == []
 
 
@@ -123,7 +123,7 @@ async def test_stream_message_route_answers_identity_question_locally(test_app):
         )
 
     assert response.status_code == 200
-    assert "Я Telegram-интерфейс ИИ-ассистента для ревью кода" in response.text
+    assert "Я Telegram-интерфейс ИИ-ассистента для разработки и ревью кода" in response.text
     assert service.sent_messages == []
 
 

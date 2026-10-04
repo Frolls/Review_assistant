@@ -137,6 +137,16 @@ async def send_message(
         except BadRequestError as exc:
             yield _format_sse_event({"type": "error", "message": _llm_bad_request_message(exc)})
             return
+        except (OpenAIError, TimeoutError):
+            yield _format_sse_event({"type": "error", "message": "Модель недоступна или не успела ответить. Попробуйте позже."})
+            return
+        except (ValueError, HTTPException) as exc:
+            detail = exc.detail if isinstance(exc, HTTPException) else str(exc)
+            yield _format_sse_event({"type": "error", "message": str(detail)})
+            return
+        except Exception:
+            yield _format_sse_event({"type": "error", "message": "Не удалось завершить запрос. Попробуйте позже."})
+            return
         done_payload = {
             "type": "done",
             "sources": shown_sources,
@@ -226,7 +236,7 @@ def _local_response(content: str) -> str | None:
     }
     if text in identity_questions:
         return (
-            "Я Telegram-интерфейс ИИ-ассистента для ревью кода. "
+            "Я Telegram-интерфейс ИИ-ассистента для разработки и ревью кода. "
             "Помогаю с Python, Ansible, pull request'ами, тестами, "
             "читаемостью и архитектурными замечаниями. Можешь отправить "
             "текст, код, diff, PDF/DOCX или изображение с кодом."
@@ -303,7 +313,7 @@ def _looks_like_review_request(text: str) -> bool:
 
 def _domain_refusal_text() -> str:
     return (
-        "Я помогаю только с ревью Python/Ansible-кода, pull request'ов, "
+        "Я помогаю с разработкой и ревью Python/Ansible-кода, pull request'ов, "
         "тестов, читаемости и архитектуры. Пришли код, diff, описание PR "
         "или документ в этих рамках, и я разберу его по делу."
     )

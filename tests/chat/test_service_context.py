@@ -84,9 +84,8 @@ def test_fit_to_budget_preserves_first_system_message():
     ]
     budget = count_tokens([messages[0]]) + 1
 
-    fitted = fit_to_budget(messages, budget)
-
-    assert fitted == [messages[0]]
+    with pytest.raises(ValueError, match="превышает контекст"):
+        fit_to_budget(messages, budget)
 
 
 @pytest.mark.asyncio
@@ -172,3 +171,42 @@ async def test_send_message_uses_vision_model_for_image_history():
 
     assert chunks == ["Hello, ", "Anya"]
     assert llm.chat.completions.calls[-1]["model"] == "vision-model"
+
+
+@pytest.mark.asyncio
+async def test_blocked_output_never_reaches_client():
+    from unittest.mock import AsyncMock
+    from app.moderation import ModerationResult
+    chat = Chat(owner_external_id="owner", interface="cli")
+    repo = FakeRepository(chat)
+    moderator = SimpleNamespace(
+        check_input=AsyncMock(return_value=ModerationResult(True, [], [], "")),
+        check_output=AsyncMock(return_value=ModerationResult(False, ["test"], [], "test")),
+    )
+    service = ChatService(repo, FakeLLM(), moderation_service=moderator)
+    output = "".join([part async for part in service.send_message(chat.id, "Hi")])
+    assert "Hello" not in output and "Anya" not in output
+    assert output == repo.messages[-1].content
+    moderator.check_output.assert_awaited_once_with("Hello, Anya")
+
+
+@pytest.mark.asyncio
+async def test_file_followup_uses_local_context_without_rag_refusal():
+    from unittest.mock import AsyncMock
+    chat = Chat(owner_external_id="owner", interface="cli")
+    repo = FakeRepository(chat)
+    rag = SimpleNamespace(prepare=AsyncMock(side_effect=AssertionError("Should analyze the attached code")))
+    llm = FakeLLM()
+    service = ChatService(repo, llm, rag_service=rag)
+    file = {"part": {"type": "text", "text": "def add(x, y): return x + y"}}
+    _ = [p async for p in service.send_message(chat.id, "Объясни", media_ref=file)]
+    _ = [p async for p in service.send_message(chat.id, "Какие тесты добавить?")]
+    assert "def add" in str(llm.chat.completions.calls[-1]["messages"])
+    rag.prepare.assert_not_called()
+
+
+def test_budget_preserves_latest_request_and_all_system_instructions():
+    rules = {"role": "system", "content": "Grounding rules"}
+    current = {"role": "user", "content": "def f(): return 1"}
+    old = {"role": "user", "content": "old " * 500}
+    assert fit_to_budget([rules, old, current], count_tokens([rules, current])) == [rules, current]

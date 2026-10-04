@@ -59,6 +59,8 @@ async def get_chat_service(
         context_strategy=settings.chat_context_strategy,
         keep_recent=settings.chat_context_window,
         rag_service=getattr(request.app.state, "rag_service", None),
+        semaphore=request.app.state.llm_semaphore,
+        context_window_tokens=settings.llm_num_ctx or 8192,
     )
 
 

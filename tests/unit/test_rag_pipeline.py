@@ -98,14 +98,14 @@ async def test_confident_answer_has_numbered_structured_source() -> None:
 
 
 @pytest.mark.asyncio
-async def test_confident_answer_gets_source_marker_when_local_model_omits_it() -> None:
+async def test_missing_citation_is_disclosed_without_fabricated_marker() -> None:
     service = RAGService(settings())
     service._retriever = FakeRetriever([scored_node(0.71)])
     service._llm = FakeLLM("Use a dedicated module.")
 
     result = await service.answer("How should an Ansible task be written?")
 
-    assert result["answer"] == "Use a dedicated module.\n\nИсточник: [1]"
+    assert result["answer"] == "Use a dedicated module.\n\nОтвет не содержит ссылок на найденные источники."
 
 
 @pytest.mark.asyncio
@@ -116,7 +116,7 @@ async def test_type_annotation_is_not_mistaken_for_source_marker() -> None:
 
     result = await service.answer("What does the function return?")
 
-    assert result["answer"] == "Return list[str].\n\nИсточник: [1]"
+    assert result["answer"] == "Return list[str].\n\nОтвет не содержит ссылок на найденные источники."
 
 
 @pytest.mark.asyncio
@@ -171,3 +171,22 @@ async def test_condense_rewrites_followup_only_for_retrieval() -> None:
     )
     assert retriever.last_query == prepared.retrieval_question
     assert len(fake_llm.chat.completions.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_unknown_citation_id_is_rejected():
+    service = RAGService(settings())
+    service._retriever = FakeRetriever([scored_node(0.71)])
+    service._llm = FakeLLM("A statement [999].")
+    result = await service.answer("Question")
+    assert result["answer"] == UNKNOWN_ANSWER
+
+
+@pytest.mark.asyncio
+async def test_array_index_in_code_is_not_a_citation():
+    service = RAGService(settings())
+    service._retriever = FakeRetriever([scored_node(0.71)])
+    service._llm = FakeLLM("Use `items[0]` as in the source [1].")
+    result = await service.answer("Question")
+    assert "items[0]" in result["answer"]
+    assert result["answer"] != UNKNOWN_ANSWER

@@ -25,6 +25,9 @@ GROUNDING_INSTRUCTION = (
     "Ты корпоративный RAG-ассистент. Отвечай только по переданному контексту. "
     "Каждое фактическое утверждение сопровождай ссылкой на номер фрагмента: [1], [2]. "
     "Не цитируй номер, если фрагмент не подтверждает утверждение. "
+    "Сохраняй смысл отрицаний и условий: описание ошибки или риска нельзя превращать в совет так поступать. "
+    "В частности, повтор неидемпотентной операции — риск дубликатов; не рекомендуй такой retry без защиты от повторного действия. "
+    "Если контекст покрывает только часть вопроса, явно назови, чего в нём нет. "
     f"Если ответа в контексте нет, ответь ровно: «{UNKNOWN_ANSWER}»"
 )
 CONDENSE_PROMPT = (
@@ -433,16 +436,17 @@ def _ollama_model_args(base_url: str) -> dict[str, Any]:
 
 
 def _ensure_source_marker(answer: str, prepared: PreparedRAG) -> str:
-    """Keep the answer auditable when a local model ignores citation syntax."""
-
-    if (
-        not prepared.confident
-        or not prepared.sources
-        or answer == UNKNOWN_ANSWER
-        or re.search(r"\[\d+\]", answer)
-    ):
+    """Check citation identifiers without inventing evidence for the model."""
+    if answer == UNKNOWN_ANSWER or not prepared.sources:
         return answer
-    return f"{answer.rstrip()}\n\nИсточник: [1]"
+    valid = {str(source["id"]) for source in prepared.sources}
+    prose = re.sub(r"```.*?```|`[^`]*`", "", answer, flags=re.DOTALL)
+    markers = re.findall(r"(?<![\w])\[(\d+)\]", prose)
+    if any(marker not in valid for marker in markers):
+        return UNKNOWN_ANSWER
+    if not markers:
+        return answer.rstrip() + "\n\nОтвет не содержит ссылок на найденные источники."
+    return answer
 
 
 def _stream_delta(chunk: Any) -> str:
@@ -518,7 +522,7 @@ async def _single_chunk(text: str) -> AsyncIterator[str]:
 
 
 def search_top_fragment(query: str) -> str:
-    """Synchronously retrieve one score-guarded fragment for simple tools."""
+    """Synchronously retrieve score-guarded fragments with source identifiers."""
 
     async def search() -> str:
         service = RAGService(get_settings())
@@ -526,7 +530,7 @@ def search_top_fragment(query: str) -> str:
             prepared = await service.prepare(query)
             if not prepared.confident or not prepared.retrieved_contexts:
                 return UNKNOWN_ANSWER
-            return prepared.retrieved_contexts[0]
+            return json.dumps({"sources": [dict(source, text=text) for source, text in zip(prepared.sources, prepared.retrieved_contexts)]}, ensure_ascii=False)
         finally:
             await service.close()
 
