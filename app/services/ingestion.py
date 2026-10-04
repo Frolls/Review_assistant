@@ -17,7 +17,10 @@ from app.services.embeddings import EmbeddingConfig, LlamaIndexEmbeddingAdapter
 logger = logging.getLogger(__name__)
 
 SUPPORTED_SUFFIXES = {".pdf", ".docx", ".html", ".htm", ".md", ".markdown"}
+# Included in document hashes so a normal UPSERT refreshes old, glued chunks.
+INGESTION_REVISION = "sentence-whitespace-v2"
 TECHNICAL_METADATA_KEYS = {
+    "ingestion_revision",
     "file_path",
     "file_name",
     "source",
@@ -138,11 +141,13 @@ class IngestionService:
             if not text:
                 continue
             document.metadata.update(metadata)
+            document.metadata["ingestion_revision"] = INGESTION_REVISION
             page = _page_number(document.metadata, index)
             document.metadata["page"] = page
             document.id_ = stable_document_id(path, index)
             document.excluded_embed_metadata_keys = sorted(TECHNICAL_METADATA_KEYS)
             document.excluded_llm_metadata_keys = [
+                "ingestion_revision",
                 "file_path",
                 "created_at",
                 "last_modified",

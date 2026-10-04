@@ -16,11 +16,17 @@ _RUSSIAN_SENTENCE_BOUNDARY = re.compile(
 
 
 def split_russian_sentences(text: str) -> list[str]:
-    """Split Russian/English prose while keeping terminal punctuation on sentences."""
+    """Split prose without losing whitespace when LlamaIndex joins the pieces."""
 
     if not text or not text.strip():
         return []
-    return [part for part in _RUSSIAN_SENTENCE_BOUNDARY.split(text) if part.strip()]
+    parts = []
+    start = 0
+    for boundary in _RUSSIAN_SENTENCE_BOUNDARY.finditer(text):
+        parts.append(text[start:boundary.end()])
+        start = boundary.end()
+    parts.append(text[start:])
+    return [part for part in parts if part.strip()]
 
 
 def fixed_size(

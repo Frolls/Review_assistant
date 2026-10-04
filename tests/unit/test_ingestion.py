@@ -55,6 +55,23 @@ def test_supported_file_scan_skips_json_and_failed_files(tmp_path: Path) -> None
     assert [path.name for path in iter_supported_files(tmp_path)] == ["a.md", "b.html"]
 
 
+def test_ingestion_revision_refreshes_hash_without_changing_identity(tmp_path, monkeypatch):
+    from app.services import ingestion
+
+    path = tmp_path / "guide.md"
+    path.write_text("# Guide\n\nFirst sentence. Second sentence.")
+    service = object.__new__(IngestionService)
+    monkeypatch.setattr(ingestion, "INGESTION_REVISION", "old-splitter")
+    old = service.load_file(path)[0]
+    monkeypatch.setattr(ingestion, "INGESTION_REVISION", "new-splitter")
+    new = service.load_file(path)[0]
+
+    assert old.id_ == new.id_
+    assert old.hash != new.hash
+    assert "ingestion_revision" in new.excluded_embed_metadata_keys
+    assert "ingestion_revision" in new.excluded_llm_metadata_keys
+
+
 def test_extract_version_returns_none_for_unversioned_file() -> None:
     assert extract_version("policy.md") is None
 
