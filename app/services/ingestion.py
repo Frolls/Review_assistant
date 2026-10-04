@@ -17,9 +17,10 @@ from app.services.embeddings import EmbeddingConfig, LlamaIndexEmbeddingAdapter
 logger = logging.getLogger(__name__)
 
 SUPPORTED_SUFFIXES = {".pdf", ".docx", ".html", ".htm", ".md", ".markdown"}
-# Included in document hashes so a normal UPSERT refreshes old, glued chunks.
-INGESTION_REVISION = "sentence-whitespace-v2"
+# Included in document hashes so a normal UPSERT refreshes outdated chunks.
+INGESTION_REVISION = "rule-paragraphs-v3.1"
 TECHNICAL_METADATA_KEYS = {
+    "chunking_profile",
     "ingestion_revision",
     "file_path",
     "file_name",
@@ -123,6 +124,9 @@ class IngestionService:
 
         suffix = path.suffix.lower()
         metadata = build_file_metadata(path, data_root=data_root)
+        curated_rules = suffix in {".md", ".markdown"} and metadata["category"] in {
+            "retrieval-corpus", "rag-block-03"
+        }
         if suffix == ".pdf":
             documents = PyMuPDFReader().load_data(path, extra_info=metadata)
         elif suffix == ".docx":
@@ -131,7 +135,14 @@ class IngestionService:
             # body works for ordinary pages and Confluence HTML exports.
             documents = HTMLTagReader(tag="body").load_data(path, extra_info=metadata)
         elif suffix in {".md", ".markdown"}:
-            documents = MarkdownReader().load_data(str(path), extra_info=metadata)
+            if curated_rules:
+                from llama_index.core import Document
+
+                # MarkdownReader discards blank lines outside fenced code.
+                # These guides use those lines to separate independent rules.
+                documents = [Document(text=path.read_text(encoding="utf-8"), metadata=metadata)]
+            else:
+                documents = MarkdownReader().load_data(str(path), extra_info=metadata)
         else:
             raise ValueError(f"Unsupported document format: {suffix}")
 
@@ -142,11 +153,14 @@ class IngestionService:
                 continue
             document.metadata.update(metadata)
             document.metadata["ingestion_revision"] = INGESTION_REVISION
+            if curated_rules:
+                document.metadata["chunking_profile"] = "rule_paragraphs"
             page = _page_number(document.metadata, index)
             document.metadata["page"] = page
             document.id_ = stable_document_id(path, index)
             document.excluded_embed_metadata_keys = sorted(TECHNICAL_METADATA_KEYS)
             document.excluded_llm_metadata_keys = [
+                "chunking_profile",
                 "ingestion_revision",
                 "file_path",
                 "created_at",
@@ -160,7 +174,7 @@ class IngestionService:
 
     def build_pipeline(self) -> tuple[Any, Any]:
         from llama_index.core.ingestion import DocstoreStrategy, IngestionPipeline
-        from llama_index.core.node_parser import SentenceSplitter
+        from app.services.rule_chunking import RuleSentenceSplitter
         from llama_index.core.storage.docstore import SimpleDocumentStore
         from llama_index.vector_stores.qdrant import QdrantVectorStore
         from qdrant_client import QdrantClient
@@ -182,7 +196,7 @@ class IngestionService:
         )
         pipeline = IngestionPipeline(
             transformations=[
-                SentenceSplitter(
+                RuleSentenceSplitter(
                     chunk_size=self.settings.rag_chunk_size,
                     chunk_overlap=self.settings.rag_chunk_overlap,
                     paragraph_separator="\n\n",
