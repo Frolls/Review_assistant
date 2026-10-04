@@ -132,6 +132,8 @@ def create_app() -> FastAPI:
     )
     app.middleware("http")(request_context_middleware)
     app.middleware("http")(rate_limit_middleware)
+    from app.core.access import access_middleware
+    app.middleware("http")(access_middleware)
     app.add_exception_handler(LLMError, llm_error_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, request_validation_error_handler)
@@ -144,6 +146,20 @@ def create_app() -> FastAPI:
     app.include_router(stateful_chat_router)
     app.include_router(feedback_router)
     app.include_router(admin_router)
+    original_openapi = app.openapi
+    def secured_openapi():
+        schema = original_openapi()
+        security = schema.setdefault("components", {}).setdefault("securitySchemes", {})
+        for name, header in (("ServiceToken", "X-Internal-Token"), ("UserIdentity", "X-User-ID")):
+            security[name] = {"type": "apiKey", "in": "header", "name": header}
+        for path, operations in schema.get("paths", {}).items():
+            if path in {"/health", "/ready"} or path.startswith("/chats/admin"):
+                continue
+            for operation in operations.values():
+                if isinstance(operation, dict):
+                    operation["security"] = [{"ServiceToken": [], "UserIdentity": []}]
+        return schema
+    app.openapi = secured_openapi
     return app
 
 
@@ -177,7 +193,7 @@ async def request_context_middleware(request: Request, call_next):
 
 async def rate_limit_middleware(request: Request, call_next):
     if request.url.path not in {"/chat", "/chat/stream", "/chats"} and not (
-        request.url.path.startswith("/chats/")
+        request.url.path.startswith(("/chats/", "/agent/", "/rag", "/documents"))
     ):
         return await call_next(request)
 
