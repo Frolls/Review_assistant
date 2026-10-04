@@ -23,10 +23,14 @@ logger = get_logger(__name__)
 UNKNOWN_ANSWER = "по базе не нашёл, могу эскалировать"
 GROUNDING_INSTRUCTION = (
     "Ты корпоративный RAG-ассистент. Отвечай только по переданному контексту. "
+    "Отвечай на последний вопрос пользователя: выбирай из контекста только относящиеся к нему факты. "
+    "Не добавляй риски, рекомендации и разделы по соседним темам, о которых пользователь не спрашивал. "
+    "История диалога нужна для понимания вопроса, но прежние ответы ассистента не являются источниками фактов. "
     "Каждое фактическое утверждение сопровождай ссылкой на номер фрагмента: [1], [2]. "
     "Не цитируй номер, если фрагмент не подтверждает утверждение. "
+    "Номера ссылок относятся только к фрагментам текущего контекста, а не к истории диалога. "
     "Сохраняй смысл отрицаний и условий: описание ошибки или риска нельзя превращать в совет так поступать. "
-    "В частности, повтор неидемпотентной операции — риск дубликатов; не рекомендуй такой retry без защиты от повторного действия. "
+    "Дай краткое объяснение; если нужен код, приведи минимальный пример по вопросу. "
     "Если контекст покрывает только часть вопроса, явно назови, чего в нём нет. "
     f"Если ответа в контексте нет, ответь ровно: «{UNKNOWN_ANSWER}»"
 )
@@ -105,7 +109,12 @@ class RAGService:
         ranked_nodes = await asyncio.to_thread(
             self._rerank_sync,
             retrieval_question,
-            nodes,
+            # Apply the retrieval threshold to every candidate, before a
+            # reranker changes the score scale. One strong hit must not admit
+            # weak neighbours into the evidence supplied to the model.
+            [node for node in nodes
+             if isinstance(getattr(node, "score", None), (int, float))
+             and node.score >= self.settings.rag_score_threshold],
         )
         sources = [_source_payload(node, index) for index, node in enumerate(ranked_nodes, 1)]
         retrieved_contexts = [_node_text(node) for node in ranked_nodes]
@@ -374,7 +383,9 @@ def _source_payload(node_with_score: Any, citation_id: int) -> dict[str, Any]:
         "file_name": _source_name(metadata),
         "page": page,
         "score": _rounded_score(getattr(node_with_score, "score", None)),
-        "snippet": text[:700],
+        # Return the complete retrieved chunk: its supporting passage can be
+        # near the end. The interface paginates it instead of hiding evidence.
+        "snippet": text,
     }
 
 

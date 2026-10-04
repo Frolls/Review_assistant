@@ -77,6 +77,32 @@ async def test_score_guard_skips_answer_llm_call() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("rerank", [False, True])
+async def test_strong_hit_does_not_admit_weak_or_unscored_fragments(rerank):
+    service = RAGService(settings(RAG_SCORE_THRESHOLD=0.5))
+    good = scored_node(0.71)
+    weak = scored_node(0.49)
+    weak.node.text = "Unrelated class attributes."
+    unscored = scored_node(None)
+    unscored.node.text = "No retrieval confidence."
+    service._retriever = FakeRetriever([good, weak, unscored])
+    service._llm = FakeLLM("Use a dedicated module [1].")
+    if rerank:
+        def different_score_scale(question, nodes):
+            assert nodes == [good]
+            good.score = -2.0
+            return nodes
+        service._rerank_sync = different_score_scale
+
+    prepared = await service.prepare("How should this task be written?")
+    assert len(prepared.sources) == 1
+    assert prepared.sources[0]["id"] == 1
+    assert "Unrelated" not in prepared.context
+    assert "No retrieval confidence" not in prepared.context
+    assert prepared.top_score == 0.71
+
+
+@pytest.mark.asyncio
 async def test_confident_answer_has_numbered_structured_source() -> None:
     service = RAGService(settings())
     service._retriever = FakeRetriever([scored_node(0.71)])
@@ -95,6 +121,19 @@ async def test_confident_answer_has_numbered_structured_source() -> None:
     }
     prompt = fake_llm.chat.completions.calls[0]["messages"][0]["content"]
     assert "[1] Файл: ansible.md" in prompt
+
+
+@pytest.mark.asyncio
+async def test_source_keeps_supporting_passage_at_end_of_chunk() -> None:
+    service = RAGService(settings())
+    node = scored_node(0.71)
+    node.node.text = "Earlier section. " * 60 + "Mutable defaults are shared between calls. Use None."
+    service._retriever = FakeRetriever([node])
+    service._llm = FakeLLM("Use None [1].")
+
+    result = await service.answer("How should a default list be declared?")
+
+    assert result["sources"][0]["snippet"] == node.node.text
 
 
 @pytest.mark.asyncio
