@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from hashlib import sha256
+import json
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,21 +29,26 @@ class PostgresChatRepository:
         interface: str,
         system_prompt: str | None = None,
     ) -> Chat:
+        # Serialize creation for one identity across sessions and API workers.
+        # A prompt is mutable configuration, never part of chat identity.
+        identity = json.dumps([owner_external_id, interface], ensure_ascii=False)
+        lock_key = int.from_bytes(sha256(identity.encode()).digest()[:8], "big", signed=True)
+        await self.session.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock_key})
         result = await self.session.execute(
             select(ChatRow)
             .where(
                 ChatRow.owner_external_id == owner_external_id,
                 ChatRow.interface == interface,
-                ChatRow.system_prompt.is_(None)
-                if system_prompt is None
-                else ChatRow.system_prompt == system_prompt,
             )
-            .order_by(ChatRow.created_at.asc())
+            .order_by(ChatRow.created_at.asc(), ChatRow.id.asc())
             .limit(1)
         )
         existing_row = result.scalar_one_or_none()
         if existing_row is not None:
-            return Chat.model_validate(existing_row, from_attributes=True)
+            existing_row.system_prompt = system_prompt
+            chat = Chat.model_validate(existing_row, from_attributes=True)
+            await self.session.commit()  # releases the transaction advisory lock
+            return chat
 
         row = ChatRow(
             owner_external_id=owner_external_id,

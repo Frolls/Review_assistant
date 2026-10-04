@@ -145,3 +145,49 @@ async def _postgres_database_url() -> AsyncIterator[str]:
             yield postgres.get_connection_url(driver="asyncpg")
     except Exception as exc:
         pytest.skip(f"Postgres test container is unavailable: {exc}")
+
+
+@pytest.mark.asyncio
+async def test_changing_system_prompt_keeps_chat_and_messages(repository):
+    first = await repository.create_chat("stable-owner", "telegram", "Old prompt")
+    await repository.append_message(first.id, _message(first.id, "user", "My history", seconds=1))
+    revised = await repository.create_chat("stable-owner", "telegram", "Updated prompt")
+    assert revised.id == first.id
+    assert (await repository.get_chat(first.id)).system_prompt == "Updated prompt"
+    assert [m.content for m in await repository.list_messages(revised.id)] == ["My history"]
+    reset = await repository.create_chat("stable-owner", "telegram", None)
+    assert reset.id == first.id
+    assert (await repository.get_chat(first.id)).system_prompt is None
+
+
+@pytest.mark.asyncio
+async def test_chat_identity_keeps_users_and_interfaces_separate(repository):
+    first = await repository.create_chat("owner-a", "telegram", "same")
+    second = await repository.create_chat("owner-b", "telegram", "same")
+    third = await repository.create_chat("owner-a", "cli", "same")
+    assert len({first.id, second.id, third.id}) == 3
+
+
+@pytest.mark.asyncio
+async def test_concurrent_create_uses_one_chat_across_repository_instances(repository):
+    import asyncio
+    if isinstance(repository, JsonChatRepository):
+        async def create():
+            repo = JsonChatRepository(repository.base_dir)
+            return await repo.create_chat("concurrent-owner", "telegram", "prompt")
+    else:
+        from sqlalchemy.ext.asyncio import async_sessionmaker
+        from app.chat.repositories.pg_repo import PostgresChatRepository
+        Session = async_sessionmaker(repository.session.bind, expire_on_commit=False)
+        async def create():
+            async with Session() as session:
+                return await PostgresChatRepository(session).create_chat("concurrent-owner", "telegram", "prompt")
+    chats = await asyncio.gather(*(create() for _ in range(8)))
+    assert len({chat.id for chat in chats}) == 1
+    if isinstance(repository, JsonChatRepository):
+        assert len(list((repository.base_dir / "chats").glob("*/chat.json"))) == 1
+    else:
+        from sqlalchemy import func, select
+        from app.chat.repositories.pg_models import ChatRow
+        count = await repository.session.scalar(select(func.count()).select_from(ChatRow))
+        assert count == 1

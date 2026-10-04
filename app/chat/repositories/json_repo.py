@@ -8,7 +8,8 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
+from weakref import WeakValueDictionary
 
 import aiofiles
 
@@ -71,6 +72,9 @@ async def _open(path: Path, mode: str = "r") -> AsyncIterator[Any]:
         yield file
 
 
+_identity_locks: WeakValueDictionary[tuple[str, str, str], asyncio.Lock] = WeakValueDictionary()
+
+
 class JsonChatRepository:
     def __init__(self, base_dir: Path) -> None:
         self.base_dir = Path(base_dir)
@@ -81,20 +85,29 @@ class JsonChatRepository:
         interface: str,
         system_prompt: str | None = None,
     ) -> Chat:
-        existing_chat = await self._find_chat(owner_external_id, interface, system_prompt)
-        if existing_chat is not None:
-            return existing_chat
-
-        chat = Chat(
-            owner_external_id=owner_external_id,
-            interface=interface,
-            system_prompt=system_prompt,
-        )
-        chat_dir = self._chat_dir(chat.id)
-        chat_dir.mkdir(parents=True, exist_ok=True)
-        async with _open(self._chat_path(chat.id), "w") as file:
-            await file.write(chat.model_dump_json())
-        return chat
+        key = (str(self.base_dir.resolve()), owner_external_id, interface)
+        lock = _identity_locks.get(key)
+        if lock is None:
+            lock = asyncio.Lock()
+            _identity_locks[key] = lock
+        async with lock:
+            chat = await self._find_chat(owner_external_id, interface)
+            if chat is None:
+                chat = Chat(owner_external_id=owner_external_id, interface=interface,
+                            system_prompt=system_prompt)
+            elif chat.system_prompt == system_prompt:
+                return chat
+            else:
+                chat = chat.model_copy(update={"system_prompt": system_prompt})
+            self._chat_dir(chat.id).mkdir(parents=True, exist_ok=True)
+            temporary = self._chat_dir(chat.id) / f".chat-{uuid4().hex}.tmp"
+            try:
+                async with _open(temporary, "w") as file:
+                    await file.write(chat.model_dump_json())
+                temporary.replace(self._chat_path(chat.id))
+            finally:
+                temporary.unlink(missing_ok=True)
+            return chat
 
     async def get_chat(self, chat_id: UUID) -> Chat | None:
         path = self._chat_path(chat_id)
@@ -242,12 +255,12 @@ class JsonChatRepository:
         self,
         owner_external_id: str,
         interface: str,
-        system_prompt: str | None,
     ) -> Chat | None:
         chats_dir = self.base_dir / "chats"
         if not chats_dir.exists():
             return None
 
+        matches = []
         for chat_path in sorted(chats_dir.glob("*/chat.json")):
             async with _open(chat_path) as file:
                 payload = await file.read()
@@ -255,7 +268,6 @@ class JsonChatRepository:
             if (
                 chat.owner_external_id == owner_external_id
                 and chat.interface == interface
-                and chat.system_prompt == system_prompt
             ):
-                return chat
-        return None
+                matches.append(chat)
+        return min(matches, key=lambda chat: (chat.created_at, str(chat.id))) if matches else None
