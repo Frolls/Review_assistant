@@ -9,9 +9,10 @@ from pathlib import Path
 from typing import Annotated, Any, Literal, NotRequired, TypedDict
 from urllib.parse import quote
 from zoneinfo import ZoneInfo
+from uuid import uuid4
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool, tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -26,7 +27,7 @@ from app.services.notifier import notify_user
 MAX_ITERATIONS = 6
 DANGEROUS_TOOL_NAME = "send_telegram_message"
 SYSTEM_PROMPT = (
-    "Ты ReAct-агент поддержки PR-review. Используй tools только по "
+    "Ты ReAct-агент помощи при разработке и ревью кода. Используй tools только по "
     "необходимости и не выдумывай данные. Отправка Telegram-сообщения "
     "является опасным действием: сформируй один tool call с точным chat_id "
     "и готовым текстом; граф сам запросит подтверждение."
@@ -72,7 +73,7 @@ SAFE_TOOLS = {
 class AgentState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
     iteration_count: NotRequired[int]
-    tool_results: Annotated[list[dict[str, Any]], operator.add]
+    tool_results: list[dict[str, Any]]
     pending_action: NotRequired[dict[str, Any] | None]
     sent: NotRequired[bool]
     decision: NotRequired[bool | None]
@@ -120,6 +121,8 @@ def build_agent(
 ):
     """Compile the persistent ReAct graph around the supplied checkpointer."""
 
+    from app.moderation import ModerationService
+    moderator = ModerationService()
     selected_model = model or _build_model(settings or get_settings())
     bound_model = selected_model.bind_tools(TOOLS)
 
@@ -127,6 +130,9 @@ def build_agent(
         response = await bound_model.ainvoke(
             [SystemMessage(content=SYSTEM_PROMPT), *state["messages"]]
         )
+        output = str(response.content) + json.dumps(getattr(response, "tool_calls", []), ensure_ascii=False)
+        if not (await moderator.check_output(output)).allowed:
+            response = AIMessage(content="Ответ агента заблокирован модерацией. Действие не выполнено.")
         return {
             "messages": [response],
             "iteration_count": state.get("iteration_count", 0) + 1,
@@ -136,47 +142,60 @@ def build_agent(
         state: AgentState,
     ) -> Literal["prepare", "execute", "finish"]:
         calls = list(getattr(state["messages"][-1], "tool_calls", None) or [])
-        if not calls or state.get("iteration_count", 0) >= MAX_ITERATIONS:
+        if not calls:
             return "finish"
+        if state.get("iteration_count", 0) >= MAX_ITERATIONS:
+            return "limit"
         if len(calls) == 1 and calls[0].get("name") == DANGEROUS_TOOL_NAME:
             return "prepare"
         return "execute"
 
     async def execute_safe_tool(state: AgentState) -> dict[str, Any]:
-        call = _last_tool_call(state)
-        name = str(call.get("name", ""))
-        args = call.get("args") or {}
-        call_id = str(call.get("id") or "missing-tool-call-id")
-        selected_tool = SAFE_TOOLS.get(name)
-        error: str | None = None
-        if selected_tool is None:
-            error = f"unknown or guarded tool {name!r}"
-            content = f"error: {error}"
-        else:
+        messages = []
+        results = []
+        for call in state["messages"][-1].tool_calls:
+            name = str(call.get("name", ""))
+            args = call.get("args") or {}
+            error = None
+            selected_tool = SAFE_TOOLS.get(name)
             try:
+                if selected_tool is None:
+                    raise ValueError("Для отправки сформируй отдельный одиночный вызов с подтверждением.")
                 content = _serialize_result(await selected_tool.ainvoke(args))
-            except Exception as exc:  # noqa: BLE001 - failure becomes an observation
-                error = f"{type(exc).__name__}: {exc}"
-                content = f"error executing tool {name!r}: {error}"
-        return {
-            "messages": [ToolMessage(content=content, tool_call_id=call_id, name=name)],
-            "tool_results": [
-                {"name": name, "args": args, "result": content, "error": error}
-            ],
-        }
+            except Exception as exc:
+                error = type(exc).__name__
+                content = f"Tool error: {error}. Отправка требует отдельного подтверждения."
+            messages.append(ToolMessage(content=content, tool_call_id=call["id"], name=name))
+            results.append({"name": name, "args": args, "result": content, "error": error})
+        return {"messages": messages, "tool_results": results}
 
-    async def prepare_telegram_message(state: AgentState) -> dict[str, Any]:
+    def initialize(state: AgentState):
+        return {"iteration_count": 0, "tool_results": [], "pending_action": None,
+                "sent": False, "decision": None, "delivery_result": None}
+
+    def stop_at_limit(state: AgentState):
+        replies = [ToolMessage(content="Лимит шагов достигнут; инструмент не выполнен.",
+                               tool_call_id=c["id"], name=c["name"])
+                   for c in state["messages"][-1].tool_calls]
+        return {"messages": [*replies, AIMessage(content="Достигнут лимит шагов. Уточните запрос; последнее действие не выполнено.")]}
+
+    async def prepare_telegram_message(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
         """Validate and render the payload without performing a side effect."""
 
         call = _last_tool_call(state)
         args = call.get("args") or {}
         chat_id = int(args["chat_id"])
+        allowed_recipient = config.get("configurable", {}).get("allowed_recipient")
+        if allowed_recipient is not None and str(chat_id) != str(allowed_recipient):
+            raise ValueError("Отправка разрешена только в личный чат инициатора.")
         text = str(args["text"]).strip()
+        if len(text.encode("utf-16-le")) // 2 > 4000:
+            raise ValueError("Telegram сообщение превышает 4000 символов.")
         if not text:
             raise ValueError("Telegram message text must not be blank")
         call_id = str(call.get("id") or "missing-tool-call-id")
         payload = {
-            "request_id": call_id,
+            "request_id": uuid4().hex,
             "tool_call_id": call_id,
             "chat_id": chat_id,
             "text": text,
@@ -202,9 +221,7 @@ def build_agent(
         role = str(
             config.get("configurable", {}).get("user_role", "write-with-approve")
         )
-        if role == "full":
-            approved = True
-        elif role == "read-only":
+        if role == "read-only":
             approved = False
         else:
             approved = bool(
@@ -244,7 +261,12 @@ def build_agent(
                 "delivery_result": result,
             }
 
-        await sender(int(payload["chat_id"]), str(payload["text"]))
+        if sender is notify_user:
+            from hashlib import sha256
+            identity = str(config.get("configurable", {}).get("thread_id", "")) + ":" + str(payload["request_id"])
+            await notify_user(int(payload["chat_id"]), str(payload["text"]), request_id=sha256(identity.encode()).hexdigest())
+        else:
+            await sender(int(payload["chat_id"]), str(payload["text"]))
         result = f"Telegram message sent to {payload['chat_id']}."
         return {
             "messages": [
@@ -267,7 +289,14 @@ def build_agent(
             "delivery_result": result,
         }
 
+    def finish_delivery(state: AgentState):
+        text = "Сообщение отправлено." if state.get("sent") else "Отправка отменена. Сообщение не отправлялось."
+        return {"messages": [AIMessage(content=text)]}
+
     builder = StateGraph(AgentState)
+    builder.add_node("finish_delivery", finish_delivery)
+    builder.add_node("initialize", initialize)
+    builder.add_node("stop_at_limit", stop_at_limit)
     builder.add_node("call_model", call_model)
     builder.add_node("execute_safe_tool", execute_safe_tool)
     builder.add_node("prepare_telegram_message", prepare_telegram_message)
@@ -275,7 +304,9 @@ def build_agent(
         "confirm_and_execute_telegram_message",
         confirm_and_execute_telegram_message,
     )
-    builder.add_edge(START, "call_model")
+    builder.add_edge(START, "initialize")
+    builder.add_edge("initialize", "call_model")
+    builder.add_edge("stop_at_limit", END)
     builder.add_conditional_edges(
         "call_model",
         route_after_model,
@@ -283,6 +314,7 @@ def build_agent(
             "prepare": "prepare_telegram_message",
             "execute": "execute_safe_tool",
             "finish": END,
+            "limit": "stop_at_limit",
         },
     )
     builder.add_edge("execute_safe_tool", "call_model")
@@ -290,7 +322,8 @@ def build_agent(
         "prepare_telegram_message",
         "confirm_and_execute_telegram_message",
     )
-    builder.add_edge("confirm_and_execute_telegram_message", "call_model")
+    builder.add_edge("confirm_and_execute_telegram_message", "finish_delivery")
+    builder.add_edge("finish_delivery", END)
     return builder.compile(checkpointer=checkpointer)
 
 

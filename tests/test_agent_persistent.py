@@ -91,3 +91,50 @@ async def test_rejection_does_not_execute_side_effect() -> None:
     assert result["sent"] is False
     assert result["decision"] is False
     sender.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_iteration_budget_resets_for_every_user_turn():
+    class TimeModel:
+        def bind_tools(self, tools):
+            return self
+        async def ainvoke(self, messages):
+            if isinstance(messages[-1], HumanMessage):
+                return AIMessage(content="", tool_calls=[{"name": "get_current_time", "args": {}, "id": "clock"}])
+            return AIMessage(content="Done")
+    async with AsyncSqliteSaver.from_conn_string(":memory:") as saver:
+        await saver.setup()
+        graph = build_agent(saver, model=TimeModel(), sender=AsyncMock())
+        for turn in range(5):
+            result = await graph.ainvoke({"messages": [HumanMessage(content=f"Time {turn}")]}, config("repeat"))
+            assert result["iteration_count"] == 2
+            assert result["tool_results"][-1]["name"] == "get_current_time"
+
+
+@pytest.mark.asyncio
+async def test_graph_rejects_another_recipient_even_before_approval():
+    sender = AsyncMock()
+    async with AsyncSqliteSaver.from_conn_string(":memory:") as saver:
+        await saver.setup()
+        graph = build_agent(saver, model=TelegramRequestModel(), sender=sender)
+        cfg = config("recipient")
+        cfg["configurable"]["allowed_recipient"] = "2002"
+        with pytest.raises(ValueError, match="инициатора"):
+            await graph.ainvoke(initial_state(), cfg)
+    sender.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_delivery_decision_finishes_without_another_model_call():
+    model = TelegramRequestModel()
+    model.ainvoke = AsyncMock(wraps=model.ainvoke)
+    async with AsyncSqliteSaver.from_conn_string(":memory:") as saver:
+        await saver.setup()
+        graph = build_agent(saver, model=model, sender=AsyncMock())
+        cfg = config("deterministic-cancel")
+        await graph.ainvoke(initial_state(), cfg)
+        result = await graph.ainvoke(Command(resume=False), cfg)
+        assert not (await graph.aget_state(cfg)).next
+    assert result["sent"] is False
+    assert "отменена" in result["messages"][-1].content
+    assert model.ainvoke.await_count == 1

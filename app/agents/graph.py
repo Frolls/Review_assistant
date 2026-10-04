@@ -82,6 +82,8 @@ def build_supervisor_graph(*, model: Any, search_tool: Any):
             {"messages": [{"role": "user", "content": state["question"]}]}, config=config
         )
         facts = _final_text(result)
+        if not facts:
+            raise ValueError("Researcher returned no result")
         return Command(
             goto="supervisor",
             update={"research": facts, "messages": [AIMessage(content=facts, name="researcher")]},
@@ -91,6 +93,8 @@ def build_supervisor_graph(*, model: Any, search_tool: Any):
         task = f"Вопрос пользователя:\n{state['question']}\n\nФакты researcher:\n{state['research']}"
         result = await writer.ainvoke({"messages": [{"role": "user", "content": task}]}, config=config)
         answer = _final_text(result)
+        if not answer:
+            raise ValueError("Writer returned no result")
         return Command(
             goto="supervisor",
             update={"final_answer": answer, "messages": [AIMessage(content=answer, name="writer")]},

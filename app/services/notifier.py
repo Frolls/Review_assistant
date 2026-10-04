@@ -5,12 +5,12 @@ import httpx
 from app.core.config import get_settings
 
 
-async def notify_user(chat_id_tg: int, text: str) -> None:
+async def notify_user(chat_id_tg: int, text: str, *, request_id: str | None = None) -> None:
     settings = get_settings()
     async with httpx.AsyncClient(timeout=5.0) as client:
         response = await client.post(
             f"{settings.bot_url.rstrip('/')}/notify",
-            json={"chat_id": chat_id_tg, "text": text},
+            json={"chat_id": chat_id_tg, "text": text, "request_id": request_id},
             headers={"X-Internal-Token": settings.internal_token},
         )
         response.raise_for_status()
