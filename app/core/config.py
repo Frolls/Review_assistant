@@ -58,6 +58,9 @@ class Settings(BaseSettings):
         validation_alias="EMBEDDING_PROVIDER",
     )
     embedding_model: str = Field(default="qwen3-embedding:4b", validation_alias="EMBEDDING_MODEL")
+    embedding_base_url: str | None = Field(default=None, validation_alias="EMBEDDING_BASE_URL")
+    embedding_api_key: SecretStr | None = Field(default=None, validation_alias="EMBEDDING_API_KEY")
+
     embedding_batch_size: int = Field(default=128, validation_alias="EMBEDDING_BATCH_SIZE")
     embedding_dimensions: int | None = Field(
         default=None,

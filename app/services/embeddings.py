@@ -87,8 +87,8 @@ class EmbeddingConfig:
             cache_path=cache_path,
             dimensions=dimensions,
             request_timeout=float(os.getenv("EMBEDDING_REQUEST_TIMEOUT", "30")),
-            api_key=os.getenv("OPENAI_API_KEY"),
-            base_url=_blank_to_none(os.getenv("OPENAI_BASE_URL")),
+            api_key=os.getenv("EMBEDDING_API_KEY") or os.getenv("OPENAI_API_KEY"),
+            base_url=_blank_to_none(os.getenv("EMBEDDING_BASE_URL")) or _blank_to_none(os.getenv("OPENAI_BASE_URL")),
         )
 
     @classmethod
@@ -101,8 +101,8 @@ class EmbeddingConfig:
             cache_path=settings.embedding_cache_path,
             dimensions=settings.embedding_dimensions,
             request_timeout=settings.embedding_request_timeout,
-            api_key=settings.openai_api_key.get_secret_value(),
-            base_url=_blank_to_none(settings.openai_base_url),
+            api_key=(settings.embedding_api_key.get_secret_value() if settings.embedding_api_key else "") or settings.openai_api_key.get_secret_value(),
+            base_url=_blank_to_none(settings.embedding_base_url) or _blank_to_none(settings.openai_base_url),
         )
 
 
@@ -351,7 +351,8 @@ def _prepare_text(model: str, text: str, *, input_type: InputType) -> str:
 
 def _cache_key(config: EmbeddingConfig, text: str, *, input_type: InputType) -> str:
     payload = {
-        "version": 1,
+        "version": 2,
+        "base_url": config.base_url,
         "provider": config.provider,
         "model": config.model,
         "dimensions": config.dimensions,

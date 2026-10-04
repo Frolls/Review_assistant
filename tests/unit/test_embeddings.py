@@ -93,3 +93,12 @@ def test_mini_benchmark_has_required_shape():
     for item in benchmark:
         assert set(item) == {"query", "relevant", "irrelevant"}
         assert all(isinstance(value, str) and value.strip() for value in item.values())
+
+
+def test_generation_and_embeddings_can_use_separate_providers():
+    from app.core.config import Settings
+    settings = Settings(OPENAI_API_KEY="generation-key", OPENAI_BASE_URL="https://generation.example/v1",
+                        EMBEDDING_BASE_URL="http://ollama:11434/v1", EMBEDDING_API_KEY="local-key")
+    config = embeddings.EmbeddingConfig.from_settings(settings)
+    assert config.base_url == "http://ollama:11434/v1"
+    assert config.api_key == "local-key"
