@@ -42,10 +42,11 @@ API: полный контекст передаётся в каждом запр
   короткого follow-up, retrieval выполняется в Qdrant, а score guard может
   вернуть фиксированный отказ без answer-вызова LLM;
 - при уверенном retrieval сервис формирует нумерованный контекст, передаёт
-  историю генерации, стримит ответ и сохраняет показанные sources в metadata
-  сообщения ассистента;
-- при наличии `media` сохраняется прежний multimodal flow без RAG retrieval;
-- после завершения потока сервис проверяет накопленный ответ через `ModerationService.check_output()` и сохраняет ответ ассистента.
+  историю генерации и сохраняет sources в metadata сообщения ассистента;
+- при наличии вложения либо его контекста в недавней истории используется
+  модельный разбор файла без поиска по общей базе;
+- сервис накапливает ответ, проверяет его через `ModerationService.check_output()`
+  и сохраняет; только после успешной проверки и записи передаёт текст клиенту по SSE.
 
 Сообщения отправляются как `multipart/form-data`: обязательное поле `content`
 и опциональный файл `media`. Поддерживаются:
@@ -53,7 +54,12 @@ API: полный контекст передаётся в каждом запр
 - изображения `image/*` — передаются в LLM как multimodal `image_url`;
 - аудио `audio/*` и `application/ogg` — расшифровываются через Whisper-compatible `/audio/transcriptions`;
 - PDF — извлекается текст первых 50 страниц, результат ограничивается 30 000 символов;
-- DOCX — извлекаются абзацы и таблицы, результат ограничивается 30 000 символов.
+- DOCX — извлекаются абзацы и таблицы, результат ограничивается 30 000 символов;
+- текстовые `.py`, `.yaml`, `.yml`, `.diff`, `.patch`, `.txt`, `.md`, `.json`, `.toml` —
+  читаются как UTF-8, бинарное содержимое отклоняется.
+
+Лимит вложения — 10 МиБ, извлечённого текста — 30 000 символов.
+Вложение служит контекстом личного диалога и не индексируется в общей базе знаний.
 
 Для изображений можно задать `VISION_MODEL`; если переменная пустая, сервис
 использует `DEFAULT_MODEL`. Для локального Ollama voice-сценарий требует
@@ -63,7 +69,7 @@ endpoint обычно не реализует `/audio/transcriptions`.
 ## Модерация
 
 Stateful-чат проверяет пользовательский ввод до LLM-вызова и итоговый ответ
-ассистента перед сохранением. `ModerationService` использует два слоя:
+ассистента перед сохранением и показом пользователю. `ModerationService` использует два слоя:
 
 - keyword/regex правила из `app/moderation/moderation_keywords.yaml`;
 - опциональный OpenAI Moderation API слой с моделью `omni-moderation-latest`,
@@ -163,36 +169,49 @@ ${CHAT_STORAGE_DIR}/chats/<chat_id>/messages.jsonl
 
 ## HTTP endpoint'ы
 
-Создать чат:
+Все пользовательские запросы ниже требуют `X-Internal-Token` backend и
+`X-User-ID`. Подставьте значения вместо заглушек, а `CHAT_ID` и `MESSAGE_ID`
+замените идентификаторами из ответов API. `owner_external_id` при создании
+должен совпадать с `X-User-ID`. Пользовательский `system_prompt` не принимается.
+
+Создать или получить чат:
 
 ```bash
-curl -X POST http://localhost:8000/chats \
+curl --fail-with-body http://localhost:8000/chats \
+  -H 'X-Internal-Token: REPLACE_WITH_INTERNAL_TOKEN' \
+  -H 'X-User-ID: test-1' \
   -H 'Content-Type: application/json' \
-  -d '{"owner_external_id":"test-1","interface":"cli","system_prompt":"Отвечай кратко."}'
+  -d '{"owner_external_id":"test-1","interface":"cli"}'
 ```
 
 Получить метаданные чата:
 
 ```bash
-curl http://localhost:8000/chats/<chat_id>
+curl --fail-with-body http://localhost:8000/chats/CHAT_ID \
+  -H 'X-Internal-Token: REPLACE_WITH_INTERNAL_TOKEN' \
+  -H 'X-User-ID: test-1'
 ```
 
 Отправить сообщение и получить SSE-поток:
 
 ```bash
-curl -N -X POST http://localhost:8000/chats/<chat_id>/messages \
-  -F 'content=Привет, меня зовут Аня'
+curl --fail-with-body -N http://localhost:8000/chats/CHAT_ID/messages \
+  -H 'X-Internal-Token: REPLACE_WITH_INTERNAL_TOKEN' \
+  -H 'X-User-ID: test-1' \
+  -F 'content=Как скрыть пароль в Ansible diff?'
 ```
 
-Отправить сообщение с файлом:
+Отправить файл кода:
 
 ```bash
-curl -N -X POST http://localhost:8000/chats/<chat_id>/messages \
-  -F 'content=Проверь код на скриншоте' \
-  -F 'media=@screenshot.png;type=image/png'
+curl --fail-with-body -N http://localhost:8000/chats/CHAT_ID/messages \
+  -H 'X-Internal-Token: REPLACE_WITH_INTERNAL_TOKEN' \
+  -H 'X-User-ID: test-1' \
+  -F 'content=Проверь этот Python-код' \
+  -F 'media=@example.py;type=text/plain'
 ```
 
-SSE-поток stateful-чата возвращает JSON-события:
+SSE возвращает JSON-события после проверки и сохранения полного ответа:
 
 ```text
 data: {"type":"token","delta":"..."}
@@ -200,43 +219,51 @@ data: {"type":"token","delta":"..."}
 data: {"type":"done","message_id":"...","confident":true,"sources":[...]}
 ```
 
-Переводы строк внутри `delta` кодируются JSON-экранированием, поэтому каждый
-SSE event остаётся одной строкой `data:`. При срабатывании score guard приходит
-текст `по базе не нашёл, могу эскалировать`, `confident=false` и пустой массив
-`sources`.
+Переводы строк внутри `delta` экранируются. При отказе либо уточнении
+`confident=false`, массив `sources` пуст. SSE здесь не означает показ
+непроверенных токенов в момент генерации моделью.
 
 Получить сообщения в хронологическом порядке:
 
 ```bash
-curl 'http://localhost:8000/chats/<chat_id>/messages?limit=50'
+curl --fail-with-body 'http://localhost:8000/chats/CHAT_ID/messages?limit=50' \
+  -H 'X-Internal-Token: REPLACE_WITH_INTERNAL_TOKEN' \
+  -H 'X-User-ID: test-1'
 ```
 
-Очистить историю сообщений:
+Очистить историю:
 
 ```bash
-curl -X DELETE http://localhost:8000/chats/<chat_id>/messages
+curl --fail-with-body -X DELETE http://localhost:8000/chats/CHAT_ID/messages \
+  -H 'X-Internal-Token: REPLACE_WITH_INTERNAL_TOKEN' \
+  -H 'X-User-ID: test-1'
 ```
 
-Сохранить feedback по ответу ассистента:
+Сохранить feedback по ответу ассистента; `sources` содержит фактически
+показанные клиентом источники:
 
 ```bash
-curl -X POST http://localhost:8000/chats/<chat_id>/messages/<message_id>/feedback \
+curl --fail-with-body http://localhost:8000/chats/CHAT_ID/messages/MESSAGE_ID/feedback \
+  -H 'X-Internal-Token: REPLACE_WITH_INTERNAL_TOKEN' \
+  -H 'X-User-ID: test-1' \
   -H 'Content-Type: application/json' \
-  -d '{"value":"down","sources":[{"id":1,"file_name":"ansible.md","page":1,"score":0.73,"snippet":"..."}]}'
+  -d '{"value":"down","sources":[]}'
 ```
 
-Admin endpoint'ы защищены заголовком `X-Admin-Token`:
+Административные endpoint проверяют `X-Admin-Token`:
 
 ```bash
-curl -H 'X-Admin-Token: changeme-admin' http://localhost:8000/chats/admin/stats
-curl -H 'X-Admin-Token: changeme-admin' 'http://localhost:8000/chats/admin/users?limit=50'
-curl -X POST http://localhost:8000/chats/admin/broadcast \
-  -H 'X-Admin-Token: changeme-admin' \
-  -H 'Content-Type: application/json' \
-  -d '{"message":"Плановое уведомление","interface_filter":"telegram"}'
+curl --fail-with-body http://localhost:8000/chats/admin/stats \
+  -H 'X-Admin-Token: REPLACE_WITH_ADMIN_TOKEN'
+curl --fail-with-body 'http://localhost:8000/chats/admin/users?limit=50' \
+  -H 'X-Admin-Token: REPLACE_WITH_ADMIN_TOKEN'
 ```
 
-## Smoke-проверка
+`POST /chats/admin/broadcast` с этим ключом ставит рассылку в очередь.
+Поля тела: `message` и `interface_filter`. Это действие отправляет сообщения
+реальным получателям через бота.
+
+## Историческая smoke-проверка
 
 Условия проверки от 2026-06-25: `uvicorn`, `curl`, Redis и OpenAI-compatible
 backend Ollama. Результаты:

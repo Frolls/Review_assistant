@@ -22,16 +22,20 @@ flowchart LR
         History[("Postgres chat history")]
         Condense["Optional condense<br/>follow-up → standalone query"]
         Retrieve["Vector retrieval<br/>top_k = 10"]
-        Guard{"top_score ≥ configured threshold?<br/>0.5 for Qwen3 4B"}
+        Guard{"Есть фрагменты со score ≥ 0.5?"}
         Rerank["Optional BGE rerank<br/>top_n = 5"]
+        Evidence{"Проверка вопроса и достаточности фактов"}
+        Clarify["Уточнение или отказ без источников"]
         Prompt["Numbered context<br/>[1], [2], …"]
-        LLM["OpenAI-compatible LLM<br/>streaming"]
+        LLM["OpenAI-compatible LLM<br/>генерация и проверка ответа"]
         Refusal["Fixed refusal<br/>no answer LLM call"]
         SSE["SSE tokens + final<br/>sources, confident"]
         Client --> Condense
         History --> Condense
         Condense --> Retrieve --> Guard
-        Guard -->|yes| Rerank --> Prompt --> LLM --> SSE
+        Guard -->|yes| Rerank --> Evidence
+        Evidence -->|достаточно| Prompt --> LLM --> SSE
+        Evidence -->|неясно или недостаточно| Clarify --> SSE
         History --> Prompt
         Guard -->|no| Refusal --> SSE
     end
@@ -90,16 +94,21 @@ python scripts/ingest.py data/
    переписывается в самостоятельный запрос. В prompt передаётся `chat_id`, но
    отдельное хранилище не создаётся.
 2. Retriever получает `RAG_SIMILARITY_TOP_K=10`.
-3. До answer-generation считается максимальный cosine score.
-4. Если score ниже порога, возвращается
-   `по базе не нашёл, могу эскалировать`; генерация ответа не вызывается.
-5. При `RAG_RERANKER_ENABLED=true` кандидаты сортирует multilingual
-   `BAAI/bge-reranker-v2-m3`, остаётся `top_n=5`. Это optional heavyweight
-   dependency из extra `local-embeddings`; без неё сервис пишет warning и
-   сохраняет исходный порядок retrieval. При выключенном re-ranker первые
-   пять retrieval-кандидатов также передаются в контекст.
-6. Фрагменты нумеруются, а системный prompt требует подтверждать утверждения
-   ссылками `[1]`, `[2]`. JSON sources использует те же номера.
+3. Порог `RAG_SCORE_THRESHOLD` применяется к каждому кандидату до reranking.
+   Если ни один не прошёл, возвращается отказ без вызова генерации ответа.
+4. При `RAG_RERANKER_ENABLED=true` прошедшие порог кандидаты сортирует
+   `BAAI/bge-reranker-v2-m3`; в контекст попадает до пяти фрагментов.
+   Это optional dependency из extra `local-embeddings`. В стенде reranker
+   выключен, используется порядок retrieval.
+5. Отдельный вызов модели проверяет понятность исходного вопроса и достаточность
+   найденных фактов. Возможны ответ, уточнение или отказ. Проверка увеличивает
+   задержку и может ошибаться; уточнения и отказы не показывают источники.
+6. Фрагменты нумеруются, системный prompt требует ссылок `[1]`, `[2]`.
+   Номера JSON sources соответствуют этому контексту. Неизвестная ссылка приводит
+   к отказу; отсутствующая ссылка не дописывается автоматически.
+
+`top_score` — показатель сходства найденного контекста, а не вероятность
+правильности ответа. Высокий score сам по себе не означает `confident=true`.
 
 История Postgres передаётся генерации целиком после существующего token-budget
 window. Поэтому «А для них?» понятен генератору; condense нужен только для
@@ -115,8 +124,8 @@ window. Поэтому «А для них?» понятен генератору
 
 Кодовый default — `RAG_SCORE_THRESHOLD=0.3`. Это стартовое значение для cosine
 на OpenAI `text-embedding-3-small`, указанное в задании. Локальный Compose
-использует другую модель, `qwen3-embedding:4b`, поэтому в корневом `.env.example`
-зафиксирован откалиброванный порог `0.5`.
+использует `qwen3-embedding:4b` и задаёт порог `0.5`. Такой же порог
+используется в общем Compose из комплекта защиты.
 
 Фактический прогон 27 июля 2026 года на полном 56-файловом корпусе:
 
@@ -148,7 +157,13 @@ retrieval.
 | `POST /chats/{id}/messages/{mid}/feedback` | `up/down` и показанные sources |
 | `POST /documents/upload` | Сохранить документ и поставить ingestion в background, HTTP 202 |
 
-`POST /rag/query`:
+Пользовательские endpoint требуют `X-Internal-Token` и `X-User-ID`.
+Для `/documents/upload` дополнительно нужен `X-Admin-Token`: это загрузка
+в **общую** базу, отдельно от вложений личного чата. Лимит — 50 МиБ;
+`202` подтверждает принятие файла, результат индексации проверяется по логам.
+Примеры авторизованных запросов — в [README](../README.md) и [документации чата](chat.md).
+
+Тело `POST /rag/query`:
 
 ```json
 {
@@ -180,11 +195,20 @@ SSE каждое событие сериализует через JSON; пере
 data: {"type":"done","message_id":"...","confident":true,"sources":[...]}
 ```
 
-Telegram-клиент читает этот поток, обновляет одно сообщение не чаще раза в
-700 мс, после завершения добавляет 👍/👎 и передаёт backend список показанных
-sources вместе с feedback.
+В диалоговом API ответ передаётся клиенту после модерации и сохранения.
+Telegram-клиент разбивает длинный ответ на страницы, показывает источники
+и кнопки 👍/👎; в feedback передаёт список фактически показанных источников.
 
-## Подтверждённая приёмка
+## Текущая оценка
+
+15 октября 2026 выполнен полный прогон на 35 вопросах при пороге 0.5:
+faithfulness 0.781, answer relevancy 0.780, context precision 0.939,
+context recall 0.986. Получены 33 ответа и два избыточных уточнения,
+включённые в средние. Наличие ссылки — 0.943, критерий `> 0.95` не пройден.
+Коллекция `corporate_rag_rules_v3` содержала 1818 фрагментов.
+[Условия, ограничения и сырые данные](rag_evaluation_current.md).
+
+## Историческая приёмка 27 июля 2026
 
 Полный локальный прогон выполнен 27 июля 2026 года с Ollama
 `qwen3:8b`, `qwen3-embedding:4b`, Qdrant 1.14, PostgreSQL 16 и Redis 7.4:
@@ -213,15 +237,17 @@ agent актуальная общая backend suite выросла до `127 pas
 
 ## Запуск
 
-Из корня workspace:
+Полный стенд запускается из общей папки с двумя репозиториями и приложенным
+`compose.yaml`. Подготовка Ollama, ключей и структура файлов описаны
+в [основном README](../README.md#запуск-полного-стенда).
+
+После подготовки из общей папки:
 
 ```bash
-cp .env.example .env
-# заполнить BOT_TOKEN и при необходимости имена локальных Ollama-моделей
-docker compose up -d
+docker compose -f compose.yaml up -d --build
+curl --fail http://localhost:8000/ready
 ```
 
-Compose поднимает app, Qdrant, Redis, PostgreSQL и bot. Индексирование, миграции
-и запуск API входят в command контейнера app; `docker exec` и ручной `pip
-install` не нужны. На первом старте embedding всего корпуса может занять
-несколько минут; healthcheck учитывает это через `start_period=5m`.
+Compose поднимает API, бот, Qdrant, Redis, PostgreSQL и Phoenix. Индексация
+и миграции выполняются перед стартом API. Первая индексация занимает несколько
+минут; healthcheck учитывает её через `start_period=5m`.
