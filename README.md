@@ -348,7 +348,13 @@ docker compose --profile eval run --rm eval python scripts/build_eval_report.py
 Локальный judge использует OpenAI-compatible endpoint Ollama:
 `qwen2.5:14b`; judge embeddings — `qwen3-embedding:4b`. Облачные ключи не
 требуются. Golden dataset и timestamped CSV/JSON лежат в `tests/eval/`,
-итоговый отчёт — в `docs/rag_evaluation.md`.
+исторический отчёт — в `docs/rag_evaluation.md`.
+
+Повторный полный прогон **15.10.2026** на текущей коллекции при пороге **0.5**:
+35/35 вопросов, без технических ошибок; faithfulness **0.781**, answer relevancy
+**0.780**. Получены 33 ответа и два избыточных уточнения, все включены в метрики.
+Наличие ссылок **0.943** не проходит исторический порог >0.95.
+[Текущая оценка, ограничения и команда воспроизведения](docs/rag_evaluation_current.md).
 
 Сырые пары TestsetGenerator также создаются внутри eval image:
 
