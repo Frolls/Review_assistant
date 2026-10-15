@@ -11,6 +11,7 @@ from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from langchain_core.messages import HumanMessage, RemoveMessage
 from langgraph.types import Command
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -171,7 +172,22 @@ async def stream_agent(
             if not snapshot.next or not pending or pending.get("request_id") != payload.request_id:
                 raise HTTPException(status_code=409, detail="Подтверждение устарело или действие уже завершено")
         elif snapshot.next:
-            raise HTTPException(status_code=409, detail="Сначала подтвердите или отмените предыдущее действие")
+            if pending or any(task.interrupts for task in snapshot.tasks):
+                raise HTTPException(status_code=409, detail="Сначала подтвердите или отмените предыдущее действие")
+            # A failed/cancelled model step also leaves snapshot.next populated.
+            # Start a new turn, dropping only the unfinished turn from the active
+            # context (including any unanswered tool calls). Older checkpoints
+            # remain available, and pending deliveries must never take this path.
+            messages = snapshot.values.get("messages", [])
+            last_user = next(
+                (index for index in range(len(messages) - 1, -1, -1)
+                 if isinstance(messages[index], HumanMessage)),
+                len(messages),
+            )
+            graph_input = {"messages": [
+                *[RemoveMessage(id=message.id) for message in messages[last_user:]],
+                *payload.input["messages"],
+            ]}
         if payload.input:
             from app.moderation import ModerationService
             result = await ModerationService().check_input(payload.input["messages"][0]["content"])

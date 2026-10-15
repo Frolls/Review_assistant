@@ -112,3 +112,76 @@ async def test_both_agent_endpoints_share_the_chat_semaphore_and_release_on_erro
     assert review_response.status_code == 500
     assert count == 2 and peak == 1 and active == 0
     assert not semaphore.locked()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", ["model", "after_tool", "prepare"])
+async def test_new_request_recovers_failed_turn_without_losing_completed_history(failure):
+    from hashlib import sha256
+    from langchain_core.messages import HumanMessage
+
+    failed_question = "Отправь сообщение другому получателю" if failure == "prepare" else "Failed question"
+
+    class RecoveringModel:
+        def bind_tools(self, tools):
+            return self
+
+        async def ainvoke(self, messages):
+            question = next(m.content for m in reversed(messages) if isinstance(m, HumanMessage))
+            if question == "Earlier question":
+                return AIMessage(content="Earlier answer")
+            if question == failed_question:
+                if failure == "model" or isinstance(messages[-1], ToolMessage):
+                    raise TimeoutError("Model timed out")
+                tool = "send_telegram_message" if failure == "prepare" else "get_current_time"
+                args = {"chat_id": 9999, "text": "Wrong recipient"} if failure == "prepare" else {"timezone": "Asia/Yekaterinburg"}
+                return AIMessage(content="", tool_calls=[{"name": tool, "args": args, "id": "failed-tool"}])
+            assert all(m.content != failed_question for m in messages)
+            assert any(m.content == "Earlier answer" for m in messages)
+            if isinstance(messages[-1], HumanMessage):
+                return AIMessage(content="", tool_calls=[{
+                    "name": "get_current_time", "args": {"timezone": "Asia/Yekaterinburg"}, "id": "retry-clock",
+                }])
+            return AIMessage(content="Recovered answer")
+
+    sender = AsyncMock()
+    graph = build_agent(InMemorySaver(), model=RecoveringModel(), sender=sender)
+    app = FastAPI()
+    app.state.llm_semaphore = asyncio.Semaphore(1)
+    app.state.agent_graph = graph
+
+    @app.middleware("http")
+    async def identity(request: Request, call_next):
+        request.state.owner_id = "1001"
+        return await call_next(request)
+
+    app.include_router(router)
+    thread = "telegram-actions"
+    config = {"configurable": {"thread_id": sha256(f"1001:{thread}".encode()).hexdigest()}}
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        async def ask(text):
+            return await client.post("/agent/stream", json={
+                "thread_id": thread, "input": {"messages": [{"role": "user", "content": text}]},
+            })
+
+        assert '"event":"done"' in (await ask("Earlier question")).text
+        failed = await ask(failed_question)
+        assert '"event":"error"' in failed.text
+        assert (await graph.aget_state(config)).next
+        assert (await client.get("/agent/pending")).json()["pending"] is None
+
+        recovered = await ask("Time again")
+        assert recovered.status_code == 200
+        assert '"event":"done"' in recovered.text
+        assert "Recovered answer" in recovered.text
+        assert "get_current_time" in recovered.text
+        state = await graph.aget_state(config)
+        assert not state.next
+        assert [m.content for m in state.values["messages"] if isinstance(m, HumanMessage)] == [
+            "Earlier question", "Time again",
+        ]
+        # The failed attempt remains in checkpoint history for diagnosis.
+        history = [s async for s in graph.aget_state_history(config)]
+        assert any(any(m.content == failed_question for m in s.values.get("messages", [])) for s in history)
+    sender.assert_not_called()

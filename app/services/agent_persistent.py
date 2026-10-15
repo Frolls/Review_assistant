@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import operator
+import re
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from datetime import datetime
@@ -12,7 +13,7 @@ from zoneinfo import ZoneInfo
 from uuid import uuid4
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool, tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -28,10 +29,51 @@ MAX_ITERATIONS = 6
 DANGEROUS_TOOL_NAME = "send_telegram_message"
 SYSTEM_PROMPT = (
     "Ты ReAct-агент помощи при разработке и ревью кода. Используй tools только по "
-    "необходимости и не выдумывай данные. Отправка Telegram-сообщения "
-    "является опасным действием: сформируй один tool call с точным chat_id "
+    "необходимости и не выдумывай данные. Выполняй последний запрос пользователя. "
+    "Твой обычный ответ уже будет показан в чате: для ответа инструмент отправки не нужен. "
+    "Текущее время при каждом новом запросе получай заново через get_current_time; "
+    "время из истории уже устарело. Просьба сообщить время не является просьбой "
+    "отправить отдельное Telegram-сообщение. Инструмент send_telegram_message "
+    "доступен только для явной команды отправки. Используй текст из текущей команды, "
+    "не подменяй его предыдущим ответом. Сформируй один tool call с точным chat_id "
     "и готовым текстом; граф сам запросит подтверждение."
 )
+
+_DELIVERY_COMMAND = re.compile(
+    r"^\s*(?:пожалуйста[,\s]+|please\s+)?(?:"
+    r"отправь(?:те)?|пришли(?:те)?|send|"
+    r"подготовь(?:те)?\s+(?:отправку|сообщение)|"
+    r"prepare\s+(?:a\s+)?(?:message|telegram)|"
+    r"(?:вызови|call)\s+send_telegram_message)\b",
+    re.IGNORECASE,
+)
+
+
+def _latest_question(messages: list[AnyMessage]) -> str:
+    question = next((str(m.content) for m in reversed(messages) if isinstance(m, HumanMessage)), "")
+    # Compatibility with messages written by older versions of the Telegram bot.
+    if question.startswith("Telegram ID инициатора:"):
+        question = question.partition("Запрос пользователя:")[2]
+    return question.strip()
+
+
+def _delivery_requested(messages: list[AnyMessage]) -> bool:
+    """Enable sending only for an explicit command in the current user turn."""
+    return bool(_DELIVERY_COMMAND.match(_latest_question(messages)))
+
+
+def _required_safe_tool(messages: list[AnyMessage]) -> str | None:
+    """An explicit tool command must get a new result in this turn."""
+    match = re.match(r"^(?:вызови|call|use)\s+([a-z_]+)\b", _latest_question(messages), re.IGNORECASE)
+    if not match or match[1].lower() not in SAFE_TOOLS:
+        return None
+    name = match[1].lower()
+    for message in reversed(messages):
+        if isinstance(message, HumanMessage):
+            break
+        if isinstance(message, ToolMessage) and message.name == name:
+            return None
+    return name
 
 
 @tool
@@ -124,12 +166,31 @@ def build_agent(
     from app.moderation import ModerationService
     moderator = ModerationService()
     selected_model = model or _build_model(settings or get_settings())
-    bound_model = selected_model.bind_tools(TOOLS)
 
-    async def call_model(state: AgentState) -> dict[str, Any]:
-        response = await bound_model.ainvoke(
-            [SystemMessage(content=SYSTEM_PROMPT), *state["messages"]]
+    async def call_model(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
+        options = config.get("configurable", {})
+        can_send = _delivery_requested(state["messages"]) and options.get("user_role") != "read-only"
+        required_tool = _required_safe_tool(state["messages"])
+        tool_options = {"tool_choice": required_tool} if required_tool else {}
+        bound_model = selected_model.bind_tools(
+            TOOLS if can_send else list(SAFE_TOOLS.values()), **tool_options,
         )
+        prompt = SYSTEM_PROMPT
+        if can_send and options.get("allowed_recipient") is not None:
+            prompt += f" Разрешённый получатель Telegram: {options['allowed_recipient']}."
+        model_messages = state["messages"]
+        last_user = max(index for index, message in enumerate(model_messages)
+                        if isinstance(message, HumanMessage))
+        if _required_safe_tool([model_messages[last_user]]) == "get_current_time":
+            # A new clock reading does not use previous readings as evidence.
+            # Keep the current request, so the model cannot copy an old answer
+            # instead of issuing the explicitly requested tool call.
+            model_messages = model_messages[last_user:]
+        response = await bound_model.ainvoke(
+            [SystemMessage(content=prompt), *model_messages]
+        )
+        if required_tool and not any(call["name"] == required_tool for call in response.tool_calls):
+            raise RuntimeError("Модель не вызвала явно запрошенный инструмент; ответ без свежих данных отклонён.")
         output = str(response.content) + json.dumps(getattr(response, "tool_calls", []), ensure_ascii=False)
         if not (await moderator.check_output(output)).allowed:
             response = AIMessage(content="Ответ агента заблокирован модерацией. Действие не выполнено.")
@@ -146,7 +207,8 @@ def build_agent(
             return "finish"
         if state.get("iteration_count", 0) >= MAX_ITERATIONS:
             return "limit"
-        if len(calls) == 1 and calls[0].get("name") == DANGEROUS_TOOL_NAME:
+        if (len(calls) == 1 and calls[0].get("name") == DANGEROUS_TOOL_NAME
+                and _delivery_requested(state["messages"])):
             return "prepare"
         return "execute"
 
@@ -164,7 +226,13 @@ def build_agent(
                 content = _serialize_result(await selected_tool.ainvoke(args))
             except Exception as exc:
                 error = type(exc).__name__
-                content = f"Tool error: {error}. Отправка требует отдельного подтверждения."
+                if name == DANGEROUS_TOOL_NAME and not _delivery_requested(state["messages"]):
+                    content = (
+                        "Пользователь не запрашивал отправку отдельного сообщения. "
+                        "Ответь на текущий запрос обычным ответом и используй доступные инструменты."
+                    )
+                else:
+                    content = f"Tool error: {error}. Отправка требует отдельного подтверждения."
             messages.append(ToolMessage(content=content, tool_call_id=call["id"], name=name))
             results.append({"name": name, "args": args, "result": content, "error": error})
         return {"messages": messages, "tool_results": results}
@@ -183,6 +251,8 @@ def build_agent(
         """Validate and render the payload without performing a side effect."""
 
         call = _last_tool_call(state)
+        if not _delivery_requested(state["messages"]):
+            raise ValueError("Для отправки нужна явная команда пользователя.")
         args = call.get("args") or {}
         chat_id = int(args["chat_id"])
         allowed_recipient = config.get("configurable", {}).get("allowed_recipient")
