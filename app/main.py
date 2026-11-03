@@ -43,6 +43,8 @@ logger = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = app.state.settings
+    from app.services.ollama import configure_context
+    await configure_context(settings)
     setup_tracing(observability_include_content=settings.observability_include_content)
     db_engine = None
     rag_service = None
@@ -50,6 +52,7 @@ async def lifespan(app: FastAPI):
         api_key=settings.openai_api_key.get_secret_value(),
         base_url=settings.openai_base_url,
         timeout=settings.request_timeout,
+        max_retries=0,
     )
     cache = Redis.from_url(settings.redis_url)
     app.state.rag_init_lock = asyncio.Lock()
@@ -145,6 +148,8 @@ def create_app() -> FastAPI:
     app.include_router(chat_router)
     app.include_router(rag_router)
     app.include_router(documents_router)
+    from app.routers.escalations import router as escalations_router
+    app.include_router(escalations_router)
     app.include_router(agent_router)
     app.include_router(stateful_chat_router)
     app.include_router(feedback_router)
@@ -171,6 +176,7 @@ async def request_context_middleware(request: Request, call_next):
     request_id = request.headers.get("X-Request-ID") or uuid4().hex[:12]
     user_id = request.headers.get("X-User-ID")
     request.state.request_id = request_id
+    request.state.turn_deadline = time.monotonic() + 180
     started_at = time.perf_counter()
 
     bind_contextvars(
@@ -181,14 +187,30 @@ async def request_context_middleware(request: Request, call_next):
     )
 
     try:
-        response = await call_next(request)
+        try:
+            async with asyncio.timeout_at(request.state.turn_deadline):
+                response = await call_next(request)
+        except TimeoutError:
+            return JSONResponse(status_code=504, content={"detail": "Превышено время обработки запроса."})
         duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
         response.headers["X-Request-ID"] = request_id
         logger.info(
-            "http_request_completed",
+            "http_response_started",
             status=response.status_code,
-            latency_ms=duration_ms,
+            response_start_ms=duration_ms,
         )
+        original_body = response.body_iterator
+        async def measured_body():
+            complete = False
+            try:
+                async for chunk in original_body:
+                    yield chunk
+                complete = True
+            finally:
+                logger.info("http_response_finished", request_id=request_id,
+                            status=response.status_code, complete=complete,
+                            response_total_ms=round((time.perf_counter() - started_at) * 1000, 2))
+        response.body_iterator = measured_body()
         return response
     finally:
         clear_contextvars()

@@ -1,0 +1,89 @@
+[
+  {
+    "id": "shared_cache-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Вызовы без cache должны возвращать независимые словари.",
+    "code": "def remember(value, cache={}):\n    cache[value] = True\n    return cache\n",
+    "expected_defects": [
+      "mutable-default"
+    ],
+    "reference_fix": "def remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n"
+  },
+  {
+    "id": "shared_cache-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Вызовы без cache должны возвращать независимые словари.",
+    "code": "def remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "shared_cache-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом.",
+    "code": "def remember(value):\n    return {value: True}\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "file_handle-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Файл должен закрываться, в том числе при исключении чтения.",
+    "code": "def first_line(path):\n    stream = open(path, encoding=\"utf-8\")\n    return stream.readline()\n",
+    "expected_defects": [
+      "unclosed-file"
+    ],
+    "reference_fix": "def first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n"
+  },
+  {
+    "id": "file_handle-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Файл должен закрываться, в том числе при исключении чтения.",
+    "code": "def first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "file_handle-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом.",
+    "code": "from pathlib import Path\n\ndef read_config(path):\n    return Path(path).read_text(encoding=\"utf-8\")\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "ensure_directory-defect",
+    "kind": "defect",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Повторное выполнение должно сохранять состояние без ошибки.",
+    "code": "- name: Create app cache\n  ansible.builtin.shell: mkdir /opt/app-cache\n",
+    "expected_defects": [
+      "non-idempotent-shell"
+    ],
+    "reference_fix": "- name: Create app cache\n  ansible.builtin.file:\n    path: /opt/app-cache\n    state: directory\n    mode: \"0755\"\n"
+  },
+  {
+    "id": "ensure_directory-fixed",
+    "kind": "fixed",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Повторное выполнение должно сохранять состояние без ошибки.",
+    "code": "- name: Create app cache\n  ansible.builtin.file:\n    path: /opt/app-cache\n    state: directory\n    mode: \"0755\"\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "ensure_directory-clean",
+    "kind": "clean",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом.",
+    "code": "- name: Install package\n  ansible.builtin.package:\n    name: git\n    state: present\n",
+    "expected_defects": [],
+    "reference_fix": null
+  }
+]

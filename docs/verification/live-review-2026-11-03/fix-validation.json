@@ -1,0 +1,38 @@
+{
+  "results": [
+    {
+      "run": "baseline",
+      "case": "file_handle-defect",
+      "passed": [
+        "first_line_result",
+        "closed_on_success",
+        "closed_on_read_error"
+      ]
+    },
+    {
+      "run": "baseline",
+      "case": "ensure_directory-defect",
+      "passed": [
+        "yaml_matches_reference_file_module_state_directory_mode"
+      ]
+    },
+    {
+      "run": "repeat",
+      "case": "shared_cache-defect",
+      "passed": [
+        "independent_defaults",
+        "explicit_cache_preserved"
+      ]
+    },
+    {
+      "run": "repeat",
+      "case": "file_handle-defect",
+      "passed": [
+        "first_line_result",
+        "closed_on_success",
+        "closed_on_read_error"
+      ]
+    }
+  ],
+  "ansible_execution": false
+}

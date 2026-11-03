@@ -1,0 +1,132 @@
+[
+  {
+    "id": "event_queue-clean-contract-v2",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Без явно переданного queue каждый вызов должен создавать независимый список; явно переданный список изменяется на месте.",
+    "code": "def enqueue(event, *, queue=None):\n    queue = [] if queue is None else queue\n    queue.append(event)\n    return queue\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax; поддерживаемые числовые примеры из задачи. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax; поддерживаемые числовые примеры из задачи. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax; поддерживаемые числовые примеры из задачи. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "86afc204-0d9c-495c-8b84-911e70deedf7"
+      }
+    ],
+    "latency_seconds": 3.427771925998968,
+    "started_at": "2026-11-03T17:33:32.669537+00:00",
+    "request_id": "ec430010a894",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 3.427474862000963
+      },
+      {
+        "type": "done",
+        "seconds": 3.427581680000003
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 383,
+          "prompt_tokens": 341,
+          "completion_tokens": 42
+        }
+      ],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax; поддерживаемые числовые примеры из задачи. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "Corrected ground truth retains required optional argument; scoped clean response without invented findings."
+    }
+  },
+  {
+    "id": "cache_map-clean-contract-v2",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Каждый вызов без cache получает независимый словарь; переданный словарь меняется на месте.",
+    "code": "def record(key, *, cache=None):\n    cache = {} if cache is None else cache\n    cache[key] = True\n    return cache\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax; поддерживаемые числовые примеры из задачи. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax; поддерживаемые числовые примеры из задачи. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax; поддерживаемые числовые примеры из задачи. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "03cb2329-37b0-4753-b5e3-b019aa7732f8"
+      }
+    ],
+    "latency_seconds": 0.4749724380017142,
+    "started_at": "2026-11-03T17:33:36.110342+00:00",
+    "request_id": "12f87dcb39f0",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.47466151399567025
+      },
+      {
+        "type": "done",
+        "seconds": 0.47476779200223973
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 331,
+          "prompt_tokens": 322,
+          "completion_tokens": 9
+        }
+      ],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax; поддерживаемые числовые примеры из задачи. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "Corrected ground truth retains required optional argument; scoped clean response without invented findings."
+    }
+  }
+]

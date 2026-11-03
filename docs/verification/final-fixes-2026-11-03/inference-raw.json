@@ -1,0 +1,126 @@
+{
+  "scope": "native Ollama microbenchmark; no retrieval or application validation",
+  "request": {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "stream": false,
+    "keep_alive": "10m",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Проверь Python-код. Вызовы без cache должны возвращать независимые словари. Назови дефект и дай полную исправленную функцию. Ответ до 150 слов.\ndef remember(value, cache={}):\n    cache[value] = True\n    return cache\n"
+      }
+    ],
+    "options": {
+      "num_ctx": 8192,
+      "num_predict": 1024,
+      "temperature": 0,
+      "seed": 42
+    }
+  },
+  "runs": [
+    {
+      "think": false,
+      "repetition": 0,
+      "warmup": true,
+      "started_at": "2026-11-03T17:23:00.392996+00:00",
+      "response": {
+        "model": "review-context-dc37a066192437ac:ctx8192",
+        "created_at": "2026-11-03T17:23:05.586977461Z",
+        "message": {
+          "role": "assistant",
+          "content": "Дефект в функции `remember` заключается в использовании глобального словаря `cache`, который делится между всеми вызовами функции. Это приводит к нежелательному поведению, так как изменения в одном вызове влияют на другие вызовы. Для исправления, нужно создавать новый словарь по умолчанию каждый раз при вызове функции.\n\nИсправленная функция:\n\n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```\n\nТеперь каждый вызов функции будет использовать независимый словарь по умолчанию."
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 5183803726,
+        "load_duration": 1595372083,
+        "prompt_eval_count": 102,
+        "prompt_eval_cached_count": 0,
+        "prompt_eval_duration": 130429000,
+        "eval_count": 162,
+        "eval_duration": 3456178000
+      },
+      "prompt_eval_tokens_per_second": 782.0346702037124,
+      "eval_tokens_per_second": 46.87258584482628,
+      "wall_seconds": 5.1944278399969335
+    },
+    {
+      "think": false,
+      "repetition": 1,
+      "warmup": false,
+      "started_at": "2026-11-03T17:23:05.587676+00:00",
+      "response": {
+        "model": "review-context-dc37a066192437ac:ctx8192",
+        "created_at": "2026-11-03T17:23:09.073059339Z",
+        "message": {
+          "role": "assistant",
+          "content": "Дефект в функции `remember` заключается в использовании глобального словаря `cache`, который делится между всеми вызовами функции. Это приводит к нежелательному поведению, так как изменения в одном вызове влияют на другие вызовы. Для исправления, нужно создавать новый словарь по умолчанию каждый раз при вызове функции.\n\nИсправленная функция:\n\n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```\n\nТеперь каждый вызов функции будет использовать независимый словарь по умолчанию."
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 3484627195,
+        "load_duration": 563501,
+        "prompt_eval_count": 102,
+        "prompt_eval_cached_count": 101,
+        "prompt_eval_duration": 22881000,
+        "eval_count": 162,
+        "eval_duration": 3444170000
+      },
+      "prompt_eval_tokens_per_second": 4457.847122066343,
+      "eval_tokens_per_second": 47.036005772072805,
+      "wall_seconds": 3.4857125180060393
+    },
+    {
+      "think": false,
+      "repetition": 2,
+      "warmup": false,
+      "started_at": "2026-11-03T17:23:09.073657+00:00",
+      "response": {
+        "model": "review-context-dc37a066192437ac:ctx8192",
+        "created_at": "2026-11-03T17:23:12.551860912Z",
+        "message": {
+          "role": "assistant",
+          "content": "Дефект в функции `remember` заключается в использовании глобального словаря `cache`, который делится между всеми вызовами функции. Это приводит к нежелательному поведению, так как изменения в одном вызове влияют на другие вызовы. Для исправления, нужно создавать новый словарь по умолчанию каждый раз при вызове функции.\n\nИсправленная функция:\n\n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```\n\nТеперь каждый вызов функции будет использовать независимый словарь по умолчанию."
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 3477688760,
+        "load_duration": 558241,
+        "prompt_eval_count": 102,
+        "prompt_eval_cached_count": 101,
+        "prompt_eval_duration": 23265000,
+        "eval_count": 162,
+        "eval_duration": 3451930000
+      },
+      "prompt_eval_tokens_per_second": 4384.268214055448,
+      "eval_tokens_per_second": 46.93026799500569,
+      "wall_seconds": 3.4785802720070933
+    },
+    {
+      "think": false,
+      "repetition": 3,
+      "warmup": false,
+      "started_at": "2026-11-03T17:23:12.552519+00:00",
+      "response": {
+        "model": "review-context-dc37a066192437ac:ctx8192",
+        "created_at": "2026-11-03T17:23:16.029739482Z",
+        "message": {
+          "role": "assistant",
+          "content": "Дефект в функции `remember` заключается в использовании глобального словаря `cache`, который делится между всеми вызовами функции. Это приводит к нежелательному поведению, так как изменения в одном вызове влияют на другие вызовы. Для исправления, нужно создавать новый словарь по умолчанию каждый раз при вызове функции.\n\nИсправленная функция:\n\n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```\n\nТеперь каждый вызов функции будет использовать независимый словарь по умолчанию."
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 3476488747,
+        "load_duration": 549441,
+        "prompt_eval_count": 102,
+        "prompt_eval_cached_count": 101,
+        "prompt_eval_duration": 22644000,
+        "eval_count": 162,
+        "eval_duration": 3451559000
+      },
+      "prompt_eval_tokens_per_second": 4504.504504504504,
+      "eval_tokens_per_second": 46.93531241969209,
+      "wall_seconds": 3.477581220002321
+    }
+  ]
+}

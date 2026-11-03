@@ -1,0 +1,192 @@
+name: review_bot
+
+services:
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    ports:
+      - "127.0.0.1:6006:6006"
+      - "127.0.0.1:4317:4317"
+    environment:
+      PHOENIX_WORKING_DIR: /data
+    volumes:
+      - phoenix-data:/data
+    restart: unless-stopped
+
+  app:
+    image: llm-service:v1
+    build:
+      context: ./Review_bot
+      dockerfile: Dockerfile
+      target: tracing
+    env_file:
+      - ${APP_ENV_FILE:-./.env}
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/review_bot
+      CHAT_REPOSITORY: postgres
+      AGENT_CHECKPOINTER: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: review_bot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      BOT_URL: http://bot:8081
+      EMBEDDING_CACHE_PATH: /app/var/ingestion/embeddings.sqlite
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin}
+      PHOENIX_COLLECTOR_ENDPOINT: http://phoenix:6006
+      OBSERVABILITY_INCLUDE_CONTENT: ${OBSERVABILITY_INCLUDE_CONTENT:-false}
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-dev-qdrant-key}
+      # Calibrated for the bundled qwen3-embedding:4b configuration.
+      RAG_SCORE_THRESHOLD: ${RAG_SCORE_THRESHOLD:-0.5}
+    command:
+      - sh
+      - -c
+      - python scripts/ingest.py data/ && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      phoenix:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - app_data:/app/data
+      - ingestion_storage:/app/var/ingestion
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen("http://localhost:8000/ready", timeout=5)
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      # The first start indexes the bundled corpus with a local 4B embedding
+      # model before Uvicorn starts. Subsequent UPSERT runs are immediate.
+      start_period: 5m
+    restart: unless-stopped
+
+  bot:
+    build:
+      context: ./telegram-review-bot
+      dockerfile: Dockerfile
+      target: runtime
+    env_file:
+      - ${BOT_ENV_FILE:-./.env}
+    environment:
+      BACKEND_URL: http://app:8000
+      DELIVERY_DB_PATH: /app/var/deliveries.sqlite
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin}
+    volumes:
+      - bot_data:/app/var
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+
+  tests:
+    profiles: ["test"]
+    image: llm-service:v1
+    build:
+      context: ./Review_bot
+      target: tracing
+    environment:
+      OPENAI_API_KEY: test-key
+      TEST_DATABASE_URL: postgresql+asyncpg://test:test@tests-postgres:5432/test_review
+    depends_on:
+      tests-postgres:
+        condition: service_healthy
+    command: ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+    volumes:
+      - ./Review_bot/app:/app/app:ro
+      - ./Review_bot/tests:/app/tests:ro
+      - ./Review_bot/eval:/app/eval:ro
+
+  tests-postgres:
+    profiles: ["test"]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: test_review
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d test_review"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  bot-tests:
+    profiles: ["test"]
+    build:
+      context: ./telegram-review-bot
+      target: tests
+    environment:
+      BOT_TOKEN: "123456:TEST"
+      BACKEND_URL: http://app:8000
+    command: ["python", "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+    volumes:
+      - ./telegram-review-bot/bot:/app/bot:ro
+      - ./telegram-review-bot/tests:/app/tests:ro
+
+  qdrant:
+    image: qdrant/qdrant:v1.14.1
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-dev-qdrant-key}
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - bash -c '</dev/tcp/127.0.0.1/6333'
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: review_bot
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d review_bot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  bot_data: {}
+  app_data: {}
+  ingestion_storage: {}
+  phoenix-data: {}
+  pg-data: {}
+  qdrant_storage: {}
+  redis_data: {}

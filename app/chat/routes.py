@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 import inspect
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Request
 from fastapi.responses import StreamingResponse
 from openai import APIStatusError, BadRequestError, OpenAIError
 from pydantic import BaseModel
@@ -14,6 +14,8 @@ from pydantic import BaseModel
 from app.chat.deps import ChatServiceDep
 from app.chat.domain import Chat, ChatMessage
 from app.chat.media import media_to_part
+from app.core.exceptions import LLMError
+from app.observability.streaming import with_heartbeat, remaining_turn_time
 
 
 router = APIRouter(prefix="/chats", tags=["stateful-chat"])
@@ -50,8 +52,10 @@ async def get_chat(chat_id: UUID, chat_service: ChatServiceDep) -> Chat:
 @router.post("/{chat_id}/messages")
 async def send_message(
     chat_id: UUID,
+    request: Request,
     *,
     content: str = Form(...),
+    mode: Literal["review", "transform"] = Form("review"),
     media: UploadFile | None = File(None),
     chat_service: ChatServiceDep,
 ) -> StreamingResponse:
@@ -91,6 +95,9 @@ async def send_message(
 
         return StreamingResponse(refusal_stream(), media_type="text/event-stream")
 
+    if mode == "review" and getattr(chat_service, "rag_service", None) is None:
+        raise HTTPException(status_code=503, detail="База правил недоступна. Повторите ревью после восстановления сервиса.")
+
     media_ref = None
     if media is not None:
         try:
@@ -113,10 +120,12 @@ async def send_message(
         saved_message_id: UUID | None = None
         shown_sources: list[dict[str, Any]] = []
         confident = False
+        answer_metadata: dict[str, Any] = {}
 
         def remember_saved_message(message: ChatMessage) -> None:
-            nonlocal saved_message_id
+            nonlocal saved_message_id, answer_metadata
             saved_message_id = message.id
+            answer_metadata = (message.media_refs or {}).get("review_answer", {})
 
         def remember_sources(sources: list[dict[str, Any]], is_confident: bool) -> None:
             nonlocal shown_sources, confident
@@ -126,6 +135,8 @@ async def send_message(
         try:
             send_kwargs: dict[str, Any] = {"media_ref": media_ref}
             send_signature = inspect.signature(chat_service.send_message)
+            if "mode" in send_signature.parameters:
+                send_kwargs["mode"] = mode
             if "input_moderation_checked" in send_signature.parameters:
                 send_kwargs["input_moderation_checked"] = input_moderation_checked
             if "on_message_saved" in send_signature.parameters:
@@ -137,7 +148,7 @@ async def send_message(
         except BadRequestError as exc:
             yield _format_sse_event({"type": "error", "message": _llm_bad_request_message(exc)})
             return
-        except (OpenAIError, TimeoutError):
+        except (OpenAIError, TimeoutError, LLMError):
             yield _format_sse_event({"type": "error", "message": "Модель недоступна или не успела ответить. Попробуйте позже."})
             return
         except (ValueError, HTTPException) as exc:
@@ -151,12 +162,17 @@ async def send_message(
             "type": "done",
             "sources": shown_sources,
             "confident": confident,
+            **answer_metadata,
         }
         if saved_message_id is not None:
             done_payload["message_id"] = str(saved_message_id)
         yield _format_sse_event(done_payload)
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        with_heartbeat(event_stream(), deadline=remaining_turn_time(request), heartbeat=_format_sse_event({"type": "progress", "stage": "processing"}),
+                       timeout_event=_format_sse_event({"type": "error", "message": "Превышено время обработки запроса."})),
+        media_type="text/event-stream", headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.get("/{chat_id}/messages", response_model=list[ChatMessage])
@@ -353,3 +369,10 @@ def _media_processing_error_message(exc: OpenAIError) -> str:
             "скорее всего, его не поддерживает."
         )
     return "Не удалось обработать медиафайл. Попробуйте другой файл или отправьте текст."
+
+
+@router.delete("/{chat_id}/history")
+async def clear_all_history(chat_id: UUID, request: Request, chat_service: ChatServiceDep):
+    from app.routers.agent import clear_agent_thread
+    await clear_agent_thread(request, "telegram-actions", clear_chat=lambda: chat_service.clear_history(chat_id))
+    return {"status": "ok", "pending": None}

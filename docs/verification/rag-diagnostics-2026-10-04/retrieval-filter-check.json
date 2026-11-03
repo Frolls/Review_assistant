@@ -1,0 +1,234 @@
+{
+  "date": "2026-10-04",
+  "index": {
+    "files_total": 56,
+    "changed": 56,
+    "unchanged": 0,
+    "failed": 0,
+    "chunks_written": 1737,
+    "formats": {
+      "html": 36,
+      "md": 20
+    },
+    "failures": []
+  },
+  "target": {
+    "collection": "corporate_rag_spacing_v2",
+    "storage_dir": "var/ingestion/spacing-v2"
+  },
+  "retrieval_checks": [
+    {
+      "scenario": "python",
+      "question": "Пишу Python-функцию со списком по умолчанию. Почему элементы из предыдущего вызова сохраняются и как правильно задавать такой аргумент?",
+      "confident": true,
+      "top_score": 0.6232379,
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "pep8_style_guide.md",
+          "page": 1,
+          "score": 0.6232,
+          "snippet": "Bare `except:` перехватывает также системные исключения и скрывает дефекты. Следует ловить максимально конкретное исключение и оставлять тело `try` коротким, чтобы было ясно, какая операция ожидаемо падает. `try/except/else` отделяет успешную ветку от обработки ошибки, а `finally` применяется для обязательного освобождения ресурса.\nMutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции."
+        }
+      ]
+    },
+    {
+      "scenario": "ansible",
+      "question": "В PR добавили Ansible template с паролем, а в CI запускают playbook с --diff. Какие замечания оставить перед merge?",
+      "confident": true,
+      "top_score": 0.7277392,
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.7277,
+          "snippet": "Для template с secrets используется `diff: false`, даже если файл защищён permissions. Оператор ограничивает запуск одним host или узкой группой, поскольку большой diff создаёт шум и повышает риск утечки в CI logs.\nНа ревью проверяется поддержка check mode у custom module, command wrapper и tasks с registered variables. Если последующая condition зависит от output команды, которая не запускается в check mode, результат симуляции может отличаться от normal run.\nУдаление файла, миграция, управление пользователями и изменение firewall должны иметь проверенный dry-run path."
+        },
+        {
+          "id": 2,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.7035,
+          "snippet": "Условие должно быть обосновано. Простое исключение всех сложных tasks делает dry run зелёным, но бесполезным; лучше улучшить поддержку check mode или явно документировать ограничение.\nDiff mode показывает before/after для модулей, которые его поддерживают, особенно template и file operations. Его можно применять отдельно или вместе с `--check`. Сочетание помогает увидеть не только факт будущего change, но и содержимое предполагаемой правки.\nDiff может выводить чувствительные данные. Для template с secrets используется `diff: false`, даже если файл защищён permissions."
+        },
+        {
+          "id": 3,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.6938,
+          "snippet": "Подавление change без сравнения состояния делает отчёт красивее, но скрывает реальную проблему идемпотентности.\nCI должен ограничивать и защищать diff artifacts. Секреты не должны попадать в console output, а inventory и credentials для проверки выбираются отдельно от production. Результат check mode сохраняется как диагностический сигнал, а не как единственное разрешение на deploy."
+        },
+        {
+          "id": 4,
+          "file_name": "ansible_best_practices.md",
+          "page": 1,
+          "score": 0.6662,
+          "snippet": "Ansible Best Practices Review\nAnsible task считается корректным, если повторный запуск playbook не меняет состояние без реальной причины. Ревьюер должен смотреть на идемпотентность, понятные task names и отсутствие скрытых изменений через `changed_when`.\nМодули `command` и `shell` допустимы только когда нет специализированного идемпотентного модуля. Если shell неизбежен, task должен иметь `creates`, `removes`, явную проверку состояния или корректный `changed_when`.\nДля управления пользователями используется `ansible.builtin.user`, для файлов - `copy`, `template`, `file`, для пакетов - пакетный модуль конкретной ОС."
+        },
+        {
+          "id": 5,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.663,
+          "snippet": "Ansible check mode и diff mode\nИсточник: https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_checkmode.html\nCheck mode запускает playbook как симуляцию без применения изменений на managed nodes. Модуль, поддерживающий check mode, сообщает ожидаемый change. Модуль без поддержки может ничего не выполнить и ничего не вернуть, поэтому успешный dry run не доказывает корректность каждой задачи.\nPlaybook запускается с `ansible-playbook ... --check`. Этот прогон полезен для конфигурационных tasks, package state и других декларативных операций."
+        }
+      ]
+    },
+    {
+      "scenario": "unknown",
+      "question": "Какие обязательные согласования PR установлены внутренним регламентом компании Альфа?",
+      "confident": false,
+      "top_score": 0.44969434,
+      "sources": []
+    }
+  ],
+  "live_answers": [
+    {
+      "scenario": "python",
+      "question": "Пишу Python-функцию со списком по умолчанию. Почему элементы из предыдущего вызова сохраняются и как правильно задавать такой аргумент?",
+      "answer": "В Python дефолтные аргументы (например, списки) инициализируются один раз при определении функции. Если в вызове добавлять элементы в такой список, он будет сохраняться между вызовами, так как объект не пересоздаётся [1].  \n\n**Как исправить:**  \nИспользуйте `None` как дефолтное значение, а внутри функции инициализируйте список заново:  \n```python\ndef my_func(arg=None):\n    if arg is None:\n        arg = []\n    arg.append(1)\n    return arg\n```  \nТакой подход гарантирует, что каждый вызов получает новый список.  \n\n**Почему это работает:**  \n`None` не изменяется между вызовами, и список создаётся только при необходимости [1].",
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "pep8_style_guide.md",
+          "page": 1,
+          "score": 0.6232,
+          "snippet": "Bare `except:` перехватывает также системные исключения и скрывает дефекты. Следует ловить максимально конкретное исключение и оставлять тело `try` коротким, чтобы было ясно, какая операция ожидаемо падает. `try/except/else` отделяет успешную ветку от обработки ошибки, а `finally` применяется для обязательного освобождения ресурса.\nMutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции."
+        }
+      ],
+      "source_pages": [
+        "Источники, указанные в ответе:\n[1] pep8_style_guide.md, стр. 1\nBare except: перехватывает также системные исключения и скрывает дефекты. Следует ловить максимально конкретное исключение и оставлять тело try коротким, чтобы было ясно, какая операция ожидаемо падает. try/except/else отделяет успешную ветку от обработки ошибки, а finally применяется для обязательного освобождения ресурса.\nMutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется None, после чего объект создаётся внутри функции.\n"
+      ],
+      "seconds": 16.1
+    },
+    {
+      "scenario": "ansible",
+      "question": "В PR добавили Ansible template с паролем, а в CI запускают playbook с --diff. Какие замечания оставить перед merge?",
+      "answer": "В playbook с `--diff` и шаблоном, содержащим пароль, есть риск утечки чувствительных данных в CI logs.  \n**Замечания:**  \n1. **Отключите diff для шаблона с паролем:**  \n   Укажите `diff: false` в template, чтобы избежать вывода before/after и утечки данных [1][2].  \n   ```yaml\n   - name: Шаблон с паролем\n     template:\n       src: secret.j2\n       dest: /path/to/file\n       mode: 0600\n     vars:\n       password: \"supersecret\"\n     vars_prompt:\n       password: \"Введи пароль\"\n     diff: false  # 👈 Отключить diff для секретов\n   ```  \n\n2. **Проверьте CI-конфиг:**  \n   Убедитесь, что CI-процесс не сохраняет или логирует diff-artifacts (например, через `--check` или отдельный прогон) [3].  \n\n3. **Риск утечки:**  \n   Без `diff: false` CI-логи могут содержать пароли из before/after, особенно если шаблон обновляется [2].  \n\n**Что не указано в контексте:**  \n- Нет информации о том, как CI обрабатывает секреты (например, через masked variables).  \n- Отсутствует проверка идемпотентности задач с паролями [4].  \n\n**Рекомендация:** Добавить `diff: false` и уточнить политику хранения секретов в CI.",
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.7277,
+          "snippet": "Для template с secrets используется `diff: false`, даже если файл защищён permissions. Оператор ограничивает запуск одним host или узкой группой, поскольку большой diff создаёт шум и повышает риск утечки в CI logs.\nНа ревью проверяется поддержка check mode у custom module, command wrapper и tasks с registered variables. Если последующая condition зависит от output команды, которая не запускается в check mode, результат симуляции может отличаться от normal run.\nУдаление файла, миграция, управление пользователями и изменение firewall должны иметь проверенный dry-run path."
+        },
+        {
+          "id": 2,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.7035,
+          "snippet": "Условие должно быть обосновано. Простое исключение всех сложных tasks делает dry run зелёным, но бесполезным; лучше улучшить поддержку check mode или явно документировать ограничение.\nDiff mode показывает before/after для модулей, которые его поддерживают, особенно template и file operations. Его можно применять отдельно или вместе с `--check`. Сочетание помогает увидеть не только факт будущего change, но и содержимое предполагаемой правки.\nDiff может выводить чувствительные данные. Для template с secrets используется `diff: false`, даже если файл защищён permissions."
+        },
+        {
+          "id": 3,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.6938,
+          "snippet": "Подавление change без сравнения состояния делает отчёт красивее, но скрывает реальную проблему идемпотентности.\nCI должен ограничивать и защищать diff artifacts. Секреты не должны попадать в console output, а inventory и credentials для проверки выбираются отдельно от production. Результат check mode сохраняется как диагностический сигнал, а не как единственное разрешение на deploy."
+        },
+        {
+          "id": 4,
+          "file_name": "ansible_best_practices.md",
+          "page": 1,
+          "score": 0.6662,
+          "snippet": "Ansible Best Practices Review\nAnsible task считается корректным, если повторный запуск playbook не меняет состояние без реальной причины. Ревьюер должен смотреть на идемпотентность, понятные task names и отсутствие скрытых изменений через `changed_when`.\nМодули `command` и `shell` допустимы только когда нет специализированного идемпотентного модуля. Если shell неизбежен, task должен иметь `creates`, `removes`, явную проверку состояния или корректный `changed_when`.\nДля управления пользователями используется `ansible.builtin.user`, для файлов - `copy`, `template`, `file`, для пакетов - пакетный модуль конкретной ОС."
+        },
+        {
+          "id": 5,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.663,
+          "snippet": "Ansible check mode и diff mode\nИсточник: https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_checkmode.html\nCheck mode запускает playbook как симуляцию без применения изменений на managed nodes. Модуль, поддерживающий check mode, сообщает ожидаемый change. Модуль без поддержки может ничего не выполнить и ничего не вернуть, поэтому успешный dry run не доказывает корректность каждой задачи.\nPlaybook запускается с `ansible-playbook ... --check`. Этот прогон полезен для конфигурационных tasks, package state и других декларативных операций."
+        }
+      ],
+      "source_pages": [
+        "Источники, указанные в ответе:\n[1] ansible_check_diff_mode.md, стр. 1\nДля template с secrets используется diff: false, даже если файл защищён permissions. Оператор ограничивает запуск одним host или узкой группой, поскольку большой diff создаёт шум и повышает риск утечки в CI logs.\nНа ревью проверяется поддержка check mode у custom module, command wrapper и tasks с registered variables. Если последующая condition зависит от output команды, которая не запускается в check mode, результат симуляции может отличаться от normal run.\nУдаление файла, миграция, управление пользователями и изменение firewall должны иметь проверенный dry-run path.\n\n[2] ansible_check_diff_mode.md, стр. 1\nУсловие должно быть обосновано. Простое исключение всех сложных tasks делает dry run зелёным, но бесполезным; лучше улучшить поддержку check mode или явно документировать ограничение.\nDiff mode показывает before/after для модулей, которые его поддерживают, особенно template и file operations. Его можно применять отдельно или вместе с --check. Сочетание помогает увидеть не только факт будущего change, но и содержимое предполагаемой правки.\nDiff может выводить чувствительные данные. Для template с secrets используется diff: false, даже если файл защищён permissions.\n\n[3] ansible_check_diff_mode.md, стр. 1\nПодавление change без сравнения состояния делает отчёт красивее, но скрывает реальную проблему идемпотентности.\nCI должен ограничивать и защищать diff artifacts. Секреты не должны попадать в console output, а inventory и credentials для проверки выбираются отдельно от production. Результат check mode сохраняется как диагностический сигнал, а не как единственное разрешение на deploy.\n\n[4] ansible_best_practices.md, стр. 1\nAnsible Best Practices Review\nAnsible task считается корректным, если повторный запуск playbook не меняет состояние без реальной причины. Ревьюер должен смотреть на идемпотентность, понятные task names и отсутствие скрытых изменений через changed_when.\nМодули command и shell допустимы только когда нет специализированного идемпотентного модуля. Если shell неизбежен, task должен иметь creates, removes, явную проверку состояния или корректный changed_when.\nДля управления пользователями используется ansible.builtin.user, для файлов - copy, template, file, для пакетов - пакетный модуль конкретной ОС.\n"
+      ],
+      "seconds": 16.3
+    },
+    {
+      "scenario": "followup",
+      "question": "Автор PR зашифровал переменную через Ansible Vault. Можно ли после этого снять замечание про --diff?",
+      "answer": "Нет, замечание о `--diff` не следует снимать, даже если переменная зашифрована через Ansible Vault.  \n\n**Почему:**  \n1. **Vault расшифровывает данные в памяти:** После расшифровки значение может попасть в output, template или удалённый файл [1].  \n2. **Diff-режим выводит before/after:** Для шаблонов с секретами `diff: false` обязателен, даже если файл защищён permissions [2][3].  \n3. **CI-логи рискуют сохранить данные:** Без `diff: false` утечка чувствительных данных в CI-логи остаётся возможной [5].  \n\n**Рекомендация:**  \n- Отключите diff для шаблона с секретом: `diff: false` [2].  \n- Убедитесь, что CI-процесс не сохраняет diff-artifacts [3].  \n\n**Что не указано в контексте:**  \n- Отсутствует информация о том, как CI обрабатывает секреты (например, через masked variables).  \n- Нет упоминания о политике хранения секретов в CI [5].  \n\n**Вывод:** Замечание о `--diff` остаётся актуальным.",
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "ansible_vault_become.md",
+          "page": 1,
+          "score": 0.7214,
+          "snippet": "Ansible Vault и privilege escalation\nИсточники:\n- https://docs.ansible.com/projects/ansible/latest/vault_guide/index.html\n- https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_privilege_escalation.html\nAnsible Vault шифрует variables или файлы, чтобы чувствительные значения можно было хранить рядом с automation-кодом в зашифрованном виде. Vault защищает data at rest, но после расшифровки значение существует в памяти процесса и может попасть в output, template или удалённый файл.\nVault password не хранится в том же repository, что и encrypted content. Он передаётся интерактивно, через защищённый password file, vault identity или интеграцию с secret manager."
+        },
+        {
+          "id": 2,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.7007,
+          "snippet": "Условие должно быть обосновано. Простое исключение всех сложных tasks делает dry run зелёным, но бесполезным; лучше улучшить поддержку check mode или явно документировать ограничение.\nDiff mode показывает before/after для модулей, которые его поддерживают, особенно template и file operations. Его можно применять отдельно или вместе с `--check`. Сочетание помогает увидеть не только факт будущего change, но и содержимое предполагаемой правки.\nDiff может выводить чувствительные данные. Для template с secrets используется `diff: false`, даже если файл защищён permissions."
+        },
+        {
+          "id": 3,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.6912,
+          "snippet": "Для template с secrets используется `diff: false`, даже если файл защищён permissions. Оператор ограничивает запуск одним host или узкой группой, поскольку большой diff создаёт шум и повышает риск утечки в CI logs.\nНа ревью проверяется поддержка check mode у custom module, command wrapper и tasks с registered variables. Если последующая condition зависит от output команды, которая не запускается в check mode, результат симуляции может отличаться от normal run.\nУдаление файла, миграция, управление пользователями и изменение firewall должны иметь проверенный dry-run path."
+        },
+        {
+          "id": 4,
+          "file_name": "ansible_best_practices.md",
+          "page": 1,
+          "score": 0.658,
+          "snippet": "Shell-команды вроде `useradd`, `chmod`, `systemctl restart` обычно являются признаком плохого task.\nRestart сервиса после изменения template должен выполняться через `notify` и handler. Иначе сервис будет перезапускаться на каждом запуске playbook, даже если конфигурация не изменилась.\nСекреты не должны лежать в обычных vars-файлах. Для них используется Ansible Vault, secret manager или переменные окружения CI с маскированием. Ревьюер должен блокировать PR, где пароль или токен добавлен в plain text."
+        },
+        {
+          "id": 5,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.6494,
+          "snippet": "Подавление change без сравнения состояния делает отчёт красивее, но скрывает реальную проблему идемпотентности.\nCI должен ограничивать и защищать diff artifacts. Секреты не должны попадать в console output, а inventory и credentials для проверки выбираются отдельно от production. Результат check mode сохраняется как диагностический сигнал, а не как единственное разрешение на deploy."
+        }
+      ],
+      "source_pages": [
+        "Источники, указанные в ответе:\n[1] ansible_vault_become.md, стр. 1\nAnsible Vault и privilege escalation\nИсточники:\n- https://docs.ansible.com/projects/ansible/latest/vault_guide/index.html\n- https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_privilege_escalation.html\nAnsible Vault шифрует variables или файлы, чтобы чувствительные значения можно было хранить рядом с automation-кодом в зашифрованном виде. Vault защищает data at rest, но после расшифровки значение существует в памяти процесса и может попасть в output, template или удалённый файл.\nVault password не хранится в том же repository, что и encrypted content. Он передаётся интерактивно, через защищённый password file, vault identity или интеграцию с secret manager.\n\n[2] ansible_check_diff_mode.md, стр. 1\nУсловие должно быть обосновано. Простое исключение всех сложных tasks делает dry run зелёным, но бесполезным; лучше улучшить поддержку check mode или явно документировать ограничение.\nDiff mode показывает before/after для модулей, которые его поддерживают, особенно template и file operations. Его можно применять отдельно или вместе с --check. Сочетание помогает увидеть не только факт будущего change, но и содержимое предполагаемой правки.\nDiff может выводить чувствительные данные. Для template с secrets используется diff: false, даже если файл защищён permissions.\n\n[3] ansible_check_diff_mode.md, стр. 1\nДля template с secrets используется diff: false, даже если файл защищён permissions. Оператор ограничивает запуск одним host или узкой группой, поскольку большой diff создаёт шум и повышает риск утечки в CI logs.\nНа ревью проверяется поддержка check mode у custom module, command wrapper и tasks с registered variables. Если последующая condition зависит от output команды, которая не запускается в check mode, результат симуляции может отличаться от normal run.\nУдаление файла, миграция, управление пользователями и изменение firewall должны иметь проверенный dry-run path.\n\n[5] ansible_check_diff_mode.md, стр. 1\nПодавление change без сравнения состояния делает отчёт красивее, но скрывает реальную проблему идемпотентности.\nCI должен ограничивать и защищать diff artifacts. Секреты не должны попадать в console output, а inventory и credentials для проверки выбираются отдельно от production. Результат check mode сохраняется как диагностический сигнал, а не как единственное разрешение на deploy.\n"
+      ],
+      "seconds": 13.0
+    },
+    {
+      "scenario": "unknown",
+      "question": "Какие обязательные согласования PR установлены внутренним регламентом компании Альфа?",
+      "answer": "по базе не нашёл, могу эскалировать",
+      "sources": [],
+      "source_pages": [],
+      "seconds": 3.7
+    }
+  ],
+  "tests": {
+    "backend": 162,
+    "bot": 28,
+    "skipped": 0
+  },
+  "limitations": [
+    "A per-fragment threshold does not prove semantic relevance or answer correctness.",
+    "Full retrieval/RAGAS evaluation has not been rerun.",
+    "The generated Ansible example added vars_prompt inside a task; generated configuration still requires developer validation."
+  ],
+  "previous_index_preserved": true,
+  "old_history_check": {
+    "scenario": "previous_class_answer",
+    "question": "Пишу Python-функцию со списком по умолчанию. Почему элементы из предыдущего вызова сохраняются и как правильно задавать такой аргумент?",
+    "previous_answer": "Список по умолчанию разделяется между вызовами [1]. Дополнительно изменяемые атрибуты класса требуют аналогичного подхода [4].",
+    "answer": "В Python изменяемые объекты (например, списки) по умолчанию создаются один раз, что приводит к пересечению между вызовами [1]. Чтобы избежать этого, используй `None` как значение по умолчанию и инициализируй список внутри функции:\n\n```python\ndef func(arg=None):\n    if arg is None:\n        arg = []\n    # работа с arg\n```\n\nТакой подход гарантирует, что каждый вызов получает отдельный список.",
+    "sources": [
+      {
+        "id": 1,
+        "file_name": "pep8_style_guide.md",
+        "page": 1,
+        "score": 0.6232,
+        "snippet": "Bare `except:` перехватывает также системные исключения и скрывает дефекты. Следует ловить максимально конкретное исключение и оставлять тело `try` коротким, чтобы было ясно, какая операция ожидаемо падает. `try/except/else` отделяет успешную ветку от обработки ошибки, а `finally` применяется для обязательного освобождения ресурса.\nMutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции."
+      }
+    ],
+    "seconds": 12.0,
+    "unrelated_terms": []
+  }
+}

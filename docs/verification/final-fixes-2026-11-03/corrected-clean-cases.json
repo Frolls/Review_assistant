@@ -1,0 +1,20 @@
+[
+  {
+    "id": "event_queue-clean-contract-v2",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Без явно переданного queue каждый вызов должен создавать независимый список; явно переданный список изменяется на месте.",
+    "code": "def enqueue(event, *, queue=None):\n    queue = [] if queue is None else queue\n    queue.append(event)\n    return queue\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "cache_map-clean-contract-v2",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Каждый вызов без cache получает независимый словарь; переданный словарь меняется на месте.",
+    "code": "def record(key, *, cache=None):\n    cache = {} if cache is None else cache\n    cache[key] = True\n    return cache\n",
+    "expected_defects": [],
+    "reference_fix": null
+  }
+]

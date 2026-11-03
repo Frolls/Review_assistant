@@ -1,0 +1,260 @@
+{
+  "date": "2026-10-04",
+  "retrieval": [
+    {
+      "scenario": "python",
+      "question": "Пишу Python-функцию со списком по умолчанию. Почему элементы из предыдущего вызова сохраняются и как правильно задавать такой аргумент?",
+      "confident": true,
+      "top_score": 0.79657346,
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "pep8_style_guide.md",
+          "page": 1,
+          "score": 0.7966,
+          "snippet": "Mutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции. На ревью такое замечание относится к корректности поведения, а не только к стилю."
+        }
+      ]
+    },
+    {
+      "scenario": "except",
+      "question": "Почему bare except опасен и как правильно перехватывать исключения в Python?",
+      "confident": true,
+      "top_score": 0.77151036,
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "pep8_style_guide.md",
+          "page": 1,
+          "score": 0.7715,
+          "snippet": "Bare `except:` перехватывает также системные исключения и скрывает дефекты. Следует ловить максимально конкретное исключение и оставлять тело `try` коротким, чтобы было ясно, какая операция ожидаемо падает. `try/except/else` отделяет успешную ветку от обработки ошибки, а `finally` применяется для обязательного освобождения ресурса."
+        },
+        {
+          "id": 2,
+          "file_name": "pep-0008-v1.0.html",
+          "page": 1,
+          "score": 0.6798,
+          "snippet": "Use exception chaining appropriately. raise X from Y\nshould be used to indicate explicit replacement without losing the\noriginal traceback.When deliberately replacing an inner exception (using raise X from\nNone), ensure that relevant details are transferred to the new\nexception (such as preserving the attribute name when converting\nKeyError to AttributeError, or embedding the text of the original\nexception in the new exception message).\n\nWhen catching exceptions, mention specific exceptions whenever\npossible instead of using a bare except: clause:try:\n    import platform_specific_module\nexcept ImportError:\n    platform_specific_module = None\n\n\nA bare except: clause will catch SystemExit and\nKeyboardInterrupt exceptions, making it harder to interrupt a\nprogram with Control-C, and can disguise other problems.  If you\nwant to catch all exceptions that signal program errors, use\nexcept Exception: (bare except is equivalent to except\nBaseException:).\nA good rule of thumb is to limit use of bare ‘except’ clauses to two\ncases:"
+        },
+        {
+          "id": 3,
+          "file_name": "pep-0008-v1.0.html",
+          "page": 1,
+          "score": 0.6356,
+          "snippet": "If the exception handler will be printing out or logging the\ntraceback; at least the user will be aware that an error has\noccurred.\nIf the code needs to do some cleanup work, but then lets the\nexception propagate upwards with raise.  try...finally\ncan be a better way to handle this case.\n\n\nWhen catching operating system errors, prefer the explicit exception\nhierarchy introduced in Python 3.3 over introspection of errno\nvalues.\nAdditionally, for all try/except clauses, limit the try clause\nto the absolute minimum amount of code necessary.  Again, this\navoids masking bugs:# Correct:\ntry:\n    value = collection[key]\nexcept KeyError:\n    return key_not_found(key)\nelse:\n    return handle_value(value)\n\n\n# Wrong:\ntry:\n    # Too broad!\n    return handle_value(collection[key])\nexcept KeyError:\n    # Will also catch KeyError raised by handle_value()\n    return key_not_found(key)"
+        },
+        {
+          "id": 4,
+          "file_name": "pep-0654-v1.0.html",
+          "page": 1,
+          "score": 0.6103,
+          "snippet": "Naked Exceptions\nIf the exception raised inside the try body is not of type ExceptionGroup\nor BaseExceptionGroup, we call it a naked exception. If its type matches\none of the except* clauses, it is caught and wrapped by an ExceptionGroup\n(or BaseExceptionGroup if it is not an Exception subclass) with an empty\nmessage string. This is to make the type of e consistent and statically known:\n>>> try:\n...     raise BlockingIOError\n... except* OSError as e:\n...     print(repr(e))\n...\nExceptionGroup('', [BlockingIOError()])\n\n\nHowever, if a naked exception is not caught, it propagates in its original\nnaked form:\n>>> try:\n...     try:\n...         raise ValueError(12)\n...     except* TypeError as e:\n...         print('never')\n... except ValueError as e:\n...     print(f'caught ValueError: {e!r}')\n...\ncaught ValueError: ValueError(12)\n>>>"
+        },
+        {
+          "id": 5,
+          "file_name": "python_style_review.md",
+          "page": 1,
+          "score": 0.607,
+          "snippet": "Исключения не должны проглатываться широким `except Exception` без контекста. Если ошибка ожидаемая, код должен логировать понятный event и возвращать доменную ошибку. Если ошибка неожиданная, лучше дать ей всплыть, чем скрыть проблему пустым ответом."
+        }
+      ]
+    },
+    {
+      "scenario": "ansible",
+      "question": "В PR добавили Ansible template с паролем, а в CI запускают playbook с --diff. Какие замечания оставить перед merge?",
+      "confident": true,
+      "top_score": 0.6897074,
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.6897,
+          "snippet": "CI должен ограничивать и защищать diff artifacts. Секреты не должны попадать в console output, а inventory и credentials для проверки выбираются отдельно от production. Результат check mode сохраняется как диагностический сигнал, а не как единственное разрешение на deploy."
+        },
+        {
+          "id": 2,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.6892,
+          "snippet": "Diff может выводить чувствительные данные. Для template с secrets используется `diff: false`, даже если файл защищён permissions. Оператор ограничивает запуск одним host или узкой группой, поскольку большой diff создаёт шум и повышает риск утечки в CI logs."
+        },
+        {
+          "id": 3,
+          "file_name": "ansible_best_practices.md",
+          "page": 1,
+          "score": 0.6655,
+          "snippet": "# Ansible Best Practices Review\n\nAnsible task считается корректным, если повторный запуск playbook не меняет состояние без реальной причины. Ревьюер должен смотреть на идемпотентность, понятные task names и отсутствие скрытых изменений через `changed_when`."
+        },
+        {
+          "id": 4,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.6458,
+          "snippet": "# Ansible check mode и diff mode\n\nИсточник: https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_checkmode.html\n\nCheck mode запускает playbook как симуляцию без применения изменений на managed nodes. Модуль, поддерживающий check mode, сообщает ожидаемый change. Модуль без поддержки может ничего не выполнить и ничего не вернуть, поэтому успешный dry run не доказывает корректность каждой задачи."
+        },
+        {
+          "id": 5,
+          "file_name": "ansible_vault_become.md",
+          "page": 1,
+          "score": 0.6414,
+          "snippet": "Template, создающий secret file, должен задавать ограниченный owner, group и mode. Diff для такой task отключается, иначе `--diff` может записать секрет в CI log. Временные файлы, backup и remote cache также учитываются в модели угроз."
+        }
+      ]
+    },
+    {
+      "scenario": "unknown",
+      "question": "Какие обязательные согласования PR установлены внутренним регламентом компании Альфа?",
+      "confident": false,
+      "top_score": 0.41700017,
+      "sources": []
+    }
+  ],
+  "limitations": [
+    "Проверены отдельные сценарии; полный RAGAS после изменения индекса не пересчитан.",
+    "Границы правил применяются к подготовленным памяткам без блоков кода, не ко всем форматам документов.",
+    "В Python-ответе модель не уточнила: новый список создаётся при arg=None; переданный явно список сохраняется. В Ansible-ответе сделано неподтверждённое предположение об отсутствии diff:false в PR, код которого не предоставлялся."
+  ],
+  "target": {
+    "collection": "corporate_rag_rules_v3",
+    "storage_dir": "var/ingestion/rules-v3"
+  },
+  "index": {
+    "files_total": 56,
+    "changed": 56,
+    "unchanged": 0,
+    "failed": 0,
+    "chunks_written": 1818,
+    "formats": {
+      "html": 36,
+      "md": 20
+    },
+    "failures": []
+  },
+  "backend_tests": {
+    "passed": 169,
+    "warnings": 2,
+    "seconds": 9.46
+  },
+  "live_checks": [
+    {
+      "scenario": "python",
+      "question": "Пишу Python-функцию со списком по умолчанию. Почему элементы из предыдущего вызова сохраняются и как правильно задавать такой аргумент?",
+      "answer": "При использовании изменяемого объекта (например, списка) в качестве значения по умолчанию в Python он создаётся один раз при определении функции. Это приводит к тому, что состояние списка сохраняется между вызовами функции [1]. Чтобы избежать этого, используй `None` как значение по умолчанию и инициализируй список внутри функции:\n\n```python\ndef example(arg=None):\n    if arg is None:\n        arg = []\n    # работа с arg\n```\n\nТакой подход гарантирует, что каждый вызов функции получает отдельный список.",
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "pep8_style_guide.md",
+          "page": 1,
+          "score": 0.7966,
+          "snippet": "Mutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции. На ревью такое замечание относится к корректности поведения, а не только к стилю."
+        }
+      ],
+      "source_pages": [
+        "Источники, указанные в ответе:\n[1] pep8_style_guide.md, стр. 1\nMutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется None, после чего объект создаётся внутри функции. На ревью такое замечание относится к корректности поведения, а не только к стилю.\n"
+      ],
+      "seconds": 27.1
+    },
+    {
+      "scenario": "ansible",
+      "question": "В PR добавили Ansible template с паролем, а в CI запускают playbook с --diff. Какие замечания оставить перед merge?",
+      "answer": "В playbook с `--diff` для задач, создающих секреты (пароли), есть риск утечки в CI logs. В [5] указано, что для таких задач должно быть `diff: false`, чтобы секреты не записывались в логи. В текущем PR отсутствует этот флаг для шаблона с паролем. Также в [2] напоминается, что даже при защите permissions для шаблонов с секретами рекомендуется отключать diff. \n\n**Замечания:**  \n1. Уточнить, отключен ли `diff` для задач, генерирующих секреты (пароли).  \n2. Проверить, используются ли vault или отдельные credentials для защиты данных, как указано в [1].  \n3. Если `diff` не отключен, риски утечки в CI logs повышаются.  \n\nНеобходимо устранить эти моменты перед merge.",
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.6897,
+          "snippet": "CI должен ограничивать и защищать diff artifacts. Секреты не должны попадать в console output, а inventory и credentials для проверки выбираются отдельно от production. Результат check mode сохраняется как диагностический сигнал, а не как единственное разрешение на deploy."
+        },
+        {
+          "id": 2,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.6892,
+          "snippet": "Diff может выводить чувствительные данные. Для template с secrets используется `diff: false`, даже если файл защищён permissions. Оператор ограничивает запуск одним host или узкой группой, поскольку большой diff создаёт шум и повышает риск утечки в CI logs."
+        },
+        {
+          "id": 3,
+          "file_name": "ansible_best_practices.md",
+          "page": 1,
+          "score": 0.6655,
+          "snippet": "# Ansible Best Practices Review\n\nAnsible task считается корректным, если повторный запуск playbook не меняет состояние без реальной причины. Ревьюер должен смотреть на идемпотентность, понятные task names и отсутствие скрытых изменений через `changed_when`."
+        },
+        {
+          "id": 4,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.6458,
+          "snippet": "# Ansible check mode и diff mode\n\nИсточник: https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_checkmode.html\n\nCheck mode запускает playbook как симуляцию без применения изменений на managed nodes. Модуль, поддерживающий check mode, сообщает ожидаемый change. Модуль без поддержки может ничего не выполнить и ничего не вернуть, поэтому успешный dry run не доказывает корректность каждой задачи."
+        },
+        {
+          "id": 5,
+          "file_name": "ansible_vault_become.md",
+          "page": 1,
+          "score": 0.6414,
+          "snippet": "Template, создающий secret file, должен задавать ограниченный owner, group и mode. Diff для такой task отключается, иначе `--diff` может записать секрет в CI log. Временные файлы, backup и remote cache также учитываются в модели угроз."
+        }
+      ],
+      "source_pages": [
+        "Источники, указанные в ответе:\n[1] ansible_check_diff_mode.md, стр. 1\nCI должен ограничивать и защищать diff artifacts. Секреты не должны попадать в console output, а inventory и credentials для проверки выбираются отдельно от production. Результат check mode сохраняется как диагностический сигнал, а не как единственное разрешение на deploy.\n\n[2] ansible_check_diff_mode.md, стр. 1\nDiff может выводить чувствительные данные. Для template с secrets используется diff: false, даже если файл защищён permissions. Оператор ограничивает запуск одним host или узкой группой, поскольку большой diff создаёт шум и повышает риск утечки в CI logs.\n\n[5] ansible_vault_become.md, стр. 1\nTemplate, создающий secret file, должен задавать ограниченный owner, group и mode. Diff для такой task отключается, иначе --diff может записать секрет в CI log. Временные файлы, backup и remote cache также учитываются в модели угроз.\n"
+      ],
+      "seconds": 13.7
+    },
+    {
+      "scenario": "followup",
+      "question": "Автор PR зашифровал переменную через Ansible Vault. Можно ли после этого снять замечание про --diff?",
+      "answer": "Нет, замечание о `--diff` не можно снять. Ansible Vault шифрует данные **в состоянии покоя** (на диске), но при расшифровке значение временно существует в памяти процесса и может попасть в логи, output или template [1]. В [3] явно указано, что даже защищённые permissions не исключают риск утечки в CI logs при использовании `--diff` для шаблонов с секретами. \n\n**Почему нельзя снимать замечание:**  \n- `--diff` может выводить чувствительные данные в логи CI.  \n- Vault не блокирует утечку через diff-режим.  \n- В [5] подчёркивается, что `diff: false` требуется для задач с секретами.  \n\n**Рекомендация:**  \nОтключить `diff: true` для задач, где используются шифрованные переменные, чтобы минимизировать риск.",
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "ansible_vault_become.md",
+          "page": 1,
+          "score": 0.7011,
+          "snippet": "Ansible Vault шифрует variables или файлы, чтобы чувствительные значения можно было хранить рядом с automation-кодом в зашифрованном виде. Vault защищает data at rest, но после расшифровки значение существует в памяти процесса и может попасть в output, template или удалённый файл."
+        },
+        {
+          "id": 2,
+          "file_name": "ansible_best_practices.md",
+          "page": 1,
+          "score": 0.6971,
+          "snippet": "Секреты не должны лежать в обычных vars-файлах. Для них используется Ansible Vault, secret manager или переменные окружения CI с маскированием. Ревьюер должен блокировать PR, где пароль или токен добавлен в plain text."
+        },
+        {
+          "id": 3,
+          "file_name": "ansible_check_diff_mode.md",
+          "page": 1,
+          "score": 0.6821,
+          "snippet": "Diff может выводить чувствительные данные. Для template с secrets используется `diff: false`, даже если файл защищён permissions. Оператор ограничивает запуск одним host или узкой группой, поскольку большой diff создаёт шум и повышает риск утечки в CI logs."
+        },
+        {
+          "id": 4,
+          "file_name": "ansible_vault_become.md",
+          "page": 1,
+          "score": 0.6593,
+          "snippet": "# Ansible Vault и privilege escalation\n\nИсточники:\n\n- https://docs.ansible.com/projects/ansible/latest/vault_guide/index.html\n- https://docs.ansible.com/projects/ansible/latest/playbook_guide/playbooks_privilege_escalation.html"
+        },
+        {
+          "id": 5,
+          "file_name": "ansible_playbook_practices.md",
+          "page": 1,
+          "score": 0.6516,
+          "snippet": "Секреты, tokens и passwords не записываются в task body, defaults или открытый inventory. `no_log: true` уменьшает риск вывода значения, но не является хранилищем секретов и усложняет диагностику; его используют точечно вместе с Vault или внешним secret manager."
+        }
+      ],
+      "source_pages": [
+        "Источники, указанные в ответе:\n[1] ansible_vault_become.md, стр. 1\nAnsible Vault шифрует variables или файлы, чтобы чувствительные значения можно было хранить рядом с automation-кодом в зашифрованном виде. Vault защищает data at rest, но после расшифровки значение существует в памяти процесса и может попасть в output, template или удалённый файл.\n\n[3] ansible_check_diff_mode.md, стр. 1\nDiff может выводить чувствительные данные. Для template с secrets используется diff: false, даже если файл защищён permissions. Оператор ограничивает запуск одним host или узкой группой, поскольку большой diff создаёт шум и повышает риск утечки в CI logs.\n\n[5] ansible_playbook_practices.md, стр. 1\nСекреты, tokens и passwords не записываются в task body, defaults или открытый inventory. no_log: true уменьшает риск вывода значения, но не является хранилищем секретов и усложняет диагностику; его используют точечно вместе с Vault или внешним secret manager.\n"
+      ],
+      "seconds": 11.2
+    },
+    {
+      "scenario": "unknown",
+      "question": "Какие обязательные согласования PR установлены внутренним регламентом компании Альфа?",
+      "answer": "по базе не нашёл, могу эскалировать",
+      "sources": [],
+      "source_pages": [],
+      "seconds": 3.7
+    }
+  ],
+  "commit": "17bd7d5"
+}

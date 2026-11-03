@@ -1,0 +1,12 @@
+{
+  "status": "ok",
+  "redis": "up",
+  "dependencies": {
+    "redis": "up",
+    "postgres": "up",
+    "qdrant": "up",
+    "model_api": "up",
+    "rag": "up",
+    "agent": "up"
+  }
+}

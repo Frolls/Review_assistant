@@ -1,0 +1,16 @@
+[
+  {
+    "case": "event_queue-clean-contract-v2",
+    "passed": [
+      "independent defaults",
+      "explicit argument accepted and mutated in place"
+    ]
+  },
+  {
+    "case": "cache_map-clean-contract-v2",
+    "passed": [
+      "independent defaults",
+      "explicit argument accepted and mutated in place"
+    ]
+  }
+]

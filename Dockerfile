@@ -19,6 +19,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 RUN /app/.venv/bin/python -m spacy download ru_core_news_md
 
+# Resolve the tokenizer at build time, never during the first user's request.
+ENV TIKTOKEN_CACHE_DIR=/app/tokenizer_cache
+RUN /app/.venv/bin/python -c 'import tiktoken; tiktoken.get_encoding("o200k_base"); tiktoken.get_encoding("cl100k_base")'
+
 COPY README.md .env.example ./
 COPY data ./data
 COPY scripts ./scripts
@@ -36,6 +40,7 @@ FROM python:3.13-slim-bookworm AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    TIKTOKEN_CACHE_DIR=/app/tokenizer_cache \
     PATH="/app/.venv/bin:${PATH}"
 
 WORKDIR /app

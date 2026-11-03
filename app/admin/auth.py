@@ -3,7 +3,7 @@ from __future__ import annotations
 import secrets
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException
+from fastapi import Header, HTTPException
 
 from app.deps.providers import SettingsDep
 

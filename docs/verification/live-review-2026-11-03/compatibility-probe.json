@@ -1,0 +1,137 @@
+[
+  {
+    "request": {
+      "model": "qwen3:latest",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Проверь Python-код. Вызовы без cache должны возвращать независимые словари. Назови дефект и дай полную исправленную функцию. Ответ до 150 слов.\ndef remember(value, cache={}):\n    cache[value] = True\n    return cache\n"
+        }
+      ],
+      "temperature": 0,
+      "max_tokens": 256,
+      "think": false,
+      "options": {
+        "num_ctx": 8192
+      }
+    },
+    "response": {
+      "id": "chatcmpl-169",
+      "object": "chat.completion",
+      "created": 1793700319,
+      "model": "qwen3:latest",
+      "system_fingerprint": "fp_ollama",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "**Дефект:** Использование изменяемого значения по умолчанию `cache={}` приводит к тому, что все вызовы без аргумента `cache` делят один и тот же словарь, нарушая требование независимости",
+            "reasoning": "Okay, let's look at this Python function. The function is called 'remember' and it takes a 'value' and a 'cache' which defaults to an empty dictionary. The problem is that the default argument 'cache' is a mutable object. In Python, default arguments are evaluated once when the function is defined, not each time it's called. So if the function is called multiple times without providing a cache, all calls will share the same dictionary. That means the cache isn't reset between calls, leading to incorrect behavior where subsequent calls might not return independent dictionaries. The defect here is using a mutable default argument, which causes the cache to persist across calls. To fix this, the default cache should be a new dictionary each time the function is called. So, the corrected function should initialize the cache as a new dictionary if it's not provided. That way, each call without a cache argument gets its own separate dictionary.\n"
+          },
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 83,
+        "prompt_tokens_details": {
+          "cached_tokens": 82
+        },
+        "completion_tokens": 256,
+        "total_tokens": 339
+      }
+    },
+    "wall_seconds": 3.252857105999283,
+    "loaded_models": {
+      "models": [
+        {
+          "name": "qwen3:latest",
+          "model": "qwen3:latest",
+          "size": 5586592726,
+          "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T15:15:19.58430409+05:00",
+          "size_vram": 5586592726,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    }
+  },
+  {
+    "request": {
+      "model": "qwen3:latest",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Проверь Python-код. Вызовы без cache должны возвращать независимые словари. Назови дефект и дай полную исправленную функцию. Ответ до 150 слов.\ndef remember(value, cache={}):\n    cache[value] = True\n    return cache\n"
+        }
+      ],
+      "temperature": 0,
+      "max_tokens": 256,
+      "reasoning_effort": "none",
+      "options": {
+        "num_ctx": 8192
+      }
+    },
+    "response": {
+      "id": "chatcmpl-932",
+      "object": "chat.completion",
+      "created": 1793700320,
+      "model": "qwen3:latest",
+      "system_fingerprint": "fp_ollama",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "**Дефект:** Использование изменяемого объекта `dict` как умолчательного аргумента приводит к неожиданной общей памяти между вызовами.  \n**Исправленная функция:**\n\n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```"
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 89,
+        "prompt_tokens_details": {
+          "cached_tokens": 88
+        },
+        "completion_tokens": 92,
+        "total_tokens": 181
+      }
+    },
+    "wall_seconds": 1.1748726889964018,
+    "loaded_models": {
+      "models": [
+        {
+          "name": "qwen3:latest",
+          "model": "qwen3:latest",
+          "size": 5586592726,
+          "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T15:15:20.759053468+05:00",
+          "size_vram": 5586592726,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    }
+  }
+]

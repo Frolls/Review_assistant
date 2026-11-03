@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from functools import lru_cache
+import hashlib
+import os
+from pathlib import Path
+import tempfile
 import time
 import asyncio
 from weakref import WeakValueDictionary
@@ -17,7 +21,10 @@ from app.chat.repository import ChatRepository
 from app.moderation import ModerationResult, ModerationService
 from app.observability.logging import get_logger
 from app.observability.pii import prompt_hash, redact_pii
-from app.services.rag import PreparedRAG, RAGService, _ensure_source_marker
+from app.observability.privacy import include_content
+from app.services.model_adapter import ModelAdapter
+from app.services.ollama import model_options
+from app.services.rag import PreparedRAG, RAGService, finalize_answer
 
 
 logger = get_logger(__name__)
@@ -84,7 +91,9 @@ class ChatService:
         safety_margin: int = DEFAULT_SAFETY_MARGIN,
         rag_service: RAGService | None = None,
         semaphore: asyncio.Semaphore | None = None,
+        request_timeout: float = 120,
     ) -> None:
+        self.adapter = ModelAdapter(request_timeout)
         self.repository = repository
         self.llm_client = llm_client
         self.moderation_service = moderation_service or ModerationService()
@@ -118,7 +127,10 @@ class ChatService:
         self, chat_id: UUID, user_content: str, media_ref: dict[str, Any] | None = None,
         *, input_moderation_checked: bool = False, on_message_saved: Any | None = None,
         on_sources: Any | None = None,
+        mode: Literal["review", "transform"] = "review",
     ) -> AsyncIterator[str]:
+        if mode == "review" and self.rag_service is None:
+            raise HTTPException(status_code=503, detail="База правил недоступна. Повторите ревью после восстановления сервиса.")
         key = str(chat_id)
         lock = _CHAT_LOCKS.get(key)
         if lock is None:
@@ -127,7 +139,7 @@ class ChatService:
         async with lock, self.semaphore:
             async for chunk in self._send_message(
                 chat_id, user_content, media_ref, input_moderation_checked=input_moderation_checked,
-                on_message_saved=on_message_saved, on_sources=on_sources,
+                on_message_saved=on_message_saved, on_sources=on_sources, mode=mode,
             ):
                 yield chunk
 
@@ -140,6 +152,7 @@ class ChatService:
         input_moderation_checked: bool = False,
         on_message_saved: Any | None = None,
         on_sources: Any | None = None,
+        mode: Literal["review", "transform"] = "review",
     ) -> AsyncIterator[str]:
         chat = await self.repository.get_chat(chat_id)
         if chat is None:
@@ -161,40 +174,43 @@ class ChatService:
         history = await self.repository.list_messages(chat_id, limit=DEFAULT_HISTORY_LIMIT)
         messages = await self._build_context(chat, history)
         budget = self.context_window_tokens - self.response_tokens - self.safety_margin
-        messages = fit_to_budget(messages, budget)
+        messages = await asyncio.to_thread(fit_to_budget, messages, budget)
 
+        usages: list[dict] = []
         accumulated: list[str] = []
         stream_completed = False
         prepared: PreparedRAG | None = None
         started_at = time.perf_counter()
         try:
-            has_local_context = any(
-                m.role == "user" and (m.media_refs or "```" in m.content
-                    or any(token in m.content for token in ("def ", "class ", "diff --git", "- name:")))
-                for m in history[-self.keep_recent:]
-            )
-            if self.rag_service is not None and not has_local_context:
-                prepared = await self.rag_service.prepare(
-                    user_content,
-                    history=messages[:-1],
-                    chat_id=chat_id,
-                )
-                if on_sources is not None:
-                    on_sources(prepared.sources, prepared.confident)
-                if not prepared.confident:
+            if self.rag_service is not None and mode == "review":
+                # Retrieval uses the current task and the current attachment. Old
+                # code never changes the routing mode of a later question.
+                part = (media_ref or {}).get("part", {})
+                review_object = part.get("text") if part.get("type") == "text" else None
+                if not review_object and any(token in user_content for token in ("```", "def ", "class ", "diff --git", "- name:")):
+                    review_object = user_content
+                prepare_kwargs = {"history": messages[:-1], "chat_id": chat_id}
+                if review_object:
+                    prepare_kwargs["review_object"] = review_object
+                if part.get("type") == "image_url":
+                    prepare_kwargs["review_image"] = part
+                prepared = await self.rag_service.prepare(user_content, usage_callback=usages.append, **prepare_kwargs)
+                if prepared.review_object:
+                    accumulated.append(await self.rag_service.review_prepared(prepared, usage_callback=usages.append))
+                elif not prepared.confident:
                     accumulated.append(prepared.fallback_answer)
-
                 else:
                     rag_messages = self.rag_service.generation_messages(
                         prepared,
                         history=messages,
                     )
-                    rag_messages = fit_to_budget(rag_messages, budget)
-                    stream = await self.llm_client.chat.completions.create(
+                    rag_messages = await asyncio.to_thread(fit_to_budget, rag_messages, budget)
+                    stream = await self.adapter.create(self.llm_client.chat.completions.create,
                         model=self._select_model(rag_messages),
                         messages=rag_messages,
                         stream=True,
                         stream_options={"include_usage": True},
+                        usage_callback=usages.append,
                         **self._completion_extra_kwargs(),
                     )
                     async for chunk in stream:
@@ -204,11 +220,12 @@ class ChatService:
                         accumulated.append(text)
 
             else:
-                stream = await self.llm_client.chat.completions.create(
+                stream = await self.adapter.create(self.llm_client.chat.completions.create,
                     model=self._select_model(messages),
                     messages=messages,
                     stream=True,
                     stream_options={"include_usage": True},
+                    usage_callback=usages.append,
                     **self._completion_extra_kwargs(),
                 )
                 async for chunk in stream:
@@ -220,22 +237,15 @@ class ChatService:
             stream_completed = True
         finally:
             full_text = "".join(accumulated)
-            if stream_completed and full_text:
-                if prepared is not None and prepared.confident:
-                    checked_text = _ensure_source_marker(full_text, prepared)
-                    if checked_text != full_text:
-                        accumulated = [checked_text]
-                        full_text = checked_text
-                output_result = await self.moderation_service.check_output(full_text)
+            if stream_completed:
+                result = finalize_answer(full_text, prepared)
+                output_result = await self.moderation_service.check_output(result.text)
                 if not output_result.allowed:
-                    await self._record_moderation_incident(
-                        chat_id,
-                        "output",
-                        output_result,
-                        full_text,
-                    )
-                    accumulated = [_blocked_output_text()]
-                    full_text = accumulated[0]
+                    await self._record_moderation_incident(chat_id, "output", output_result, result.text)
+                    result = finalize_answer(result.text, prepared, blocked=True)
+                if result.text != full_text:
+                    accumulated = [result.text]
+                full_text = result.text
 
                 assistant_message = await self.repository.append_message(
                     chat_id,
@@ -245,16 +255,17 @@ class ChatService:
                         content=full_text,
                         tokens=count_tokens([{"role": "assistant", "content": full_text}]),
                         latency_ms=round((time.perf_counter() - started_at) * 1000),
-                        media_refs=(
-                            {
-                                "rag_sources": prepared.sources,
-                                "rag_confident": prepared.confident,
-                            }
-                            if prepared is not None
-                            else None
-                        ),
+                        media_refs={
+                            "review_answer": {"text": result.text, **result.metadata()},
+                            "rag_sources": result.metadata()["sources"],
+                            "rag_confident": result.confident,
+                            "usage": usages,
+                            "usage_available": bool(usages),
+                        },
                     ),
                 )
+                if on_sources is not None:
+                    on_sources(result.metadata()["sources"], result.confident)
                 if on_message_saved is not None:
                     on_message_saved(assistant_message)
         # No model output is visible before moderation and durable storage succeed.
@@ -277,7 +288,10 @@ class ChatService:
         )
 
     async def clear_history(self, chat_id: UUID) -> None:
-        await self.repository.soft_delete_messages(chat_id)
+        key = str(chat_id)
+        lock = _CHAT_LOCKS.setdefault(key, asyncio.Lock())
+        async with lock:
+            await self.repository.soft_delete_messages(chat_id)
 
     async def _build_context(
         self,
@@ -318,7 +332,7 @@ class ChatService:
         summary_input = "\n".join(
             f"{message.role}: {message.content}" for message in messages
         )
-        response = await self.llm_client.chat.completions.create(
+        response = await self.adapter.create(self.llm_client.chat.completions.create,
             model=self.model,
             messages=[
                 {"role": "system", "content": SUMMARIZE_PROMPT},
@@ -326,6 +340,7 @@ class ChatService:
             ],
             temperature=0,
             max_tokens=256,
+            **model_options(str(getattr(self.llm_client, "base_url", ""))),
         )
         return _extract_response_text(response).strip()
 
@@ -335,12 +350,9 @@ class ChatService:
         return self.model
 
     def _completion_extra_kwargs(self) -> dict[str, Any]:
-        result: dict[str, Any] = {"max_tokens": self.response_tokens}
+        result: dict[str, Any] = {"max_tokens": self.response_tokens, "temperature": 0}
         base_url = str(getattr(self.llm_client, "base_url", ""))
-        if "11434" in base_url or "ollama" in base_url.lower():
-            result["extra_body"] = {"think": False}
-            if self.num_ctx is not None:
-                result["extra_body"]["options"] = {"num_ctx": self.num_ctx}
+        result.update(model_options(base_url))
         return result
 
     async def _record_moderation_incident(
@@ -356,7 +368,7 @@ class ChatService:
                 direction=direction,
                 result=result,
                 text_hash=prompt_hash(content),
-                text_preview=redact_pii(content)[:160],
+                text_preview=redact_pii(content)[:160] if include_content() else "",
             )
         except Exception as exc:
             logger.warning(
@@ -442,19 +454,27 @@ def _count_content_tokens(value: Any) -> int:
     return _count_text_tokens(_coerce_text(value))
 
 
-def _count_text_tokens(value: str) -> int:
+def tokenize_for_context(value: str) -> list[int]:
     encoder = _token_encoder()
     if encoder is not None:
-        return len(encoder(value))
+        return encoder(value, disallowed_special=())
 
-    # Offline fallback for sandboxed tests when tiktoken cannot fetch its BPE
-    # file yet. Production runs use tiktoken as soon as the encoding is cached.
-    return max(1, len(value) // 4) if value else 0
+    # Conservative offline fallback. No network access in a request; an absent
+    # cache may reject a large input earlier, rather than block the event loop.
+    return list(value.encode("utf-8"))
+
+
+def _count_text_tokens(value: str) -> int:
+    return len(tokenize_for_context(value))
 
 
 @lru_cache(maxsize=1)
 def _token_encoder():
+    cache = os.environ.get("TIKTOKEN_CACHE_DIR", os.environ.get("DATA_GYM_CACHE_DIR", str(Path(tempfile.gettempdir()) / "data-gym-cache")))
+    path = Path(cache) / "fb374d419588a4632f3f557e76b4b70aebbca790"
     try:
+        if not cache or hashlib.sha256(path.read_bytes()).hexdigest() != "446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d":
+            return None
         return tiktoken.get_encoding("o200k_base").encode
     except Exception as exc:  # pragma: no cover - depends on local tiktoken cache/network
         logger.warning("chat.token_encoder_unavailable", error=str(exc))

@@ -1,0 +1,115 @@
+{
+  "review": {
+    "metrics": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "clean_false_positive_rate": 0.0,
+      "usable_fix_rate": 0.3333333333333333,
+      "cases": 18
+    },
+    "counts": {
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 3
+    },
+    "statuses": {
+      "answered": 16,
+      "refused": 2
+    },
+    "latency_seconds": {
+      "count": 18,
+      "median": 0.6456129520011018,
+      "mean": 2.2257619610006967,
+      "p95_nearest_rank": 8.469873282003391
+    },
+    "latency_defects_seconds": {
+      "count": 6,
+      "median": 6.832372724995366,
+      "mean": 5.376482270333024,
+      "p95_nearest_rank": 8.469873282003391
+    },
+    "usage": {
+      "model_calls": 27,
+      "usage_available_calls": 27,
+      "tokens": {
+        "prompt_tokens": 15877,
+        "completion_tokens": 1222,
+        "total_tokens": 17099
+      }
+    },
+    "resources": {
+      "duration_seconds_including_management_waits": 101.16334175199881,
+      "exit_code": 0,
+      "host_cpu_mean_percent": 12.200261593048527,
+      "peak_host_ram_gib": 20.638168334960938,
+      "peak_device_vram_gib": 15.702312469482422,
+      "gpu_busy_mean_percent": 39.08040201005025,
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "context_length": 8192,
+          "size_vram": 10425372507
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "context_length": 4096,
+          "size_vram": 3434537287
+        }
+      ]
+    },
+    "strict_source_support": "finally_override: general propagation/cleanup excerpt, not explicit return-in-finally rule"
+  },
+  "agent": {
+    "operational_status": "passed",
+    "steps": 9,
+    "turn_seconds": {
+      "count": 9,
+      "median": 0.927854137000395,
+      "mean": 1.5362593455558655,
+      "p95_nearest_rank": 6.4095181160009815
+    },
+    "notify_requests": 0,
+    "stale_request_rejected": true,
+    "semantic_quality": "one incorrect unsolicited Optional[T] addition in knowledge answer; see agent-evaluation.json",
+    "usage": {
+      "model_calls": 15,
+      "usage_available_calls": 15,
+      "tokens": {
+        "prompt_tokens": 16745,
+        "completion_tokens": 759,
+        "total_tokens": 17504
+      }
+    },
+    "resources": {
+      "duration_seconds_including_management_waits": 18.884769764998055,
+      "exit_code": 0,
+      "host_cpu_mean_percent": 22.545246815813787,
+      "peak_host_ram_gib": 22.460052490234375,
+      "peak_device_vram_gib": 15.393028259277344,
+      "gpu_busy_mean_percent": 77.39473684210526,
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "context_length": 8192,
+          "size_vram": 10425372507
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "context_length": 4096,
+          "size_vram": 3434537287
+        },
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "context_length": 8192,
+          "size_vram": 6312228290
+        }
+      ]
+    }
+  },
+  "scope": "Frozen new cases, no output-driven production tuning; same author, not independent human assessment. Operational success is not general answer-quality success."
+}

@@ -26,6 +26,8 @@ from app.core.exceptions import (
 from app.observability.logging import get_logger
 from app.observability.pii import prompt_hash, redact_pii, redact_pii_for_log
 from app.schemas.chat import ChatDelta, ChatMessage, ChatRequest, ChatResponse, Usage
+from app.services.model_adapter import ModelAdapter, PROMPT_VERSION
+from app.services.ollama import model_options
 from app.services.security.input_validator import validate_input
 from app.services.security.output_filter import filter_output
 
@@ -50,6 +52,7 @@ class LLMService:
         semaphore: asyncio.Semaphore | None = None,
         canary: str = "",
     ) -> None:
+        self.adapter = ModelAdapter(settings.request_timeout)
         self.openai = openai
         self.cache = cache
         self.settings = settings
@@ -64,7 +67,7 @@ class LLMService:
         system_prompt = self._security_system_prompt()
         cache_key = self._build_cache_key(protected_request)
         started_at = time.perf_counter()
-        with tracer.start_as_current_span("chat.request", kind=SpanKind.SERVER) as span:
+        with tracer.start_as_current_span("chat.request", kind=SpanKind.SERVER, record_exception=False, set_status_on_exception=False) as span:
             span.set_attribute("openinference.span.kind", "CHAIN")
             self._set_request_span_attributes(span, protected_request)
             try:
@@ -184,7 +187,7 @@ class LLMService:
 
         async with self._sem:
             try:
-                stream = await self.openai.chat.completions.create(
+                stream = await self.adapter.create(self.openai.chat.completions.create,
                     model=protected_request.model,
                     messages=[
                         message.model_dump(mode="json")
@@ -194,6 +197,7 @@ class LLMService:
                     max_tokens=protected_request.max_tokens,
                     stream=True,
                     stream_options={"include_usage": True},
+                    **model_options(self.settings.openai_base_url),
                 )
             except (RateLimitError, APITimeoutError, AuthenticationError, OpenAIError) as exc:
                 raise self._translate_error(exc) from exc
@@ -230,7 +234,7 @@ class LLMService:
         )
         payload_json = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
         digest = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
-        return f"chat:{digest}"
+        return f"chat:{PROMPT_VERSION}:{digest}"
 
     async def _read_cache(self, cache_key: str) -> ChatResponse | None:
         try:
@@ -265,20 +269,8 @@ class LLMService:
         return LLMError(str(exc))
 
     async def _create_chat_completion_with_retry(self, **kwargs):
-        max_attempts = 2
-        for attempt in range(max_attempts):
-            try:
-                return await self.openai.chat.completions.create(**kwargs)
-            except Exception as exc:
-                if (
-                    self._is_quota_error(exc)
-                    or not self._is_rate_limit_error(exc)
-                    or attempt == max_attempts - 1
-                ):
-                    raise
-                await asyncio.sleep(0.25 * (attempt + 1))
-
-        raise LLMRateLimitError("LLM provider rate limit exceeded.")
+        kwargs.update(model_options(self.settings.openai_base_url))
+        return await self.adapter.create(self.openai.chat.completions.create, **kwargs)
 
     async def _moderate_output(self, answer: str) -> None:
         moderations = getattr(self.openai, "moderations", None)
@@ -317,7 +309,7 @@ class LLMService:
         )
 
         try:
-            response = await self.openai.chat.completions.create(
+            response = await self.adapter.create(self.openai.chat.completions.create,
                 model=self.settings.default_model,
                 messages=[
                     {
@@ -328,6 +320,7 @@ class LLMService:
                 ],
                 temperature=0,
                 max_tokens=64,
+                **model_options(self.settings.openai_base_url),
             )
         except Exception as exc:
             logger.warning("output_moderation_judge.unavailable", error=str(exc))
@@ -544,12 +537,14 @@ class LLMService:
 
     def _set_error_span_attributes(self, span: trace.Span, exc: Exception) -> None:
         error_code = exc.code if isinstance(exc, LLMError) else exc.__class__.__name__
-        error_message = exc.message if isinstance(exc, LLMError) else str(exc)
+        error_message = (exc.message if isinstance(exc, LLMError) else str(exc)) if self.settings.observability_include_content else error_code
         span.set_attribute("error.type", error_code)
         span.set_attribute("error.message", error_message)
         span.set_status(Status(StatusCode.ERROR, error_message))
 
     def _redacted_span_preview(self, text: str) -> str:
+        if not self.settings.observability_include_content:
+            return prompt_hash(text)
         preview = redact_pii(self._redact_canary(text))
         if len(preview) > _SPAN_PREVIEW_LIMIT:
             return preview[:_SPAN_PREVIEW_LIMIT]

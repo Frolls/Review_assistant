@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-03",
+  "description": "Editorial normalization of evaluator attribution. Evaluation remains automated, not independent human review. Model responses, numeric results and live protocols are unchanged.",
+  "artifact_edits": [
+    {
+      "file": "docs/verification/acceptance-2026-11-03/README.md",
+      "before_sha256": "3fb9fe61c2f813e2fd26736c37723326173390d98df1d5a37004e92c1e872718",
+      "after_sha256": "fabd39e19b8048205ab58ff5a431a827a60143b788d91850c29d3ea27da467bb"
+    },
+    {
+      "file": "docs/verification/acceptance-2026-11-03/agent-evaluation.json",
+      "before_sha256": "03ce029bafeeb1a1fd0a6170f473169c0bcbf9fdacc50cb590f836f78b31e087",
+      "after_sha256": "d916981f0c271f4f161e5ade428805c75232070b976c4f1ba509d9e151dd0a2c"
+    },
+    {
+      "file": "docs/verification/acceptance-2026-11-03/review-annotated.json",
+      "before_sha256": "9ce11e7b7a2ad816d2b319fda6a56526258559ed69bd85379715b7487be2ffd5",
+      "after_sha256": "4d6ecb241b0912280f89580b62706012ae2c3b331b8597a33af9c7d8f43356fa"
+    },
+    {
+      "file": "docs/verification/final-fixes-2026-11-03/README.md",
+      "before_sha256": "8dd7c9c895d0927cda7d379fb5c2be7a1262062664e4917dfea06e9bda67e9e1",
+      "after_sha256": "bdcb4d42b19b63fdc936f9cc056b596c899aff3f4cc6a57e109ca8f83f7c164e"
+    },
+    {
+      "file": "docs/verification/live-review-2026-11-03/README.md",
+      "before_sha256": "ceebf4425e765fe74e06a8eaa548837f4c905b825be14013a8541a4d79aaf85e",
+      "after_sha256": "8190d354289077556efb493472db75422a2f19e0d9c3fab3b47f6b46d45249ba"
+    },
+    {
+      "file": "docs/verification/live-review-2026-11-03/baseline-annotated.json",
+      "before_sha256": "07da4bc89fe696d54a09c4de38c5ebbe039ae3b777d7fc04beea44ac743499dc",
+      "after_sha256": "4462f2de1b8d7125e4c5a8d8668a7f6b9f56609573bd060318830a6e56efb5d0"
+    },
+    {
+      "file": "docs/verification/live-review-2026-11-03/repeat-annotated.json",
+      "before_sha256": "3bd3642ecbd0e12fe8e21825707257f186bc72ab9eb30d6dcd361d713319c286",
+      "after_sha256": "8177c2a36f16ce00467284748eea8c71be365d12e6e0f91e134c8342b007a752"
+    },
+    {
+      "file": "docs/verification/live-review-2026-11-03/summarize.py",
+      "before_sha256": "c0d1a8b01d9a063b16b307e62984b6fc6fa7400951db52e5241b590a6d8e39cb",
+      "after_sha256": "5eadec31b20f5f6ef65015213c5a6cb7ecb139cbc548302aeafe74d58c48cc3f"
+    },
+    {
+      "file": "docs/verification/live-review-2026-11-03/summary.json",
+      "before_sha256": "1dcec9a7971500ebe299260ede925052e5791bd8b59e10f8b41e4ec8d3444b40",
+      "after_sha256": "2f247886463c1224d1600dfeb08ccbf5bb12e344343fcf5883647927362279b0"
+    }
+  ],
+  "source_changes": [
+    {
+      "file": "Review_bot/app/chat/repositories/json_repo.py",
+      "before_sha256": "ccdc0009cd5d173164431bdfc5e017b7c48ee9ae935bf030978c9a9ca5280f29",
+      "after_sha256": "3213d223077be6be014987c75be9c11f7a95d4aa486ebf751e29be338e95bb65",
+      "reason": "Remove implicit development-environment selection of synchronous JSON I/O; retain explicit CHAT_JSON_FORCE_SYNC_IO. Not part of the recorded live run; evaluation does not execute repository I/O."
+    }
+  ]
+}

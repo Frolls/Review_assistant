@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import Annotated, Literal
+from typing import Literal
 from uuid import UUID
 
 import sqlalchemy as sa

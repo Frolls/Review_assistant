@@ -5,11 +5,15 @@ repos:
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
-        exclude: ^tests/eval/results/.*\.csv$
+        exclude: ^(tests/eval/results/.*\.csv$|docs/verification/(?!README\.md$))
       - id: end-of-file-fixer
+        exclude: ^docs/verification/(?!README\.md$)
       - id: mixed-line-ending
+        exclude: ^docs/verification/(?!README\.md$)
       - id: detect-private-key
       - id: check-added-large-files
+        # Retained raw resource measurements are up to 804 KiB.
+        args: [--maxkb=1024]
       - id: check-executables-have-shebangs
       - id: check-symlinks
 
@@ -19,3 +23,12 @@ repos:
       - id: gitlint
         name: Check Git rules via gitlint
         args: [-v, --ignore=body-is-missing, --msg-filename]
+
+  - repo: local
+    hooks:
+      - id: ruff
+        name: Ruff
+        entry: ruff check --no-cache
+        language: system
+        types: [python]
+        exclude: ^docs/verification/

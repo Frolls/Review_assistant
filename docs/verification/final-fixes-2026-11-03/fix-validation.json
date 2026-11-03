@@ -1,0 +1,157 @@
+{
+  "python": [
+    {
+      "dataset": "regression-v12",
+      "case": "event_queue-defect",
+      "passed": [
+        "independent defaults",
+        "explicit argument identity"
+      ]
+    },
+    {
+      "dataset": "regression-v12",
+      "case": "json_import-defect",
+      "passed": [
+        "JSON object",
+        "JSON array",
+        "no NameError"
+      ]
+    },
+    {
+      "dataset": "regression-v12",
+      "case": "finally_override-defect",
+      "passed": [
+        "correct result",
+        "exception propagation",
+        "cleanup preserved"
+      ]
+    },
+    {
+      "dataset": "regression-v12",
+      "case": "mean_contract-defect",
+      "passed": [
+        "task example",
+        "three additional behavioral inputs"
+      ]
+    },
+    {
+      "dataset": "fresh",
+      "case": "cache_map-defect",
+      "passed": [
+        "independent defaults",
+        "explicit argument identity"
+      ]
+    },
+    {
+      "dataset": "fresh",
+      "case": "math_import-defect",
+      "passed": [
+        "three inputs",
+        "no NameError"
+      ]
+    },
+    {
+      "dataset": "fresh",
+      "case": "cleanup_finally-defect",
+      "passed": [
+        "correct result",
+        "exception propagation",
+        "cleanup preserved"
+      ]
+    },
+    {
+      "dataset": "fresh",
+      "case": "temperature-defect",
+      "passed": [
+        "three task examples",
+        "two additional behavioral inputs"
+      ]
+    }
+  ],
+  "ansible": [
+    {
+      "dataset": "regression-v12",
+      "case": "archive_directory-defect",
+      "passed": [
+        "first run creates directory",
+        "second run succeeds with zero changes",
+        "no duplicated cmd"
+      ],
+      "runs": [
+        {
+          "returncode": 0,
+          "stdout": "\nPLAY [localhost] ***************************************************************\n\nTASK [Prepare archive directory] ***********************************************\nchanged: [localhost]\n\nPLAY RECAP *********************************************************************\nlocalhost                  : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \n\n",
+          "stderr": ""
+        },
+        {
+          "returncode": 0,
+          "stdout": "\nPLAY [localhost] ***************************************************************\n\nTASK [Prepare archive directory] ***********************************************\nok: [localhost]\n\nPLAY RECAP *********************************************************************\nlocalhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \n\n",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "dataset": "regression-v12",
+      "case": "nested_secret-defect",
+      "passed": [
+        "original exposes synthetic secret",
+        "fixed output censors secret",
+        "block/task precedence"
+      ],
+      "runs": [
+        {
+          "returncode": 0,
+          "stdout": "\nPLAY [localhost] ***************************************************************\n\nTASK [Inspect credential] ******************************************************\nok: [localhost] => {\n    \"deploy_password\": \"SYNTHETIC_SECRET_731\"\n}\n\nPLAY RECAP *********************************************************************\nlocalhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \n\n",
+          "stderr": ""
+        },
+        {
+          "returncode": 0,
+          "stdout": "\nPLAY [localhost] ***************************************************************\n\nTASK [Inspect credential] ******************************************************\nok: [localhost]\n\nPLAY RECAP *********************************************************************\nlocalhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \n\n",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "dataset": "fresh",
+      "case": "cache_directory-defect",
+      "passed": [
+        "first run creates directory",
+        "second run succeeds with zero changes",
+        "no duplicated cmd"
+      ],
+      "runs": [
+        {
+          "returncode": 0,
+          "stdout": "\nPLAY [localhost] ***************************************************************\n\nTASK [Create cache] ************************************************************\nchanged: [localhost]\n\nPLAY RECAP *********************************************************************\nlocalhost                  : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \n\n",
+          "stderr": ""
+        },
+        {
+          "returncode": 0,
+          "stdout": "\nPLAY [localhost] ***************************************************************\n\nTASK [Create cache] ************************************************************\nok: [localhost]\n\nPLAY RECAP *********************************************************************\nlocalhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \n\n",
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "dataset": "fresh",
+      "case": "override_secret-defect",
+      "passed": [
+        "original exposes synthetic secret",
+        "fixed output censors secret",
+        "block/task precedence"
+      ],
+      "runs": [
+        {
+          "returncode": 0,
+          "stdout": "\nPLAY [localhost] ***************************************************************\n\nTASK [Token] *******************************************************************\nok: [localhost] => {\n    \"service_token\": \"SYNTHETIC_SECRET_731\"\n}\n\nPLAY RECAP *********************************************************************\nlocalhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \n\n",
+          "stderr": ""
+        },
+        {
+          "returncode": 0,
+          "stdout": "\nPLAY [localhost] ***************************************************************\n\nTASK [Token] *******************************************************************\nok: [localhost]\n\nPLAY RECAP *********************************************************************\nlocalhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \n\n",
+          "stderr": ""
+        }
+      ]
+    }
+  ]
+}

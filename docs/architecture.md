@@ -1,6 +1,7 @@
-> Исторический отчёт этапа курса. Итоговая архитектура и отчёт исправлений
-> прилагаются автором отдельно в материалах защиты. Роль `full` больше
-> не доступна через API, подтверждения связаны с владельцем и уникальным действием.
+> Документ объединяет реализованные компоненты и целевую архитектуру следующих этапов.
+> Актуальные исправления и результаты проверок: [отчёт и live-проверка v12](verification/README.md).
+> Роль `full` недоступна через API; `request_id` создаётся случайно для каждого
+> действия, сохраняется до interrupt и проверяется вместе с владельцем.
 
 # Архитектурный паспорт PR Review Bot
 
@@ -32,8 +33,10 @@
 - с Redis cache-aside для повторяющихся запросов.
 
 Stateful `/chats/{id}/messages` использует другой путь: история хранится в
-Postgres, вопрос проходит RAG retrieval/score guard, а ответ стримится с
-цитатами и sources. Этот режим используется Telegram-ботом.
+Postgres, вопрос проходит retrieval, а текст буферизуется до проверки ссылок,
+модерации и сохранения согласованного `ReviewAnswer`. SSE передаёт progress и
+проверенный результат с источниками. Этот режим используется Telegram-ботом;
+Redis-кеш stateless `/chat` на него не распространяется.
 
 ### 2. Interactive Review
 
@@ -54,7 +57,8 @@ LLM использует исходный вопрос и предыдущие �
 задержку; проверка моделью не гарантирует достоверность последующей генерации.
 
 Отдельный `POST /agent/stream` реализует stateful ReAct-сценарий: прогресс
-узлов и токены модели передаются через SSE, checkpoint’ы сохраняются в SQLite
+узлов передаётся через SSE; токены генерации не публикуются до проверки.
+Checkpoint’ы сохраняются в SQLite
 или PostgreSQL, а опасная Telegram-отправка приостанавливается до решения
 человека через `interrupt()` и продолжается через `Command(resume=...)`.
 
@@ -62,6 +66,21 @@ LLM использует исходный вопрос и предыдущие �
 `POST /agent/review`. Endpoint запускает supervisor LangGraph с агентами
 `researcher` и `writer`, использующими production `RAGService`; persistent ReAct
 и HIL-контракт `/agent/stream` остаются отдельным путём для write-действий.
+
+Ревью вложенного Python/Ansible-кода выполняет ограниченный набор проверок Ruff,
+AST и YAML, затем ищет применимые правила. Векторный retrieval сохраняет порог
+0.5 для каждого кандидата. Для F821, B012, mkdir-repeat и secret-debug дополнительно
+работает точный каталог правил с официальными URL; его записи имеют `score=null`,
+а не выдуманный embedding score. Для простых числовых функций поддерживаются
+явные примеры входа/выхода из задачи: закрытый AST-интерпретатор не выполняет
+пользовательский Python, импорт, атрибуты или I/O. Требование задачи обозначается
+отдельным источником. Отсутствие диагностик означает только отсутствие находок
+в перечисленных проверках, а не доказанную корректность произвольного кода.
+
+Агент после `search_knowledge_base` публикует найденную выдержку с атрибуцией,
+без дополнительного свободного пересказа моделью. Другие инструменты и дальнейшие
+ходы сохраняют обычный цикл агента. `/clear` удаляет обычную историю, checkpoint
+и pending action; `/clear_agent` и `/clear_chat` позволяют очистить их отдельно.
 
 ### 3. Full PR Review
 
@@ -455,19 +474,19 @@ default, Compose использует существующий PostgreSQL и Б�
 autogenerate.
 
 Опасный tool `send_telegram_message` реализован двумя последовательными
-узлами. `prepare_telegram_message` валидирует данные и детерминированно строит
-draft без side effect. `confirm_and_execute_telegram_message` вызывает
+узлами. `prepare_telegram_message` валидирует данные, создаёт UUID request_id и сохраняет
+draft в checkpoint без side effect. `confirm_and_execute_telegram_message` вызывает
 `interrupt()` для роли `write-with-approve`; в этом режиме HTTP `POST /notify`
 выполняется только после `Command(resume=True)`. Роль `read-only` отклоняет
-запись, а `full` может выполнить её без паузы. Такое разделение
+запись; `full` отклоняется схемой API. Такое разделение
 необходимо, потому что interrupt-узел при resume начинает выполнение заново:
 внешняя запись до `interrupt()` могла бы выполниться повторно.
 
 FastAPI endpoint `POST /agent/stream` принимает стабильный `thread_id`, ровно
 одно из полей `input` или `resume` и `user_role`. Он проецирует
-`graph.astream(..., stream_mode=["updates", "messages"])` в SSE, добавляя явные
+`graph.astream(..., stream_mode=["updates"])` в SSE, добавляя явные
 события `interrupt`, `paused`, `done` и `error`. `updates` выбран для прогресса
-по узлам и state delta, `messages` — для токенов и tool-call chunks. Более
+по завершённым узлам и state delta. Heartbeat `progress` отправляется во время ожидания. Более
 детальный `astream_events(version="v2")` не используется в базовом API, чтобы
 не увеличивать транспортный объём callback-событиями.
 
@@ -477,16 +496,17 @@ Time travel использует `aget_state_history()` и чтение snapshot
 write и остаётся детерминированным внутри одного lineage.
 
 **Consequences.** Paused run переживает замену контейнера, критический side
-effect получает проверяемую human-approval границу, а клиент видит узловой и
-token-level прогресс. SQLite позволяет запускать тесты и демо без PostgreSQL;
+effect получает проверяемую human-approval границу, а клиент видит прогресс завершённых узлов
+и heartbeat. SQLite позволяет запускать тесты и демо без PostgreSQL;
 production-like Compose не требует нового database service или отдельной БД.
 
 Цена решения — четыре служебные таблицы, необходимость сохранять стабильный
-`thread_id` и поддерживать транспортный resume contract. Backchannel пока не
-принимает idempotency key: сбой после приёма `/notify`, но до записи checkpoint,
-остаётся неоднозначным для ручного retry. В SSE также ещё нет replay-буфера по
-`Last-Event-ID`, а роль `full` до публичного использования должна вычисляться
-из доверенной аутентификации, а не из клиентского JSON.
+`thread_id` и поддерживать транспортный resume contract. Backchannel принимает ключ доставки и хранит SQLite-журнал
+с хешем адресата/текста. При неизвестном исходе повтор блокируется.
+В SSE нет replay-буфера `Last-Event-ID`. Контекст ограничен целыми ходами;
+`/clear` удаляет оба вида истории и pending action. Для нескольких API-worker
+потребуется распределённая блокировка потоков; текущий Compose запускает один.
+
 
 **Alternatives considered.** Только `InMemorySaver` отвергнут из-за потери
 paused state при рестарте. Отдельная PostgreSQL-база не создаётся, поскольку
@@ -689,9 +709,9 @@ LiteLLM deployment group для batch-задач либо увеличение �
 
 Артефакты:
 
-- конфиг proxy: [docs/litellm/config.yaml](/workspaces/Review_bot/docs/litellm/config.yaml)
-- production-like конфиг: [docs/litellm/config.production_like.yaml](/workspaces/Review_bot/docs/litellm/config.production_like.yaml)
-- локальный fallback-стенд: [docs/litellm/mock_openai_server.py](/workspaces/Review_bot/docs/litellm/mock_openai_server.py)
+- конфиг proxy: [docs/litellm/config.yaml](litellm/config.yaml)
+- production-like конфиг: [docs/litellm/config.production_like.yaml](litellm/config.production_like.yaml)
+- локальный fallback-стенд: [docs/litellm/mock_openai_server.py](litellm/mock_openai_server.py)
 
 Локальный demo-конфиг сделан так, чтобы без Docker проверить сам механизм fallback:
 
@@ -795,8 +815,10 @@ Structured logs фиксируют:
 - `prompt_hash`;
 - `prompt_preview`.
 
-Полный prompt в логи не записывается. Вместо него используется `prompt_preview`
-с маскированием чувствительных данных. Regex-редакция покрывает:
+При `OBSERVABILITY_INCLUDE_CONTENT=false` preview и произвольный контент исключены
+из собственных логов и span: остаются hash, длина и технические metadata.
+Это относится также к RAG и condense. При явно включённом содержимом preview
+проходит маскирование; оно не гарантирует удаления всех секретов. Regex-редакция покрывает:
 
 - email;
 - российские телефоны;
@@ -841,8 +863,8 @@ OBSERVABILITY_INCLUDE_CONTENT=false
 
 При таком значении применяются следующие правила:
 
-- `chat.request` не сохраняет сырой prompt и сырой response в `input.value` и `output.value`;
-- `input.value` и `output.value` заменяются на `[redacted]`;
+- собственные `chat.request` и RAG span не сохраняют вопрос, ответ или preview;
+- helper заменяет содержимое hash/длиной и пропускает только технические атрибуты;
 - `ChatCompletion` скрывает `LLM Input` и `LLM Output` на уровне OpenInference `TraceConfig`;
 - в Phoenix `LLM Input` и `LLM Output` для `ChatCompletion` отображаются как `__REDACTED__`.
 
@@ -857,8 +879,8 @@ OBSERVABILITY_INCLUDE_CONTENT=false
 - кеш ответов хранится отдельно в `Redis`.
 
 Следствие для эксплуатации: traces, записанные до включения безопасного режима,
-могут содержать сырой контент; после включения redaction новые trace должны
-содержать только безопасные preview и метаданные.
+могут содержать сырой контент; при выключенном содержимом новые trace сохраняют
+только hash, длины и технические метаданные.
 
 ## Источники по Gateway и LLM-слою
 
@@ -869,3 +891,27 @@ OBSERVABILITY_INCLUDE_CONTENT=false
 - Fallbacks / reliability: <https://docs.litellm.ai/docs/proxy/reliability>
 - GitHub README: <https://github.com/BerriAI/litellm>
 - nginx HTTP rate limiting: <https://nginx.org/en/docs/http/ngx_http_limit_req_module.html>
+# Уточнения после live-проверки 3 ноября 2026
+
+Для ревью можно задать `REVIEW_MODEL` отдельно от основной модели диалога.
+На проверенном локальном стенде это `qwen2.5:14b`. При старте Ollama получает
+производные модели с `num_ctx=LLM_NUM_CTX`: исходные модели не изменяются,
+отсутствующие веса автоматически не скачиваются. Параметры производной модели
+проверяются до начала работы. Совместимый OpenAI endpoint получает
+`reasoning_effort=none`; вложенные `options.num_ctx` на нём не используются.
+
+Ревью Python ограничено явно перечисленными проверками Ruff и AST, ревью
+Ansible — проверками YAML, повторного `mkdir` и вывода явно названного секрета.
+Диагностики и пользовательский код передаются модели отдельно от найденных
+правил. Модель сопоставляет диагностику с источником и предлагает исправление;
+после генерации проверяются структура ответа, ссылки, полнота исправления и
+повторный результат проверок. Для узких преобразований используются
+механические исправления. Отсутствие диагностик означает только отсутствие
+замечаний в указанной области проверки; источники retrieval при этом не
+выдаются за процитированные. Это не полное семантическое ревью произвольного кода.
+
+Кеш tiktoken создаётся при сборке образа. Подсчёт токенов не загружает данные
+из сети во время запроса: при отсутствии/повреждении кеша используется
+консервативная оценка по UTF-8. Подсчёт вынесен из event loop; это оценка
+бюджета, а не точный токенизатор Qwen. RAG использует тот же локальный helper.
+Если RAG не готов, режим ревью возвращает 503 и не переходит к прямой генерации.

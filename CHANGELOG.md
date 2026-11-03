@@ -1,5 +1,45 @@
 # Changelog
 
+## [2026-11-03]
+
+### Documentation maintenance after publication
+
+- Pinned Ruff to the locally verified 0.15.16 and made the existing lint rule set explicit. Fresh CI installations previously selected 0.17.3 and failed before tests because its default checks differed; the lockfile and pre-commit version requirement now agree.
+- Standardized evaluator attribution as automated, non-independent evaluation; preserved model responses, numeric results, and live protocols. Recorded editorial before/after hashes and updated artifact checksums.
+- Removed the development-environment shortcut for synchronous JSON I/O; restricted environments now use the existing explicit `CHAT_JSON_FORCE_SYNC_IO` option. This post-live change is recorded separately from benchmark results.
+- Generalized Docker exclusions for hidden local tooling and caches.
+- Verified 15 JSON storage/configuration tests in each I/O mode, Ruff, 96 artifact hashes, and unchanged final metrics; these checks supplement the recorded live results.
+
+### Added
+
+- Added bounded Python/Ansible review checks, rule-backed diagnostics, validated fixes, and evaluation cases covering defective, fixed, and clean code.
+- Added persistent escalation tickets with ownership checks, status, and cancellation.
+- Added a shared model adapter for deadlines, retries, error mapping, prompt versions, and usage accounting, including preparation calls and usage-only stream chunks.
+- Added versioned deployment configuration, pair smoke scripts, Ruff checks in pre-commit/CI, and portable verification of benchmark artifacts.
+
+### Changed
+
+- Combined current-task rule retrieval with uploaded code as separate analysis input; explicit transformation mode applies to one turn.
+- Finalized text, status, confidence, and cited sources together after citation validation and moderation, and reused that result in HTTP, SSE, history, and feedback.
+- Added full chat/agent clearing with pending-action cancellation and bounded agent context that preserves complete tool-call/result groups.
+- Documented buffered responses with heartbeat/progress events, a turn deadline, and separate response-start and full-stream latency measurements.
+- Updated architecture and deployment documentation; retained selected historical evidence with an [explanation of its purpose and limits](docs/verification/HISTORY.md).
+
+### Fixed
+
+- Prevented old code in conversation history from bypassing RAG and invalid citations or blocked output from retaining confident status and published sources.
+- Applied content privacy controls to custom spans and condense logs; moved PDF/DOCX parsing into bounded subprocesses with timeouts and archive-size limits.
+- Avoided synchronous tokenizer downloads during requests, verified the actual Ollama context, and corrected compatibility settings for disabling reasoning.
+- Included preparatory model usage in history, preserved exact source quotations in agent search answers, and prevented numeric examples such as `[7]` from being mistaken for citations.
+
+### Verified
+
+- Recorded 257 backend tests, 39 bot tests, one pair smoke test, and passing Ruff checks. See the [verification report](docs/verification/README.md).
+- Evaluated 36 valid attachment cases: 12/12 defects found, 12/12 fixes validated, and no false findings on 24 correct examples. All 38 observed v12 answers remain available, including two replaced ambiguous clean fixtures; evaluation covers six defect families and was performed by the same author/evaluator.
+- Completed nine live agent turns through the bot client, including preview/cancel and clearing pending actions, without Telegram polling or positive delivery confirmation.
+- Measured native Qwen2.5 14B inference at a median 46.935 decode tokens/s with context 8192; retained resource samples and measurement limitations. The post-live numeric-format fix passed regression and full backend tests; live metrics describe the preceding frozen v12.
+- Verified 96 archived artifact hashes and reproduced the final metrics from exported commits. Historical results remain distinct from the current acceptance results and are not a threshold-only A/B test.
+
 ## [2026-08-08]
 
 ### Added

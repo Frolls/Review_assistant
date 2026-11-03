@@ -1,0 +1,89 @@
+[
+  {
+    "id": "interrupts-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Некорректное числовое значение возвращает 0, KeyboardInterrupt и SystemExit должны распространяться.",
+    "code": "def parse_number(value):\n    try:\n        return int(value)\n    except:\n        return 0\n",
+    "expected_defects": [
+      "bare-except"
+    ],
+    "reference_fix": "def parse_number(value):\n    try:\n        return int(value)\n    except (ValueError, TypeError):\n        return 0\n"
+  },
+  {
+    "id": "interrupts-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Некорректное числовое значение возвращает 0, KeyboardInterrupt и SystemExit должны распространяться.",
+    "code": "def parse_number(value):\n    try:\n        return int(value)\n    except (ValueError, TypeError):\n        return 0\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "interrupts-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию.",
+    "code": "def double(value):\n    return value * 2\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "shell_arguments-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: filename приходит от пользователя и должен передаваться как буквальное имя файла, без исполнения команд оболочки.",
+    "code": "import subprocess\n\ndef file_size(filename):\n    return subprocess.run(\"wc -c -- \" + filename, shell=True, check=True, capture_output=True, text=True).stdout\n",
+    "expected_defects": [
+      "shell-injection"
+    ],
+    "reference_fix": "import subprocess\n\ndef file_size(filename):\n    return subprocess.run([\"wc\", \"-c\", \"--\", filename], check=True, capture_output=True, text=True).stdout\n"
+  },
+  {
+    "id": "shell_arguments-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: filename приходит от пользователя и должен передаваться как буквальное имя файла, без исполнения команд оболочки.",
+    "code": "import subprocess\n\ndef file_size(filename):\n    return subprocess.run([\"wc\", \"-c\", \"--\", filename], check=True, capture_output=True, text=True).stdout\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "shell_arguments-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию.",
+    "code": "import subprocess\n\ndef git_version():\n    return subprocess.run([\"git\", \"--version\"], check=True, capture_output=True, text=True).stdout\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "secret_output-defect",
+    "kind": "defect",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: api_token — секрет, загружаемый через Vault. Его значение не должно появляться в обычном выводе выполнения.",
+    "code": "- name: Inspect deployment settings\n  ansible.builtin.debug:\n    var: api_token\n",
+    "expected_defects": [
+      "secret-in-logs"
+    ],
+    "reference_fix": "- name: Inspect deployment settings\n  ansible.builtin.debug:\n    var: api_token\n  no_log: true\n"
+  },
+  {
+    "id": "secret_output-fixed",
+    "kind": "fixed",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: api_token — секрет, загружаемый через Vault. Его значение не должно появляться в обычном выводе выполнения.",
+    "code": "- name: Inspect deployment settings\n  ansible.builtin.debug:\n    var: api_token\n  no_log: true\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "secret_output-clean",
+    "kind": "clean",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию.",
+    "code": "- name: Report completion\n  ansible.builtin.debug:\n    msg: Deployment complete\n",
+    "expected_defects": [],
+    "reference_fix": null
+  }
+]

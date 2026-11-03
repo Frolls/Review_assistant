@@ -1,0 +1,77 @@
+{
+  "started_at": "2026-10-15T11:22:15.659405+00:00",
+  "status": "complete",
+  "backend_commit": "edd30f292f98a746017bae70e8f805a1158b6dc4",
+  "backend_clean_at_start": true,
+  "dataset_questions": 35,
+  "configuration": {
+    "production_model": "qwen3:latest",
+    "judge_model": "qwen2.5:14b",
+    "embedding_model": "qwen3-embedding:4b",
+    "rag_collection": "corporate_rag_rules_v3",
+    "collection_points_at_start": 1818,
+    "score_threshold": 0.5,
+    "request_timeout": 30.0,
+    "llm_num_ctx": 8192,
+    "chunk_size": 256,
+    "chunk_overlap": 32,
+    "top_k": 10,
+    "reranker_enabled": false,
+    "reranker_top_n": 5,
+    "ragas_version": "0.4.3",
+    "concurrency": 1,
+    "judge_cache": false
+  },
+  "sha256": {
+    "tests/eval/golden_dataset.json": "f61995bd48afeff7529368b90b760333fcd9186b650096a429ddd89e03474bb7",
+    "app/services/rag.py": "d92555c10757833ec8608556a99fca8fc1a6db3b76af0348f1a5f6a183982df0",
+    "app/services/embeddings.py": "46fab60d952a605d687fda758367cea38bc96de9d9abc0560c0336db2939f3a8",
+    "app/services/ingestion.py": "bfa74a3cfb6ebd9f75d3ab1bade1c5906856c9884f6e2d3b818c191ed7cd05ae",
+    "scripts/run_eval.py": "d23135b47ef438324c3f5514756dafdf2e96c2fbd0a90f793c94536903e2fd9e",
+    "uv.lock": "ff1652f372c4b8b557c18ca5e5bac15d0f59b0c4e93139f8292ec8d26b296c62"
+  },
+  "note": "Current runtime configuration; corpus and generation guards differ from the July baseline. This is not an isolated threshold A/B test.",
+  "scope": "RAGService.evaluate_inputs: current retrieval, evidence guard and grounded generation; no Telegram transport or HTTP moderation wrapper.",
+  "model_digests": {
+    "qwen3:latest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+    "qwen2.5:14b": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6",
+    "qwen3-embedding:4b": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907"
+  },
+  "eval_image": "docker.io/library/review_bot-eval:latest (4bfe58cbdf7a); current app and scripts bind-mounted read-only",
+  "reproduction_command": "docker run --rm --user 0:0 --network review_bot_default --add-host host.docker.internal:host-gateway --env-file .env -e QDRANT_URL=http://qdrant:6333 -e PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006 -e RAG_SCORE_THRESHOLD=0.5 -e EMBEDDING_CACHE_PATH=/tmp/rag-eval-embeddings.sqlite -v ./Review_bot/app:/app/app:ro -v ./Review_bot/scripts:/app/scripts:ro -v ./Review_bot/tests/eval:/app/tests/eval docker.io/library/review_bot-eval:latest python scripts/run_eval.py --label current_threshold_05 --judge-provider openai --judge-model qwen2.5:14b --embedding-model qwen3-embedding:4b --concurrency 1 --no-cache",
+  "reproduction_workdir": "Diploma/",
+  "finished_at": "2026-10-15T11:48:32.042193+00:00",
+  "result_json": "Review_bot/tests/eval/results/2026-10-15_114831_current_threshold_05.json",
+  "result_csv": "Review_bot/tests/eval/results/2026-10-15_114831_current_threshold_05.csv",
+  "metrics": {
+    "faithfulness": 0.781281179138322,
+    "answer_relevancy": 0.779545470699262,
+    "context_precision": 0.9389682539383776,
+    "context_recall": 0.9857142857142858,
+    "has_citation": 0.9428571428571428,
+    "average_latency_ms": 10271.847771428571
+  },
+  "metric_sample_counts": {
+    "faithfulness": 35,
+    "answer_relevancy": 35,
+    "context_precision": 35,
+    "context_recall": 35,
+    "has_citation": 35
+  },
+  "successful_rows": 35,
+  "answered": 33,
+  "clarification_requests": 2,
+  "manual_review": {
+    "unnecessary_clarifications": [
+      "rag_001",
+      "rag_030"
+    ],
+    "unsupported_example_details": [
+      "rag_007",
+      "rag_009"
+    ],
+    "overstatement": [
+      "rag_005"
+    ]
+  }
+}

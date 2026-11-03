@@ -1,0 +1,40 @@
+{
+  "time": "2026-11-03T10:18:52.478313+00:00",
+  "ready_before_stop": {
+    "status": "ok",
+    "redis": "up",
+    "dependencies": {
+      "redis": "up",
+      "postgres": "up",
+      "qdrant": "up",
+      "model_api": "up",
+      "rag": "up",
+      "agent": "up"
+    }
+  },
+  "unloads": [
+    {
+      "model": "qwen3:latest",
+      "result": {
+        "model": "qwen3:latest",
+        "created_at": "2026-11-03T10:18:52.47676895Z",
+        "response": "",
+        "done": true,
+        "done_reason": "unload"
+      }
+    },
+    {
+      "model": "qwen3-embedding:4b",
+      "result": {
+        "model": "qwen3-embedding:4b",
+        "created_at": "2026-11-03T10:18:52.477699391Z",
+        "response": "",
+        "done": true,
+        "done_reason": "unload"
+      }
+    }
+  ],
+  "models_after": {
+    "models": []
+  }
+}

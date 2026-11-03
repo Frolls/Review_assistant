@@ -11,7 +11,15 @@ import pytest
 import pytest_asyncio
 
 from app.chat.domain import ChatMessage
-from app.chat.repositories.json_repo import JsonChatRepository
+from app.chat.repositories.json_repo import JsonChatRepository, _use_aiofiles
+
+
+@pytest.mark.parametrize("value,expected", [(None, True), ("false", True), ("true", False), ("1", False), ("YES", False)])
+def test_json_sync_io_requires_explicit_configuration(monkeypatch, value, expected):
+    monkeypatch.delenv("CHAT_JSON_FORCE_SYNC_IO", raising=False)
+    if value is not None:
+        monkeypatch.setenv("CHAT_JSON_FORCE_SYNC_IO", value)
+    assert _use_aiofiles() is expected
 
 
 @pytest_asyncio.fixture(params=["json", "postgres"])
@@ -118,6 +126,28 @@ async def test_soft_delete_hides_old_messages_but_new_messages_are_visible(repos
 @pytest.mark.asyncio
 async def test_get_chat_unknown_uuid_returns_none(repository):
     assert await repository.get_chat(uuid4()) is None
+
+
+@pytest.mark.asyncio
+async def test_feedback_uses_stored_answer_sources_and_rejects_deleted_message(repository):
+    chat = await repository.create_chat("feedback-owner", "cli")
+    message = await repository.append_message(chat.id, ChatMessage(
+        chat_id=chat.id, role="assistant", content="Refused",
+        media_refs={"review_answer": {"text": "Refused", "status": "refused", "confident": False, "sources": []}},
+    ))
+    await repository.save_feedback(chat.id, message.id, "down", sources=[{"id": 99}])
+    if isinstance(repository, JsonChatRepository):
+        import json
+        row = json.loads((repository._chat_dir(chat.id) / "message_feedback.jsonl").read_text().strip())
+        assert row["sources"] == []
+    else:
+        from sqlalchemy import select
+        from app.chat.repositories.pg_models import MessageFeedbackRow
+        row = (await repository.session.execute(select(MessageFeedbackRow))).scalar_one()
+        assert row.sources == []
+    await repository.soft_delete_messages(chat.id)
+    with pytest.raises(LookupError):
+        await repository.save_feedback(chat.id, message.id, "up")
 
 
 def _message(chat_id, role: str, content: str, *, seconds: int) -> ChatMessage:

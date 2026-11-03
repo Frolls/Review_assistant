@@ -1,0 +1,44 @@
+{
+  "backend": {
+    "passed": 257,
+    "skipped": 0,
+    "failed": 0,
+    "seconds": 11.1,
+    "warnings": 2,
+    "command": "python -m pytest -q -p no:cacheprovider tests",
+    "runtime": "localhost/llm-service:v1 with current repository mounted read-only; dedicated postgres:16-alpine test database",
+    "raw_output": "backend-tests-final.txt"
+  },
+  "bot": {
+    "passed": 39,
+    "skipped": 0,
+    "failed": 0,
+    "seconds": 1.36,
+    "command": "python -m pytest -q -p no:cacheprovider",
+    "runtime": "review_bot-bot-tests with current repository mounted read-only"
+  },
+  "pair": {
+    "passed": 1,
+    "skipped": 0,
+    "failed": 0,
+    "seconds": 1.05,
+    "warnings": 1,
+    "command": "sh scripts/test_pair.sh",
+    "network": "none"
+  },
+  "ruff": {
+    "backend": "All checks passed! app tests scripts",
+    "bot_and_root": "All checks passed! scripts telegram-review-bot/bot telegram-review-bot/tests tests"
+  },
+  "warning_details": "Pydantic UnsupportedFieldAttributeWarning in dependency annotations",
+  "initial_harness_error": "Bot runtime image has no pytest; use existing bot-tests image. No product test failures.",
+  "backend_before_format_patch": {
+    "passed": 256,
+    "skipped": 0,
+    "failed": 0,
+    "seconds": 7.19,
+    "warnings": 2,
+    "command": "python -m pytest -q -p no:cacheprovider tests",
+    "runtime": "localhost/llm-service:v1 with current repository mounted read-only; dedicated postgres:16-alpine test database"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "started_at": "2026-11-03T16:21:34.987246+00:00",
+  "source_freeze": "protocol.json",
+  "review_model": "qwen2.5:14b",
+  "agent_model": "qwen3:latest",
+  "reindex": false,
+  "threshold": 0.5,
+  "collection": "corporate_rag_rules_v3",
+  "corpus_chunks": 1818,
+  "review_concurrency": 1,
+  "bot_mode": "production HTTP API, polling/broadcasts disabled, synthetic Bot token",
+  "llm_substitutions": false,
+  "retriever_substitutions": false,
+  "database_substitutions": false,
+  "images_rebuilt": false,
+  "ansible_version": "core 2.18.18",
+  "ansible_target": "container-local localhost, no network or host writes",
+  "ollama": {
+    "version": "0.40.6"
+  },
+  "review_bot-app-1": {
+    "image": "dd4dee4136b1b16790d4787f56b2925b88aa19570396ccac04dfa20f8c7ae7f5",
+    "environment": {
+      "OBSERVABILITY_INCLUDE_CONTENT": "false",
+      "DEFAULT_MODEL": "qwen3:latest",
+      "LLM_NUM_CTX": "8192",
+      "CHAT_REPOSITORY": "postgres",
+      "PHOENIX_TRACING_ENABLED": "false",
+      "RAG_SCORE_THRESHOLD": "0.5",
+      "RAG_COLLECTION": "corporate_rag_rules_v3",
+      "AGENT_CHECKPOINTER": "postgres",
+      "REVIEW_MODEL": "qwen2.5:14b"
+    }
+  },
+  "review-acceptance-bot-api": {
+    "image": "f4cec34b9016c7e3a04e0c19b15939ef0fa9dc0a5d2d49f66c047fa6520a770b",
+    "environment": {
+      "DEFAULT_MODEL": "qwen3:latest",
+      "REVIEW_MODEL": "qwen2.5:14b",
+      "RAG_COLLECTION": "corporate_rag_rules_v3",
+      "LLM_NUM_CTX": "8192",
+      "OBSERVABILITY_INCLUDE_CONTENT": "false"
+    }
+  },
+  "source_unchanged_after_runs": true,
+  "agent_telemetry_correlation": "Dedicated run time interval plus redacted user_id [INN]; PII scrubber masks synthetic numeric owner. No other user requests in this isolated acceptance session."
+}

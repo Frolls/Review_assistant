@@ -1,0 +1,563 @@
+[
+  {
+    "status": 200,
+    "response_start_ms": 2.71,
+    "event": "http_response_started",
+    "request_id": "5a1769c3a15e",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:17:53.995467Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 299.76,
+    "usage_available": true,
+    "usage.prompt_tokens": 364,
+    "usage.completion_tokens": 6,
+    "usage.total_tokens": 370,
+    "event": "model.call",
+    "request_id": "5a1769c3a15e",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:17:54.503838Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 4145.84,
+    "usage_available": true,
+    "usage.prompt_tokens": 863,
+    "usage.completion_tokens": 178,
+    "usage.total_tokens": 1041,
+    "event": "model.call",
+    "request_id": "5a1769c3a15e",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:17:58.761694Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 681.58,
+    "usage_available": true,
+    "usage.prompt_tokens": 769,
+    "usage.completion_tokens": 19,
+    "usage.total_tokens": 788,
+    "event": "model.call",
+    "request_id": "5a1769c3a15e",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:17:59.444808Z"
+  },
+  {
+    "request_id": "5a1769c3a15e",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 5516.64,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:17:59.509408Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.29,
+    "event": "http_response_started",
+    "request_id": "514db7a39b20",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:17:59.527128Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 989.03,
+    "usage_available": true,
+    "usage.prompt_tokens": 343,
+    "usage.completion_tokens": 40,
+    "usage.total_tokens": 383,
+    "event": "model.call",
+    "request_id": "514db7a39b20",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:00.578614Z"
+  },
+  {
+    "request_id": "514db7a39b20",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 1114.18,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:18:00.639025Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.01,
+    "event": "http_response_started",
+    "request_id": "c494bc430e3f",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:00.675092Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 697.26,
+    "usage_available": true,
+    "usage.prompt_tokens": 322,
+    "usage.completion_tokens": 29,
+    "usage.total_tokens": 351,
+    "event": "model.call",
+    "request_id": "c494bc430e3f",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:01.431552Z"
+  },
+  {
+    "request_id": "c494bc430e3f",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 895.64,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:18:01.568731Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.05,
+    "event": "http_response_started",
+    "request_id": "9fcf50d0ef9d",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:01.586545Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 418.17,
+    "usage_available": true,
+    "usage.prompt_tokens": 380,
+    "usage.completion_tokens": 13,
+    "usage.total_tokens": 393,
+    "event": "model.call",
+    "request_id": "9fcf50d0ef9d",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:02.064730Z"
+  },
+  {
+    "request_id": "9fcf50d0ef9d",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 596.5,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:18:02.180997Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 3.15,
+    "event": "http_response_started",
+    "request_id": "81544cb30ee9",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:02.218740Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 374.19,
+    "usage_available": true,
+    "usage.prompt_tokens": 329,
+    "usage.completion_tokens": 13,
+    "usage.total_tokens": 342,
+    "event": "model.call",
+    "request_id": "81544cb30ee9",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:02.655518Z"
+  },
+  {
+    "request_id": "81544cb30ee9",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 500.14,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:18:02.715741Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.34,
+    "event": "http_response_started",
+    "request_id": "b4551376e449",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:02.753542Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 370.95,
+    "usage_available": true,
+    "usage.prompt_tokens": 330,
+    "usage.completion_tokens": 13,
+    "usage.total_tokens": 343,
+    "event": "model.call",
+    "request_id": "b4551376e449",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:03.185030Z"
+  },
+  {
+    "request_id": "b4551376e449",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 493.53,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:18:03.244732Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.01,
+    "event": "http_response_started",
+    "request_id": "0902e43214d5",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:03.289884Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 350.34,
+    "usage_available": true,
+    "usage.prompt_tokens": 386,
+    "usage.completion_tokens": 9,
+    "usage.total_tokens": 395,
+    "event": "model.call",
+    "request_id": "0902e43214d5",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:03.698307Z"
+  },
+  {
+    "request_id": "0902e43214d5",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 511.46,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:18:03.799348Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.14,
+    "event": "http_response_started",
+    "request_id": "c9896c34cdd5",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:03.835138Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 440.2,
+    "usage_available": true,
+    "usage.prompt_tokens": 316,
+    "usage.completion_tokens": 17,
+    "usage.total_tokens": 333,
+    "event": "model.call",
+    "request_id": "c9896c34cdd5",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:04.335107Z"
+  },
+  {
+    "request_id": "c9896c34cdd5",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 560.88,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:18:04.393875Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.28,
+    "event": "http_response_started",
+    "request_id": "6b5313eaf8e0",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:04.431632Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 393.1,
+    "usage_available": true,
+    "usage.prompt_tokens": 334,
+    "usage.completion_tokens": 14,
+    "usage.total_tokens": 348,
+    "event": "model.call",
+    "request_id": "6b5313eaf8e0",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:04.886594Z"
+  },
+  {
+    "request_id": "6b5313eaf8e0",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 468.14,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:18:04.897490Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 6.39,
+    "event": "http_response_started",
+    "request_id": "33adf4342956",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:04.939497Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 769.63,
+    "usage_available": true,
+    "usage.prompt_tokens": 433,
+    "usage.completion_tokens": 28,
+    "usage.total_tokens": 461,
+    "event": "model.call",
+    "request_id": "33adf4342956",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:05.769197Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 563.04,
+    "usage_available": true,
+    "usage.prompt_tokens": 331,
+    "usage.completion_tokens": 13,
+    "usage.total_tokens": 344,
+    "event": "model.call",
+    "request_id": "33adf4342956",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:06.338093Z"
+  },
+  {
+    "request_id": "33adf4342956",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 1521.33,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:18:06.454447Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.3,
+    "event": "http_response_started",
+    "request_id": "45aca582ea3c",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:06.491830Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 837.77,
+    "usage_available": true,
+    "usage.prompt_tokens": 324,
+    "usage.completion_tokens": 34,
+    "usage.total_tokens": 358,
+    "event": "model.call",
+    "request_id": "45aca582ea3c",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:07.393552Z"
+  },
+  {
+    "request_id": "45aca582ea3c",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 915.62,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:18:07.405159Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.35,
+    "event": "http_response_started",
+    "request_id": "0d22191ac57b",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:07.443619Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 695.22,
+    "usage_available": true,
+    "usage.prompt_tokens": 326,
+    "usage.completion_tokens": 28,
+    "usage.total_tokens": 354,
+    "event": "model.call",
+    "request_id": "0d22191ac57b",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:18:08.200380Z"
+  },
+  {
+    "request_id": "0d22191ac57b",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 819.18,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:18:08.260454Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.68,
+    "event": "http_response_started",
+    "request_id": "30086df742d0",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:08.390573Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 556.21,
+    "usage_available": true,
+    "usage.prompt_tokens": 400,
+    "usage.completion_tokens": 18,
+    "usage.total_tokens": 418,
+    "event": "model.call",
+    "request_id": "30086df742d0",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:08.980449Z"
+  },
+  {
+    "request_id": "30086df742d0",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 654.8,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:19:09.042701Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.08,
+    "event": "http_response_started",
+    "request_id": "df65a82c8025",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:09.078724Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 459.28,
+    "usage_available": true,
+    "usage.prompt_tokens": 307,
+    "usage.completion_tokens": 18,
+    "usage.total_tokens": 325,
+    "event": "model.call",
+    "request_id": "df65a82c8025",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:09.542753Z"
+  },
+  {
+    "request_id": "df65a82c8025",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 525.95,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:19:09.602599Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.15,
+    "event": "http_response_started",
+    "request_id": "999db645eedd",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:09.639904Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 222.63,
+    "usage_available": true,
+    "usage.prompt_tokens": 274,
+    "usage.completion_tokens": 7,
+    "usage.total_tokens": 281,
+    "event": "model.call",
+    "request_id": "999db645eedd",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:09.866900Z"
+  },
+  {
+    "request_id": "999db645eedd",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 288.44,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:19:09.926198Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.09,
+    "event": "http_response_started",
+    "request_id": "a19134399167",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:09.963543Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 374.07,
+    "usage_available": true,
+    "usage.prompt_tokens": 390,
+    "usage.completion_tokens": 10,
+    "usage.total_tokens": 400,
+    "event": "model.call",
+    "request_id": "a19134399167",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:10.342760Z"
+  },
+  {
+    "request_id": "a19134399167",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 442.16,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:19:10.403628Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.27,
+    "event": "http_response_started",
+    "request_id": "45dbf61e6633",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:10.440909Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 256.54,
+    "usage_available": true,
+    "usage.prompt_tokens": 299,
+    "usage.completion_tokens": 10,
+    "usage.total_tokens": 309,
+    "event": "model.call",
+    "request_id": "45dbf61e6633",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:10.702226Z"
+  },
+  {
+    "request_id": "45dbf61e6633",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 322.83,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:19:10.761469Z"
+  },
+  {
+    "status": 200,
+    "response_start_ms": 2.12,
+    "event": "http_response_started",
+    "request_id": "a12b13acfa1f",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:10.799000Z"
+  },
+  {
+    "model": "review-context-dc37a066192437ac:ctx8192",
+    "prompt_version": "review-2026-11-03-v12",
+    "latency_ms": 267.03,
+    "usage_available": true,
+    "usage.prompt_tokens": 282,
+    "usage.completion_tokens": 10,
+    "usage.total_tokens": 292,
+    "event": "model.call",
+    "request_id": "a12b13acfa1f",
+    "user_id": "code-review-eval-1417d0523cc143cfa008699f4c9237d4",
+    "timestamp": "2026-11-03T17:19:11.071748Z"
+  },
+  {
+    "request_id": "a12b13acfa1f",
+    "status": 200,
+    "complete": true,
+    "response_total_ms": 334.55,
+    "event": "http_response_finished",
+    "timestamp": "2026-11-03T17:19:11.131428Z"
+  }
+]

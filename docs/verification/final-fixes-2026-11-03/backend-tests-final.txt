@@ -1,0 +1,12 @@
+........................................................................ [ 28%]
+........................................................................ [ 56%]
+........................................................................ [ 84%]
+.........................................                                [100%]
+=============================== warnings summary ===============================
+../app/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2274
+../app/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2274
+  /app/.venv/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2274: UnsupportedFieldAttributeWarning: The 'validate_default' attribute with value True was provided to the `Field()` function, which has no effect in the context it was used. 'validate_default' is field-specific metadata, and can only be attached to a model field using `Annotated` metadata or by assignment. This may have happened because an `Annotated` type alias using the `type` statement was used, or if the `Field()` function was attached to a single member of a union type.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+257 passed, 2 warnings in 11.10s

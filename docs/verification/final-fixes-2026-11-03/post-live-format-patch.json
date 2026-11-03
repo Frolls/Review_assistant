@@ -1,0 +1,8 @@
+{
+  "recorded_at": "2026-11-03T17:39:06.847198+00:00",
+  "reason": "A singleton list such as [7] in a rendered diagnostic could be misread as source citation 7. Render input values as inline code, already excluded by citation validation. No retrieval, model settings, rules or interpreter behavior changed.",
+  "file": "Review_bot/app/services/review_contracts.py",
+  "before_sha256": "d465d349b5e7e37f3de7a712bed4bec57676ee1c7a78ebf813ae22a7017fe3ef",
+  "after_sha256": "3c7078f1c863572728c3f76a635d7b31ff929d3403ea22010d50379ee3308413",
+  "validation": "test_single_item_example_is_data_not_an_unknown_citation plus full backend suite; prior live results apply to the frozen pre-format-patch version."
+}

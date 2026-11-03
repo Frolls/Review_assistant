@@ -54,6 +54,7 @@ async def get_chat_service(
             openai_enabled=settings.moderation_openai_enabled,
         ),
         model=settings.default_model,
+        request_timeout=settings.request_timeout,
         vision_model=settings.vision_model,
         num_ctx=settings.llm_num_ctx,
         context_strategy=settings.chat_context_strategy,

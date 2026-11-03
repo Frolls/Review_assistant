@@ -1,0 +1,50 @@
+{
+  "recorded_at": "2026-11-03T17:26:07.957953+00:00",
+  "source_freeze": "protocol-v12.json",
+  "source_unchanged_after_runs": true,
+  "review_model": "qwen2.5:14b",
+  "agent_model": "qwen3:latest",
+  "reindex": false,
+  "vector_collection": "corporate_rag_rules_v3",
+  "vector_chunks": 1818,
+  "exact_catalogue_rules": 4,
+  "review_concurrency": 1,
+  "images_rebuilt": false,
+  "runtime": "existing images with read-only current app source and verified tokenizer cache",
+  "bot_mode": "real HTTP API without polling, broadcasts or positive resume; synthetic token",
+  "ansible": "core 2.18.18; container-local localhost, no network, read-only host files",
+  "agent_telemetry_correlation": "Dedicated run interval and PII-redacted user_id [INN]; no other user requests in the interval.",
+  "test_harness_notes": [
+    "Initial bot pytest attempt used runtime image without pytest; rerun in existing bot-tests image passed.",
+    "v11 regression failure retained; production v12 frozen before fresh outputs."
+  ],
+  "review_bot-app-1": {
+    "image": "dd4dee4136b1b16790d4787f56b2925b88aa19570396ccac04dfa20f8c7ae7f5",
+    "environment": {
+      "OBSERVABILITY_INCLUDE_CONTENT": "false",
+      "DEFAULT_MODEL": "qwen3:latest",
+      "LLM_NUM_CTX": "8192",
+      "CHAT_REPOSITORY": "postgres",
+      "PHOENIX_TRACING_ENABLED": "false",
+      "RAG_SCORE_THRESHOLD": "0.5",
+      "RAG_COLLECTION": "corporate_rag_rules_v3",
+      "AGENT_CHECKPOINTER": "postgres",
+      "REVIEW_MODEL": "qwen2.5:14b"
+    }
+  },
+  "review-final-bot-api": {
+    "image": "f4cec34b9016c7e3a04e0c19b15939ef0fa9dc0a5d2d49f66c047fa6520a770b",
+    "environment": {
+      "LLM_NUM_CTX": "8192",
+      "REVIEW_MODEL": "qwen2.5:14b",
+      "OBSERVABILITY_INCLUDE_CONTENT": "false",
+      "RAG_COLLECTION": "corporate_rag_rules_v3",
+      "DEFAULT_MODEL": "qwen3:latest"
+    }
+  },
+  "ollama": {
+    "version": "0.40.6"
+  },
+  "cpu": "AMD Ryzen 9 9950X 16-Core Processor",
+  "memtotal_kib": 129219368
+}

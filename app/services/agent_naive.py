@@ -48,11 +48,8 @@ def run_agent(task: str, max_steps: int = 6) -> dict:
     for step in range(max_steps):
         started = time.perf_counter()
         try:
-            provider_options = (
-                {"extra_body": {"think": False}}
-                if "11434" in settings.openai_base_url
-                else {}
-            )
+            from app.services.ollama import model_options
+            provider_options = model_options(settings.openai_base_url)
             response = client.chat.completions.create(
                 model=settings.default_model,
                 messages=messages,

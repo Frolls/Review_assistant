@@ -1,0 +1,16 @@
+{
+  "frozen_at": "2026-11-03T17:33:17.364170+00:00",
+  "sha256": "520aaa8652e63ea516595b74adfd852aa2e77803d203aa1f45d64c4feeba28b8",
+  "replaces": [
+    {
+      "dataset": "regression-v12",
+      "case": "event_queue-clean"
+    },
+    {
+      "dataset": "fresh",
+      "case": "cache_map-clean"
+    }
+  ],
+  "reason": "Original clean fixtures omitted the optional keyword argument although the task required in-place modification when it is supplied. Treat as ambiguous ground truth; preserve original answers and replace only these fixtures with fully compliant functions. Production code unchanged.",
+  "protocol": "Run both replacements once, keep all 38 observed v12 answers, report quality on 36 valid fixtures. Each final set consists of 17 original cases and one corrected clean fixture. Replacements authored after earlier outputs; no production tuning."
+}

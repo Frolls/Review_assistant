@@ -1,0 +1,4 @@
+{
+  "status": "harness failure before agent turn",
+  "error": "Rootless container uid 1000 could not write bind-mounted audit/results directory; bot health audit middleware returned 500. No model turn or external effect. Rerun with container uid 0 (mapped to host user)."
+}

@@ -1,0 +1,176 @@
+[
+  {
+    "id": "event_queue-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Без явно переданного queue каждый вызов должен создавать независимый список; явно переданный список изменяется на месте.",
+    "code": "def enqueue(event, *, queue=[]):\n    queue.append(event)\n    return queue\n",
+    "expected_defects": [
+      "mutable-default"
+    ],
+    "reference_fix": "def enqueue(event, *, queue=None):\n    if queue is None:\n        queue = []\n    queue.append(event)\n    return queue\n"
+  },
+  {
+    "id": "event_queue-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Без явно переданного queue каждый вызов должен создавать независимый список; явно переданный список изменяется на месте.",
+    "code": "def enqueue(event, *, queue=None):\n    if queue is None:\n        queue = []\n    queue.append(event)\n    return queue\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "event_queue-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Без явно переданного queue каждый вызов должен создавать независимый список; явно переданный список изменяется на месте.",
+    "code": "def enqueue(event):\n    return [event]\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "json_import-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Самодостаточный модуль должен разобрать JSON-строку без NameError. Никаких скрытых глобальных переменных нет.",
+    "code": "def decode_config(payload):\n    return json.loads(payload)\n",
+    "expected_defects": [
+      "undefined-name"
+    ],
+    "reference_fix": "import json\n\ndef decode_config(payload):\n    return json.loads(payload)\n"
+  },
+  {
+    "id": "json_import-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Самодостаточный модуль должен разобрать JSON-строку без NameError. Никаких скрытых глобальных переменных нет.",
+    "code": "import json\n\ndef decode_config(payload):\n    return json.loads(payload)\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "json_import-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Самодостаточный модуль должен разобрать JSON-строку без NameError. Никаких скрытых глобальных переменных нет.",
+    "code": "from json import loads\n\ndef decode_config(payload):\n    return loads(payload)\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "finally_override-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Возвращать обратное число; при делении на ноль ZeroDivisionError должен дойти до вызывающего кода.",
+    "code": "def reciprocal(value):\n    try:\n        return 1 / value\n    finally:\n        return 0\n",
+    "expected_defects": [
+      "finally-suppresses-result-and-error"
+    ],
+    "reference_fix": "def reciprocal(value):\n    return 1 / value\n"
+  },
+  {
+    "id": "finally_override-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Возвращать обратное число; при делении на ноль ZeroDivisionError должен дойти до вызывающего кода.",
+    "code": "def reciprocal(value):\n    return 1 / value\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "finally_override-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Возвращать обратное число; при делении на ноль ZeroDivisionError должен дойти до вызывающего кода.",
+    "code": "def reciprocal(value):\n    if value == 0:\n        raise ZeroDivisionError(\"zero\")\n    return 1 / value\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "mean_contract-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Для непустого списка чисел вернуть арифметическое среднее. Например, [2, 8] должно давать 5.",
+    "code": "def average(values):\n    return sum(values) / (len(values) + 1)\n",
+    "expected_defects": [
+      "incorrect-denominator"
+    ],
+    "reference_fix": "def average(values):\n    return sum(values) / len(values)\n"
+  },
+  {
+    "id": "mean_contract-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Для непустого списка чисел вернуть арифметическое среднее. Например, [2, 8] должно давать 5.",
+    "code": "def average(values):\n    return sum(values) / len(values)\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "mean_contract-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Для непустого списка чисел вернуть арифметическое среднее. Например, [2, 8] должно давать 5.",
+    "code": "from statistics import mean\n\ndef average(values):\n    return mean(values)\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "archive_directory-defect",
+    "kind": "defect",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Каталог /tmp/review-acceptance-archive должен создаваться без ошибки при повторном запуске. Исходно /tmp существует.",
+    "code": "- name: Prepare archive directory\n  ansible.builtin.shell:\n    cmd: mkdir /tmp/review-acceptance-archive\n",
+    "expected_defects": [
+      "non-idempotent-shell"
+    ],
+    "reference_fix": "- name: Prepare archive directory\n  ansible.builtin.file:\n    path: /tmp/review-acceptance-archive\n    state: directory\n    mode: \"0700\"\n"
+  },
+  {
+    "id": "archive_directory-fixed",
+    "kind": "fixed",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Каталог /tmp/review-acceptance-archive должен создаваться без ошибки при повторном запуске. Исходно /tmp существует.",
+    "code": "- name: Prepare archive directory\n  ansible.builtin.file:\n    path: /tmp/review-acceptance-archive\n    state: directory\n    mode: \"0700\"\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "archive_directory-clean",
+    "kind": "clean",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Проверка существования каталога не должна менять систему.",
+    "code": "- name: Inspect archive directory\n  ansible.builtin.stat:\n    path: /tmp/review-acceptance-archive\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "nested_secret-defect",
+    "kind": "defect",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: deploy_password — секрет. Его нельзя выводить в лог при диагностике. Проверяй наследование no_log у block.",
+    "code": "- name: Deployment diagnostics\n  block:\n    - name: Inspect credential\n      ansible.builtin.debug:\n        var: deploy_password\n  no_log: false\n",
+    "expected_defects": [
+      "secret-debug"
+    ],
+    "reference_fix": "- name: Deployment diagnostics\n  block:\n    - name: Inspect credential\n      ansible.builtin.debug:\n        var: deploy_password\n  no_log: true\n"
+  },
+  {
+    "id": "nested_secret-fixed",
+    "kind": "fixed",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: deploy_password — секрет. Его нельзя выводить в лог при диагностике. Проверяй наследование no_log у block.",
+    "code": "- name: Deployment diagnostics\n  block:\n    - name: Inspect credential\n      ansible.builtin.debug:\n        var: deploy_password\n  no_log: true\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "nested_secret-clean",
+    "kind": "clean",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: deploy_password — секрет. Его нельзя выводить в лог при диагностике. Проверяй наследование no_log у block.",
+    "code": "- name: Public diagnostics\n  ansible.builtin.debug:\n    msg: Deployment diagnostics ready\n",
+    "expected_defects": [],
+    "reference_fix": null
+  }
+]

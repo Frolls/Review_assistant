@@ -13,6 +13,8 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage, RemoveMessage
 from langgraph.types import Command
+from app.observability.streaming import with_heartbeat, remaining_turn_time
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 _locks: WeakValueDictionary[str, asyncio.Lock] = WeakValueDictionary()
@@ -239,7 +241,8 @@ async def stream_agent(
             lock.release()
 
     return StreamingResponse(
-        event_stream(),
+        with_heartbeat(event_stream(), deadline=remaining_turn_time(request), heartbeat=_sse("progress", {"stage": "processing"}),
+                       timeout_event=_sse("error", {"message": "Превышено время обработки запроса агента."})),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -268,7 +271,7 @@ async def review_agent(payload: AgentReviewRequest, request: Request) -> dict[st
         "final_answer": "",
         "handoff_count": 0,
     }
-    async with request.app.state.llm_semaphore:
+    async with asyncio.timeout(180), request.app.state.llm_semaphore:
         values = await graph.ainvoke(initial, config=config)
     answer = values.get("final_answer", "")
     if not (await moderator.check_output(answer)).allowed:
@@ -287,3 +290,25 @@ async def pending_action(request: Request, thread_id: str = "telegram-actions"):
         raise HTTPException(status_code=503, detail="Agent unavailable")
     snapshot = await graph.aget_state({"configurable": {"thread_id": _owned_thread(request, thread_id)}})
     return {"pending": snapshot.values.get("pending_action") if snapshot.next else None}
+
+
+async def clear_agent_thread(request: Request, thread_id: str, *, clear_chat=None) -> None:
+    graph = getattr(request.app.state, "agent_graph", None)
+    if graph is None:
+        raise HTTPException(status_code=503, detail="Agent unavailable")
+    owned = _owned_thread(request, thread_id)
+    lock = _thread_lock(owned)
+    if lock.locked():
+        raise HTTPException(status_code=409, detail="Дождитесь завершения текущего запуска агента")
+    async with lock:
+        # Deleting the whole checkpoint thread invalidates every old approval.
+        # Delivery journal is intentionally retained to prevent blind retries.
+        await graph.checkpointer.adelete_thread(owned)
+        if clear_chat is not None:
+            await clear_chat()
+
+
+@router.delete("/history")
+async def clear_agent_history(request: Request, thread_id: str = "telegram-actions"):
+    await clear_agent_thread(request, thread_id)
+    return {"status": "ok", "pending": None}

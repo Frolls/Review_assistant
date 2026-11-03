@@ -1,0 +1,314 @@
+{
+  "quality_annotation": "Automated rubric-based evaluation, not blind human review",
+  "latency_percentile_method": "median; p95 nearest rank, n=9 implies maximum",
+  "resources_scope": "host-wide; desktop and other processes included; GPU sensor energy is not wall-plug energy",
+  "runs": {
+    "baseline": {
+      "metrics": {
+        "precision": 1.0,
+        "recall": 0.6666666666666666,
+        "clean_false_positive_rate": 0.0,
+        "usable_fix_rate": 0.6666666666666666,
+        "cases": 9
+      },
+      "statuses": {
+        "error": 1,
+        "refused": 6,
+        "answered": 2
+      },
+      "latency_seconds_all": {
+        "n": 9,
+        "mean": 30.76459717033342,
+        "p50": 11.013209643002483,
+        "p95_nearest_rank": 182.84578440399855,
+        "max": 182.84578440399855
+      },
+      "answered_fraction": 0.2222222222222222,
+      "clean_accepted_without_findings": 0,
+      "completed_model_calls": 22,
+      "model_usage_excludes_embeddings_and_incomplete_calls": {
+        "prompt_tokens": 17279,
+        "completion_tokens": 6427,
+        "total_tokens": 23706
+      },
+      "resources": {
+        "duration_seconds": 278.0245988300012,
+        "samples": 546,
+        "host_cpu_percent": {
+          "n": 545,
+          "mean": 10.921249091639657,
+          "p50": 1.9512195121951237,
+          "p95_nearest_rank": 31.174334140435832,
+          "max": 35.86626139817629
+        },
+        "peak_host_ram_gib": 14.90957260131836,
+        "idle_host_ram_gib": 12.882033538818359,
+        "peak_sum_ollama_rss_gib": 3.998821258544922,
+        "gpus": {
+          "card0": {
+            "peak_vram_gib": 0.015590667724609375,
+            "idle_vram_gib": 0.015529632568359375,
+            "busy_percent": {
+              "n": 546,
+              "mean": 0,
+              "p50": 0.0,
+              "p95_nearest_rank": 0,
+              "max": 0
+            },
+            "mean_power_watts_time_weighted": 0.0404157235608425,
+            "peak_power_watts": 0.123,
+            "idle_power_watts": 0.0212,
+            "energy_wh": 0.003121160920432585,
+            "energy_above_idle_wh_estimate": 0.0014839611950940176
+          },
+          "card1": {
+            "peak_vram_gib": 12.22867202758789,
+            "idle_vram_gib": 2.713365173339844,
+            "busy_percent": {
+              "n": 546,
+              "mean": 36.608058608058606,
+              "p50": 7.0,
+              "p95_nearest_rank": 99,
+              "max": 99
+            },
+            "mean_power_watts_time_weighted": 93.21613160144257,
+            "peak_power_watts": 234.0,
+            "idle_power_watts": 32.6,
+            "energy_wh": 7.198746464858751,
+            "energy_above_idle_wh_estimate": 4.68116575514001
+          }
+        },
+        "loaded_models": [
+          {
+            "name": "qwen3:latest",
+            "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+            "context_length": 4096,
+            "size_vram": 5586592726
+          },
+          {
+            "name": "qwen3-embedding:4b",
+            "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+            "context_length": 4096,
+            "size_vram": 3434537287
+          }
+        ]
+      }
+    },
+    "repeat": {
+      "metrics": {
+        "precision": 0.6666666666666666,
+        "recall": 0.6666666666666666,
+        "clean_false_positive_rate": 0.16666666666666666,
+        "usable_fix_rate": 0.6666666666666666,
+        "cases": 9
+      },
+      "statuses": {
+        "answered": 3,
+        "refused": 6
+      },
+      "latency_seconds_all": {
+        "n": 9,
+        "mean": 11.6992332576673,
+        "p50": 10.953392830000666,
+        "p95_nearest_rank": 22.079704986997967,
+        "max": 22.079704986997967
+      },
+      "answered_fraction": 0.3333333333333333,
+      "clean_accepted_without_findings": 0,
+      "completed_model_calls": 25,
+      "model_usage_excludes_embeddings_and_incomplete_calls": {
+        "prompt_tokens": 19181,
+        "completion_tokens": 7486,
+        "total_tokens": 26667
+      },
+      "resources": {
+        "duration_seconds": 106.51808234599957,
+        "samples": 210,
+        "host_cpu_percent": {
+          "n": 209,
+          "mean": 29.307093447084394,
+          "p50": 30.188679245283023,
+          "p95_nearest_rank": 32.138517618469024,
+          "max": 36.81018799272287
+        },
+        "peak_host_ram_gib": 15.497901916503906,
+        "idle_host_ram_gib": 13.680572891235352,
+        "peak_sum_ollama_rss_gib": 5.178073883056641,
+        "gpus": {
+          "card0": {
+            "peak_vram_gib": 0.01555633544921875,
+            "idle_vram_gib": 0.015529632568359375,
+            "busy_percent": {
+              "n": 210,
+              "mean": 0,
+              "p50": 0.0,
+              "p95_nearest_rank": 0,
+              "max": 0
+            },
+            "mean_power_watts_time_weighted": 0.07752059816374562,
+            "peak_power_watts": 0.117,
+            "idle_power_watts": 0.0203,
+            "energy_wh": 0.0022934771384072565,
+            "energy_above_idle_wh_estimate": 0.0016928937191291386
+          },
+          "card1": {
+            "peak_vram_gib": 8.650470733642578,
+            "idle_vram_gib": 2.954541015625,
+            "busy_percent": {
+              "n": 210,
+              "mean": 95.43333333333334,
+              "p50": 99.0,
+              "p95_nearest_rank": 99,
+              "max": 99
+            },
+            "mean_power_watts_time_weighted": 214.38279075516354,
+            "peak_power_watts": 227.0,
+            "idle_power_watts": 34.4,
+            "energy_wh": 6.342598497838488,
+            "energy_above_idle_wh_estimate": 5.324861077978033
+          }
+        },
+        "loaded_models": [
+          {
+            "name": "qwen3:latest",
+            "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+            "context_length": 4096,
+            "size_vram": 5586592726
+          }
+        ]
+      }
+    }
+  },
+  "inference": {
+    "false": {
+      "repetitions": 3,
+      "wall_seconds": {
+        "n": 3,
+        "mean": 1.1734210830012064,
+        "p50": 1.1733492130006198,
+        "p95_nearest_rank": 1.1780944020028983,
+        "max": 1.1780944020028983
+      },
+      "decode_tokens_per_second": {
+        "n": 3,
+        "mean": 79.82538462392282,
+        "p50": 79.83623159102329,
+        "p95_nearest_rank": 79.84392248890865,
+        "max": 79.84392248890865
+      },
+      "output_tokens": [
+        92,
+        92,
+        92
+      ],
+      "prompt_tokens": [
+        89,
+        89,
+        89
+      ],
+      "load_seconds": [
+        0.001177927,
+        0.000831215,
+        0.000799955
+      ],
+      "finish_reasons": [
+        "stop",
+        "stop",
+        "stop"
+      ]
+    },
+    "true": {
+      "repetitions": 3,
+      "wall_seconds": {
+        "n": 3,
+        "mean": 4.20681515666729,
+        "p50": 4.204077063001023,
+        "p95_nearest_rank": 4.214607428999443,
+        "max": 4.214607428999443
+      },
+      "decode_tokens_per_second": {
+        "n": 3,
+        "mean": 78.72113032267576,
+        "p50": 78.67790509196705,
+        "p95_nearest_rank": 78.85299333392612,
+        "max": 78.85299333392612
+      },
+      "output_tokens": [
+        329,
+        329,
+        329
+      ],
+      "prompt_tokens": [
+        83,
+        83,
+        83
+      ],
+      "load_seconds": [
+        0.000809395,
+        0.000834945,
+        0.001382928
+      ],
+      "finish_reasons": [
+        "stop",
+        "stop",
+        "stop"
+      ]
+    },
+    "resources": {
+      "duration_seconds": 22.945545456001128,
+      "samples": 46,
+      "host_cpu_percent": {
+        "n": 45,
+        "mean": 30.266062579954287,
+        "p50": 30.4426925409339,
+        "p95_nearest_rank": 31.812652068126525,
+        "max": 32.82674772036474
+      },
+      "peak_host_ram_gib": 15.268287658691406,
+      "idle_host_ram_gib": 14.89047622680664,
+      "peak_sum_ollama_rss_gib": 2.3913803100585938,
+      "gpus": {
+        "card0": {
+          "peak_vram_gib": 0.01555633544921875,
+          "idle_vram_gib": 0.01555633544921875,
+          "busy_percent": {
+            "n": 46,
+            "mean": 0,
+            "p50": 0.0,
+            "p95_nearest_rank": 0,
+            "max": 0
+          },
+          "mean_power_watts_time_weighted": 0.08458310878420408,
+          "peak_power_watts": 0.107,
+          "idle_power_watts": 0.0252,
+          "energy_wh": 0.0005388799897837226,
+          "energy_above_idle_wh_estimate": 0.00037833049074372226
+        },
+        "card1": {
+          "peak_vram_gib": 8.523284912109375,
+          "idle_vram_gib": 8.53608512878418,
+          "busy_percent": {
+            "n": 46,
+            "mean": 94.23913043478261,
+            "p50": 99.0,
+            "p95_nearest_rank": 99,
+            "max": 99
+          },
+          "mean_power_watts_time_weighted": 215.016947481414,
+          "peak_power_watts": 223.0,
+          "idle_power_watts": 52.4,
+          "energy_wh": 1.369875523938534,
+          "energy_above_idle_wh_estimate": 1.0360345021252002
+        }
+      },
+      "loaded_models": [
+        {
+          "name": "qwen3:latest",
+          "digest": "500a1f067a9f782620b40bee6f7b0c89e17ae61f686b92c24933e4ca4b2b8b41",
+          "context_length": 4096,
+          "size_vram": 5586592726
+        }
+      ]
+    }
+  }
+}

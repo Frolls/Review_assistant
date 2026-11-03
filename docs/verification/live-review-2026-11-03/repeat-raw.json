@@ -1,0 +1,5627 @@
+[
+  {
+    "id": "shared_cache-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Вызовы без cache должны возвращать независимые словари.",
+    "code": "def remember(value, cache={}):\n    cache[value] = True\n    return cache\n",
+    "expected_defects": [
+      "mutable-default"
+    ],
+    "reference_fix": "def remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n",
+    "answer": "В коде нарушено требование о независимости словарей при вызовах без `cache`. Использование изменяемого значения по умолчанию (`cache={}`) приводит к тому, что все вызовы функции `remember()` без аргумента `cache` будут использовать один и тот же словарь. Это нарушает ожидание, что вызовы без кэша возвращают независимые словари [1].\n\n**Дефект**:  \nИзменяемый аргумент по умолчанию (`cache={}`) создает общее состояние между вызовами функции, что противоречит требованиям к независимости [1].\n\n**Исправленная версия**:  \n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```\n\n**Обоснование**:  \n- Если `cache` не указан, создается новый словарь для каждого вызова.  \n- Это гарантирует, что вызовы без `cache` возвращают независимые словари [1].",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В"
+      },
+      {
+        "type": "token",
+        "delta": " код"
+      },
+      {
+        "type": "token",
+        "delta": "е"
+      },
+      {
+        "type": "token",
+        "delta": " на"
+      },
+      {
+        "type": "token",
+        "delta": "руш"
+      },
+      {
+        "type": "token",
+        "delta": "ено"
+      },
+      {
+        "type": "token",
+        "delta": " треб"
+      },
+      {
+        "type": "token",
+        "delta": "ование"
+      },
+      {
+        "type": "token",
+        "delta": " о"
+      },
+      {
+        "type": "token",
+        "delta": " н"
+      },
+      {
+        "type": "token",
+        "delta": "ез"
+      },
+      {
+        "type": "token",
+        "delta": "ав"
+      },
+      {
+        "type": "token",
+        "delta": "ис"
+      },
+      {
+        "type": "token",
+        "delta": "им"
+      },
+      {
+        "type": "token",
+        "delta": "ости"
+      },
+      {
+        "type": "token",
+        "delta": " сл"
+      },
+      {
+        "type": "token",
+        "delta": "овар"
+      },
+      {
+        "type": "token",
+        "delta": "ей"
+      },
+      {
+        "type": "token",
+        "delta": " при"
+      },
+      {
+        "type": "token",
+        "delta": " выз"
+      },
+      {
+        "type": "token",
+        "delta": "ова"
+      },
+      {
+        "type": "token",
+        "delta": "х"
+      },
+      {
+        "type": "token",
+        "delta": " без"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "cache"
+      },
+      {
+        "type": "token",
+        "delta": "`."
+      },
+      {
+        "type": "token",
+        "delta": " И"
+      },
+      {
+        "type": "token",
+        "delta": "сп"
+      },
+      {
+        "type": "token",
+        "delta": "ользов"
+      },
+      {
+        "type": "token",
+        "delta": "ание"
+      },
+      {
+        "type": "token",
+        "delta": " измен"
+      },
+      {
+        "type": "token",
+        "delta": "яем"
+      },
+      {
+        "type": "token",
+        "delta": "ого"
+      },
+      {
+        "type": "token",
+        "delta": " значения"
+      },
+      {
+        "type": "token",
+        "delta": " по"
+      },
+      {
+        "type": "token",
+        "delta": " у"
+      },
+      {
+        "type": "token",
+        "delta": "мол"
+      },
+      {
+        "type": "token",
+        "delta": "ч"
+      },
+      {
+        "type": "token",
+        "delta": "анию"
+      },
+      {
+        "type": "token",
+        "delta": " (`"
+      },
+      {
+        "type": "token",
+        "delta": "cache"
+      },
+      {
+        "type": "token",
+        "delta": "={"
+      },
+      {
+        "type": "token",
+        "delta": "}`"
+      },
+      {
+        "type": "token",
+        "delta": ")"
+      },
+      {
+        "type": "token",
+        "delta": " пр"
+      },
+      {
+        "type": "token",
+        "delta": "ив"
+      },
+      {
+        "type": "token",
+        "delta": "од"
+      },
+      {
+        "type": "token",
+        "delta": "ит"
+      },
+      {
+        "type": "token",
+        "delta": " к"
+      },
+      {
+        "type": "token",
+        "delta": " тому"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " что"
+      },
+      {
+        "type": "token",
+        "delta": " все"
+      },
+      {
+        "type": "token",
+        "delta": " выз"
+      },
+      {
+        "type": "token",
+        "delta": "ов"
+      },
+      {
+        "type": "token",
+        "delta": "ы"
+      },
+      {
+        "type": "token",
+        "delta": " функци"
+      },
+      {
+        "type": "token",
+        "delta": "и"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "remember"
+      },
+      {
+        "type": "token",
+        "delta": "()`"
+      },
+      {
+        "type": "token",
+        "delta": " без"
+      },
+      {
+        "type": "token",
+        "delta": " а"
+      },
+      {
+        "type": "token",
+        "delta": "рг"
+      },
+      {
+        "type": "token",
+        "delta": "умент"
+      },
+      {
+        "type": "token",
+        "delta": "а"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "cache"
+      },
+      {
+        "type": "token",
+        "delta": "`"
+      },
+      {
+        "type": "token",
+        "delta": " будут"
+      },
+      {
+        "type": "token",
+        "delta": " использовать"
+      },
+      {
+        "type": "token",
+        "delta": " один"
+      },
+      {
+        "type": "token",
+        "delta": " и"
+      },
+      {
+        "type": "token",
+        "delta": " тот"
+      },
+      {
+        "type": "token",
+        "delta": " же"
+      },
+      {
+        "type": "token",
+        "delta": " сл"
+      },
+      {
+        "type": "token",
+        "delta": "овар"
+      },
+      {
+        "type": "token",
+        "delta": "ь"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": " Это"
+      },
+      {
+        "type": "token",
+        "delta": " на"
+      },
+      {
+        "type": "token",
+        "delta": "руш"
+      },
+      {
+        "type": "token",
+        "delta": "ает"
+      },
+      {
+        "type": "token",
+        "delta": " о"
+      },
+      {
+        "type": "token",
+        "delta": "ж"
+      },
+      {
+        "type": "token",
+        "delta": "ид"
+      },
+      {
+        "type": "token",
+        "delta": "ание"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " что"
+      },
+      {
+        "type": "token",
+        "delta": " выз"
+      },
+      {
+        "type": "token",
+        "delta": "ов"
+      },
+      {
+        "type": "token",
+        "delta": "ы"
+      },
+      {
+        "type": "token",
+        "delta": " без"
+      },
+      {
+        "type": "token",
+        "delta": " к"
+      },
+      {
+        "type": "token",
+        "delta": "э"
+      },
+      {
+        "type": "token",
+        "delta": "ша"
+      },
+      {
+        "type": "token",
+        "delta": " в"
+      },
+      {
+        "type": "token",
+        "delta": "озвращ"
+      },
+      {
+        "type": "token",
+        "delta": "ают"
+      },
+      {
+        "type": "token",
+        "delta": " н"
+      },
+      {
+        "type": "token",
+        "delta": "ез"
+      },
+      {
+        "type": "token",
+        "delta": "ав"
+      },
+      {
+        "type": "token",
+        "delta": "ис"
+      },
+      {
+        "type": "token",
+        "delta": "им"
+      },
+      {
+        "type": "token",
+        "delta": "ые"
+      },
+      {
+        "type": "token",
+        "delta": " сл"
+      },
+      {
+        "type": "token",
+        "delta": "овар"
+      },
+      {
+        "type": "token",
+        "delta": "и"
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "1"
+      },
+      {
+        "type": "token",
+        "delta": "].\n\n"
+      },
+      {
+        "type": "token",
+        "delta": "**"
+      },
+      {
+        "type": "token",
+        "delta": "Д"
+      },
+      {
+        "type": "token",
+        "delta": "е"
+      },
+      {
+        "type": "token",
+        "delta": "ф"
+      },
+      {
+        "type": "token",
+        "delta": "ект"
+      },
+      {
+        "type": "token",
+        "delta": "**:"
+      },
+      {
+        "type": "token",
+        "delta": "  \n"
+      },
+      {
+        "type": "token",
+        "delta": "И"
+      },
+      {
+        "type": "token",
+        "delta": "з"
+      },
+      {
+        "type": "token",
+        "delta": "мен"
+      },
+      {
+        "type": "token",
+        "delta": "яем"
+      },
+      {
+        "type": "token",
+        "delta": "ый"
+      },
+      {
+        "type": "token",
+        "delta": " а"
+      },
+      {
+        "type": "token",
+        "delta": "рг"
+      },
+      {
+        "type": "token",
+        "delta": "умент"
+      },
+      {
+        "type": "token",
+        "delta": " по"
+      },
+      {
+        "type": "token",
+        "delta": " у"
+      },
+      {
+        "type": "token",
+        "delta": "мол"
+      },
+      {
+        "type": "token",
+        "delta": "ч"
+      },
+      {
+        "type": "token",
+        "delta": "анию"
+      },
+      {
+        "type": "token",
+        "delta": " (`"
+      },
+      {
+        "type": "token",
+        "delta": "cache"
+      },
+      {
+        "type": "token",
+        "delta": "={"
+      },
+      {
+        "type": "token",
+        "delta": "}`"
+      },
+      {
+        "type": "token",
+        "delta": ")"
+      },
+      {
+        "type": "token",
+        "delta": " созд"
+      },
+      {
+        "type": "token",
+        "delta": "ает"
+      },
+      {
+        "type": "token",
+        "delta": " общ"
+      },
+      {
+        "type": "token",
+        "delta": "ее"
+      },
+      {
+        "type": "token",
+        "delta": " состояние"
+      },
+      {
+        "type": "token",
+        "delta": " между"
+      },
+      {
+        "type": "token",
+        "delta": " выз"
+      },
+      {
+        "type": "token",
+        "delta": "ов"
+      },
+      {
+        "type": "token",
+        "delta": "ами"
+      },
+      {
+        "type": "token",
+        "delta": " функци"
+      },
+      {
+        "type": "token",
+        "delta": "и"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " что"
+      },
+      {
+        "type": "token",
+        "delta": " против"
+      },
+      {
+        "type": "token",
+        "delta": "ор"
+      },
+      {
+        "type": "token",
+        "delta": "еч"
+      },
+      {
+        "type": "token",
+        "delta": "ит"
+      },
+      {
+        "type": "token",
+        "delta": " требования"
+      },
+      {
+        "type": "token",
+        "delta": "м"
+      },
+      {
+        "type": "token",
+        "delta": " к"
+      },
+      {
+        "type": "token",
+        "delta": " н"
+      },
+      {
+        "type": "token",
+        "delta": "ез"
+      },
+      {
+        "type": "token",
+        "delta": "ав"
+      },
+      {
+        "type": "token",
+        "delta": "ис"
+      },
+      {
+        "type": "token",
+        "delta": "им"
+      },
+      {
+        "type": "token",
+        "delta": "ости"
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "1"
+      },
+      {
+        "type": "token",
+        "delta": "].\n\n"
+      },
+      {
+        "type": "token",
+        "delta": "**"
+      },
+      {
+        "type": "token",
+        "delta": "И"
+      },
+      {
+        "type": "token",
+        "delta": "сп"
+      },
+      {
+        "type": "token",
+        "delta": "рав"
+      },
+      {
+        "type": "token",
+        "delta": "лен"
+      },
+      {
+        "type": "token",
+        "delta": "ная"
+      },
+      {
+        "type": "token",
+        "delta": " вер"
+      },
+      {
+        "type": "token",
+        "delta": "с"
+      },
+      {
+        "type": "token",
+        "delta": "ия"
+      },
+      {
+        "type": "token",
+        "delta": "**:"
+      },
+      {
+        "type": "token",
+        "delta": "  \n"
+      },
+      {
+        "type": "token",
+        "delta": "```"
+      },
+      {
+        "type": "token",
+        "delta": "python"
+      },
+      {
+        "type": "token",
+        "delta": "\n"
+      },
+      {
+        "type": "token",
+        "delta": "def"
+      },
+      {
+        "type": "token",
+        "delta": " remember"
+      },
+      {
+        "type": "token",
+        "delta": "(value"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " cache"
+      },
+      {
+        "type": "token",
+        "delta": "=None"
+      },
+      {
+        "type": "token",
+        "delta": "):\n"
+      },
+      {
+        "type": "token",
+        "delta": "   "
+      },
+      {
+        "type": "token",
+        "delta": " if"
+      },
+      {
+        "type": "token",
+        "delta": " cache"
+      },
+      {
+        "type": "token",
+        "delta": " is"
+      },
+      {
+        "type": "token",
+        "delta": " None"
+      },
+      {
+        "type": "token",
+        "delta": ":\n"
+      },
+      {
+        "type": "token",
+        "delta": "       "
+      },
+      {
+        "type": "token",
+        "delta": " cache"
+      },
+      {
+        "type": "token",
+        "delta": " ="
+      },
+      {
+        "type": "token",
+        "delta": " {}\n"
+      },
+      {
+        "type": "token",
+        "delta": "   "
+      },
+      {
+        "type": "token",
+        "delta": " cache"
+      },
+      {
+        "type": "token",
+        "delta": "[value"
+      },
+      {
+        "type": "token",
+        "delta": "]"
+      },
+      {
+        "type": "token",
+        "delta": " ="
+      },
+      {
+        "type": "token",
+        "delta": " True"
+      },
+      {
+        "type": "token",
+        "delta": "\n"
+      },
+      {
+        "type": "token",
+        "delta": "   "
+      },
+      {
+        "type": "token",
+        "delta": " return"
+      },
+      {
+        "type": "token",
+        "delta": " cache"
+      },
+      {
+        "type": "token",
+        "delta": "\n"
+      },
+      {
+        "type": "token",
+        "delta": "``"
+      },
+      {
+        "type": "token",
+        "delta": "`\n\n"
+      },
+      {
+        "type": "token",
+        "delta": "**"
+      },
+      {
+        "type": "token",
+        "delta": "Об"
+      },
+      {
+        "type": "token",
+        "delta": "основ"
+      },
+      {
+        "type": "token",
+        "delta": "ание"
+      },
+      {
+        "type": "token",
+        "delta": "**:"
+      },
+      {
+        "type": "token",
+        "delta": "  \n"
+      },
+      {
+        "type": "token",
+        "delta": "-"
+      },
+      {
+        "type": "token",
+        "delta": " Если"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "cache"
+      },
+      {
+        "type": "token",
+        "delta": "`"
+      },
+      {
+        "type": "token",
+        "delta": " не"
+      },
+      {
+        "type": "token",
+        "delta": " указан"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " созд"
+      },
+      {
+        "type": "token",
+        "delta": "ается"
+      },
+      {
+        "type": "token",
+        "delta": " новый"
+      },
+      {
+        "type": "token",
+        "delta": " сл"
+      },
+      {
+        "type": "token",
+        "delta": "овар"
+      },
+      {
+        "type": "token",
+        "delta": "ь"
+      },
+      {
+        "type": "token",
+        "delta": " для"
+      },
+      {
+        "type": "token",
+        "delta": " каждого"
+      },
+      {
+        "type": "token",
+        "delta": " выз"
+      },
+      {
+        "type": "token",
+        "delta": "ова"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": "  \n"
+      },
+      {
+        "type": "token",
+        "delta": "-"
+      },
+      {
+        "type": "token",
+        "delta": " Это"
+      },
+      {
+        "type": "token",
+        "delta": " гаранти"
+      },
+      {
+        "type": "token",
+        "delta": "ру"
+      },
+      {
+        "type": "token",
+        "delta": "ет"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " что"
+      },
+      {
+        "type": "token",
+        "delta": " выз"
+      },
+      {
+        "type": "token",
+        "delta": "ов"
+      },
+      {
+        "type": "token",
+        "delta": "ы"
+      },
+      {
+        "type": "token",
+        "delta": " без"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "cache"
+      },
+      {
+        "type": "token",
+        "delta": "`"
+      },
+      {
+        "type": "token",
+        "delta": " в"
+      },
+      {
+        "type": "token",
+        "delta": "озвращ"
+      },
+      {
+        "type": "token",
+        "delta": "ают"
+      },
+      {
+        "type": "token",
+        "delta": " н"
+      },
+      {
+        "type": "token",
+        "delta": "ез"
+      },
+      {
+        "type": "token",
+        "delta": "ав"
+      },
+      {
+        "type": "token",
+        "delta": "ис"
+      },
+      {
+        "type": "token",
+        "delta": "им"
+      },
+      {
+        "type": "token",
+        "delta": "ые"
+      },
+      {
+        "type": "token",
+        "delta": " сл"
+      },
+      {
+        "type": "token",
+        "delta": "овар"
+      },
+      {
+        "type": "token",
+        "delta": "и"
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "1"
+      },
+      {
+        "type": "token",
+        "delta": "]."
+      },
+      {
+        "type": "done",
+        "sources": [
+          {
+            "id": 1,
+            "page": 1,
+            "score": 0.5359,
+            "snippet": "Mutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции. На ревью такое замечание относится к корректности поведения, а не только к стилю.",
+            "file_name": "pep8_style_guide.md"
+          }
+        ],
+        "confident": true,
+        "text": "В коде нарушено требование о независимости словарей при вызовах без `cache`. Использование изменяемого значения по умолчанию (`cache={}`) приводит к тому, что все вызовы функции `remember()` без аргумента `cache` будут использовать один и тот же словарь. Это нарушает ожидание, что вызовы без кэша возвращают независимые словари [1].\n\n**Дефект**:  \nИзменяемый аргумент по умолчанию (`cache={}`) создает общее состояние между вызовами функции, что противоречит требованиям к независимости [1].\n\n**Исправленная версия**:  \n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```\n\n**Обоснование**:  \n- Если `cache` не указан, создается новый словарь для каждого вызова.  \n- Это гарантирует, что вызовы без `cache` возвращают независимые словари [1].",
+        "status": "answered",
+        "message_id": "9e18ecc9-cabd-46cd-b6aa-1c4c7e18754c"
+      }
+    ],
+    "latency_seconds": 13.852501458000916,
+    "started_at": "2026-11-03T09:57:34.937081+00:00",
+    "request_id": "8830d6c8de55",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.004666632001317
+      },
+      {
+        "type": "token",
+        "seconds": 13.83967003699945
+      },
+      {
+        "type": "token",
+        "seconds": 13.839691806999326
+      },
+      {
+        "type": "token",
+        "seconds": 13.839784207000775
+      },
+      {
+        "type": "token",
+        "seconds": 13.839795927000523
+      },
+      {
+        "type": "token",
+        "seconds": 13.839805866999086
+      },
+      {
+        "type": "token",
+        "seconds": 13.839815067000018
+      },
+      {
+        "type": "token",
+        "seconds": 13.839856487000361
+      },
+      {
+        "type": "token",
+        "seconds": 13.839867307000532
+      },
+      {
+        "type": "token",
+        "seconds": 13.839926996999566
+      },
+      {
+        "type": "token",
+        "seconds": 13.839965326998936
+      },
+      {
+        "type": "token",
+        "seconds": 13.840049717000511
+      },
+      {
+        "type": "token",
+        "seconds": 13.840084696999838
+      },
+      {
+        "type": "token",
+        "seconds": 13.840151057000185
+      },
+      {
+        "type": "token",
+        "seconds": 13.840188846999808
+      },
+      {
+        "type": "token",
+        "seconds": 13.84025440700134
+      },
+      {
+        "type": "token",
+        "seconds": 13.840292797001894
+      },
+      {
+        "type": "token",
+        "seconds": 13.840369697001734
+      },
+      {
+        "type": "token",
+        "seconds": 13.840405667000596
+      },
+      {
+        "type": "token",
+        "seconds": 13.84046449699963
+      },
+      {
+        "type": "token",
+        "seconds": 13.840506027001538
+      },
+      {
+        "type": "token",
+        "seconds": 13.840570987002138
+      },
+      {
+        "type": "token",
+        "seconds": 13.840608667000197
+      },
+      {
+        "type": "token",
+        "seconds": 13.840673267000966
+      },
+      {
+        "type": "token",
+        "seconds": 13.84071313700042
+      },
+      {
+        "type": "token",
+        "seconds": 13.84077699699992
+      },
+      {
+        "type": "token",
+        "seconds": 13.840813947001152
+      },
+      {
+        "type": "token",
+        "seconds": 13.840878577000694
+      },
+      {
+        "type": "token",
+        "seconds": 13.840916697001376
+      },
+      {
+        "type": "token",
+        "seconds": 13.840981517001637
+      },
+      {
+        "type": "token",
+        "seconds": 13.841019347000838
+      },
+      {
+        "type": "token",
+        "seconds": 13.841082947001269
+      },
+      {
+        "type": "token",
+        "seconds": 13.841118567001104
+      },
+      {
+        "type": "token",
+        "seconds": 13.841183297001407
+      },
+      {
+        "type": "token",
+        "seconds": 13.841220597001666
+      },
+      {
+        "type": "token",
+        "seconds": 13.841284877002181
+      },
+      {
+        "type": "token",
+        "seconds": 13.841325107001467
+      },
+      {
+        "type": "token",
+        "seconds": 13.84139155700177
+      },
+      {
+        "type": "token",
+        "seconds": 13.84143014700021
+      },
+      {
+        "type": "token",
+        "seconds": 13.841502837000007
+      },
+      {
+        "type": "token",
+        "seconds": 13.841540057001112
+      },
+      {
+        "type": "token",
+        "seconds": 13.841605647001415
+      },
+      {
+        "type": "token",
+        "seconds": 13.841643807001674
+      },
+      {
+        "type": "token",
+        "seconds": 13.841707876999862
+      },
+      {
+        "type": "token",
+        "seconds": 13.84174572700067
+      },
+      {
+        "type": "token",
+        "seconds": 13.841809297002328
+      },
+      {
+        "type": "token",
+        "seconds": 13.841846907002036
+      },
+      {
+        "type": "token",
+        "seconds": 13.841911567000352
+      },
+      {
+        "type": "token",
+        "seconds": 13.841949206998834
+      },
+      {
+        "type": "token",
+        "seconds": 13.842014007001126
+      },
+      {
+        "type": "token",
+        "seconds": 13.842051286999776
+      },
+      {
+        "type": "token",
+        "seconds": 13.842114817001857
+      },
+      {
+        "type": "token",
+        "seconds": 13.842152946999704
+      },
+      {
+        "type": "token",
+        "seconds": 13.842215957000008
+      },
+      {
+        "type": "token",
+        "seconds": 13.842253106999124
+      },
+      {
+        "type": "token",
+        "seconds": 13.842315386998962
+      },
+      {
+        "type": "token",
+        "seconds": 13.842353387000912
+      },
+      {
+        "type": "token",
+        "seconds": 13.842420017001132
+      },
+      {
+        "type": "token",
+        "seconds": 13.842460217001644
+      },
+      {
+        "type": "token",
+        "seconds": 13.842524697000044
+      },
+      {
+        "type": "token",
+        "seconds": 13.842562417001318
+      },
+      {
+        "type": "token",
+        "seconds": 13.842626036999718
+      },
+      {
+        "type": "token",
+        "seconds": 13.84266389700133
+      },
+      {
+        "type": "token",
+        "seconds": 13.842727457002184
+      },
+      {
+        "type": "token",
+        "seconds": 13.842765597000835
+      },
+      {
+        "type": "token",
+        "seconds": 13.842829967001308
+      },
+      {
+        "type": "token",
+        "seconds": 13.842866457001946
+      },
+      {
+        "type": "token",
+        "seconds": 13.842930527000135
+      },
+      {
+        "type": "token",
+        "seconds": 13.84296836700014
+      },
+      {
+        "type": "token",
+        "seconds": 13.84303275700222
+      },
+      {
+        "type": "token",
+        "seconds": 13.843069537000702
+      },
+      {
+        "type": "token",
+        "seconds": 13.843133097001555
+      },
+      {
+        "type": "token",
+        "seconds": 13.843170366999402
+      },
+      {
+        "type": "token",
+        "seconds": 13.843234477000806
+      },
+      {
+        "type": "token",
+        "seconds": 13.843272217000049
+      },
+      {
+        "type": "token",
+        "seconds": 13.843334787001368
+      },
+      {
+        "type": "token",
+        "seconds": 13.843372606999765
+      },
+      {
+        "type": "token",
+        "seconds": 13.843438087002141
+      },
+      {
+        "type": "token",
+        "seconds": 13.843477037000412
+      },
+      {
+        "type": "token",
+        "seconds": 13.843539946999954
+      },
+      {
+        "type": "token",
+        "seconds": 13.843576707000466
+      },
+      {
+        "type": "token",
+        "seconds": 13.843640127000981
+      },
+      {
+        "type": "token",
+        "seconds": 13.84367694699904
+      },
+      {
+        "type": "token",
+        "seconds": 13.84373985700222
+      },
+      {
+        "type": "token",
+        "seconds": 13.84377684699939
+      },
+      {
+        "type": "token",
+        "seconds": 13.843841126999905
+      },
+      {
+        "type": "token",
+        "seconds": 13.84387894700194
+      },
+      {
+        "type": "token",
+        "seconds": 13.843943866999325
+      },
+      {
+        "type": "token",
+        "seconds": 13.843982706999668
+      },
+      {
+        "type": "token",
+        "seconds": 13.844043477001833
+      },
+      {
+        "type": "token",
+        "seconds": 13.844080347000272
+      },
+      {
+        "type": "token",
+        "seconds": 13.844143147001887
+      },
+      {
+        "type": "token",
+        "seconds": 13.844180056999903
+      },
+      {
+        "type": "token",
+        "seconds": 13.84424503700211
+      },
+      {
+        "type": "token",
+        "seconds": 13.84428436700182
+      },
+      {
+        "type": "token",
+        "seconds": 13.844349487000727
+      },
+      {
+        "type": "token",
+        "seconds": 13.84438796700124
+      },
+      {
+        "type": "token",
+        "seconds": 13.844457617000444
+      },
+      {
+        "type": "token",
+        "seconds": 13.844497177000449
+      },
+      {
+        "type": "token",
+        "seconds": 13.844560796998849
+      },
+      {
+        "type": "token",
+        "seconds": 13.844598196999868
+      },
+      {
+        "type": "token",
+        "seconds": 13.84466134700051
+      },
+      {
+        "type": "token",
+        "seconds": 13.84469893700225
+      },
+      {
+        "type": "token",
+        "seconds": 13.844761096999719
+      },
+      {
+        "type": "token",
+        "seconds": 13.84479914700205
+      },
+      {
+        "type": "token",
+        "seconds": 13.844861827001296
+      },
+      {
+        "type": "token",
+        "seconds": 13.844898797000496
+      },
+      {
+        "type": "token",
+        "seconds": 13.844962487000885
+      },
+      {
+        "type": "token",
+        "seconds": 13.845001657002285
+      },
+      {
+        "type": "token",
+        "seconds": 13.84507321700221
+      },
+      {
+        "type": "token",
+        "seconds": 13.84510958700048
+      },
+      {
+        "type": "token",
+        "seconds": 13.845174147001671
+      },
+      {
+        "type": "token",
+        "seconds": 13.845210857001803
+      },
+      {
+        "type": "token",
+        "seconds": 13.845274617000541
+      },
+      {
+        "type": "token",
+        "seconds": 13.84531115700156
+      },
+      {
+        "type": "token",
+        "seconds": 13.845374456999707
+      },
+      {
+        "type": "token",
+        "seconds": 13.845412227001361
+      },
+      {
+        "type": "token",
+        "seconds": 13.845479866999085
+      },
+      {
+        "type": "token",
+        "seconds": 13.845515067001543
+      },
+      {
+        "type": "token",
+        "seconds": 13.845578557000408
+      },
+      {
+        "type": "token",
+        "seconds": 13.845616327002062
+      },
+      {
+        "type": "token",
+        "seconds": 13.845678097000928
+      },
+      {
+        "type": "token",
+        "seconds": 13.845713106999028
+      },
+      {
+        "type": "token",
+        "seconds": 13.845776307000051
+      },
+      {
+        "type": "token",
+        "seconds": 13.845813477000775
+      },
+      {
+        "type": "token",
+        "seconds": 13.845877267001924
+      },
+      {
+        "type": "token",
+        "seconds": 13.845918386999983
+      },
+      {
+        "type": "token",
+        "seconds": 13.84597760700126
+      },
+      {
+        "type": "token",
+        "seconds": 13.846014386999741
+      },
+      {
+        "type": "token",
+        "seconds": 13.846091016999708
+      },
+      {
+        "type": "token",
+        "seconds": 13.846125416999712
+      },
+      {
+        "type": "token",
+        "seconds": 13.846177677001833
+      },
+      {
+        "type": "token",
+        "seconds": 13.846215207002388
+      },
+      {
+        "type": "token",
+        "seconds": 13.846278046999942
+      },
+      {
+        "type": "token",
+        "seconds": 13.846316907001892
+      },
+      {
+        "type": "token",
+        "seconds": 13.846383897001942
+      },
+      {
+        "type": "token",
+        "seconds": 13.846419277000678
+      },
+      {
+        "type": "token",
+        "seconds": 13.846482007000304
+      },
+      {
+        "type": "token",
+        "seconds": 13.846518757000013
+      },
+      {
+        "type": "token",
+        "seconds": 13.846581417001289
+      },
+      {
+        "type": "token",
+        "seconds": 13.846618397001293
+      },
+      {
+        "type": "token",
+        "seconds": 13.846682457002316
+      },
+      {
+        "type": "token",
+        "seconds": 13.846719727000163
+      },
+      {
+        "type": "token",
+        "seconds": 13.846782276999875
+      },
+      {
+        "type": "token",
+        "seconds": 13.846820507002121
+      },
+      {
+        "type": "token",
+        "seconds": 13.846883007001452
+      },
+      {
+        "type": "token",
+        "seconds": 13.84692068699951
+      },
+      {
+        "type": "token",
+        "seconds": 13.846983747000195
+      },
+      {
+        "type": "token",
+        "seconds": 13.847019487002399
+      },
+      {
+        "type": "token",
+        "seconds": 13.847083307002322
+      },
+      {
+        "type": "token",
+        "seconds": 13.847120137001184
+      },
+      {
+        "type": "token",
+        "seconds": 13.847183727000811
+      },
+      {
+        "type": "token",
+        "seconds": 13.847222577001958
+      },
+      {
+        "type": "token",
+        "seconds": 13.847290747002262
+      },
+      {
+        "type": "token",
+        "seconds": 13.84732811700087
+      },
+      {
+        "type": "token",
+        "seconds": 13.84739357700164
+      },
+      {
+        "type": "token",
+        "seconds": 13.847431587000756
+      },
+      {
+        "type": "token",
+        "seconds": 13.847499527000764
+      },
+      {
+        "type": "token",
+        "seconds": 13.847536086999753
+      },
+      {
+        "type": "token",
+        "seconds": 13.847599567001453
+      },
+      {
+        "type": "token",
+        "seconds": 13.847636926999257
+      },
+      {
+        "type": "token",
+        "seconds": 13.847701547001634
+      },
+      {
+        "type": "token",
+        "seconds": 13.84773895699982
+      },
+      {
+        "type": "token",
+        "seconds": 13.847803276999912
+      },
+      {
+        "type": "token",
+        "seconds": 13.847841656999663
+      },
+      {
+        "type": "token",
+        "seconds": 13.84790553700077
+      },
+      {
+        "type": "token",
+        "seconds": 13.847940157000266
+      },
+      {
+        "type": "token",
+        "seconds": 13.847993808001775
+      },
+      {
+        "type": "token",
+        "seconds": 13.84802832800051
+      },
+      {
+        "type": "token",
+        "seconds": 13.848074808000092
+      },
+      {
+        "type": "token",
+        "seconds": 13.848109118000139
+      },
+      {
+        "type": "token",
+        "seconds": 13.848155468000186
+      },
+      {
+        "type": "token",
+        "seconds": 13.848189897998964
+      },
+      {
+        "type": "token",
+        "seconds": 13.848239057999308
+      },
+      {
+        "type": "token",
+        "seconds": 13.848273737999989
+      },
+      {
+        "type": "token",
+        "seconds": 13.848321397999825
+      },
+      {
+        "type": "token",
+        "seconds": 13.848356017999322
+      },
+      {
+        "type": "token",
+        "seconds": 13.848405638000258
+      },
+      {
+        "type": "token",
+        "seconds": 13.848437087999628
+      },
+      {
+        "type": "token",
+        "seconds": 13.848505738002132
+      },
+      {
+        "type": "token",
+        "seconds": 13.848537578000105
+      },
+      {
+        "type": "token",
+        "seconds": 13.848601768000663
+      },
+      {
+        "type": "token",
+        "seconds": 13.84863163800037
+      },
+      {
+        "type": "token",
+        "seconds": 13.848734457998944
+      },
+      {
+        "type": "token",
+        "seconds": 13.848802087999502
+      },
+      {
+        "type": "token",
+        "seconds": 13.848812658001407
+      },
+      {
+        "type": "token",
+        "seconds": 13.848820998002338
+      },
+      {
+        "type": "token",
+        "seconds": 13.848859818001074
+      },
+      {
+        "type": "token",
+        "seconds": 13.848867947999679
+      },
+      {
+        "type": "token",
+        "seconds": 13.84890171799998
+      },
+      {
+        "type": "token",
+        "seconds": 13.84893264800121
+      },
+      {
+        "type": "token",
+        "seconds": 13.84898967800109
+      },
+      {
+        "type": "token",
+        "seconds": 13.849021588001051
+      },
+      {
+        "type": "token",
+        "seconds": 13.849067647999618
+      },
+      {
+        "type": "token",
+        "seconds": 13.849098258000595
+      },
+      {
+        "type": "token",
+        "seconds": 13.849147667999205
+      },
+      {
+        "type": "token",
+        "seconds": 13.84917853799925
+      },
+      {
+        "type": "token",
+        "seconds": 13.8492300479993
+      },
+      {
+        "type": "token",
+        "seconds": 13.849260838000191
+      },
+      {
+        "type": "token",
+        "seconds": 13.849320268000156
+      },
+      {
+        "type": "token",
+        "seconds": 13.84935693800071
+      },
+      {
+        "type": "token",
+        "seconds": 13.849396228000842
+      },
+      {
+        "type": "token",
+        "seconds": 13.849429517998942
+      },
+      {
+        "type": "token",
+        "seconds": 13.849483998001233
+      },
+      {
+        "type": "token",
+        "seconds": 13.849516868001956
+      },
+      {
+        "type": "token",
+        "seconds": 13.849572818002343
+      },
+      {
+        "type": "token",
+        "seconds": 13.84960812799909
+      },
+      {
+        "type": "token",
+        "seconds": 13.849642037999729
+      },
+      {
+        "type": "token",
+        "seconds": 13.849675268000283
+      },
+      {
+        "type": "token",
+        "seconds": 13.849806178001018
+      },
+      {
+        "type": "token",
+        "seconds": 13.84987247800018
+      },
+      {
+        "type": "token",
+        "seconds": 13.849885748000816
+      },
+      {
+        "type": "token",
+        "seconds": 13.849895388000732
+      },
+      {
+        "type": "token",
+        "seconds": 13.849938768002175
+      },
+      {
+        "type": "token",
+        "seconds": 13.84994806800023
+      },
+      {
+        "type": "token",
+        "seconds": 13.850295137999638
+      },
+      {
+        "type": "token",
+        "seconds": 13.850304007999512
+      },
+      {
+        "type": "token",
+        "seconds": 13.85031226800129
+      },
+      {
+        "type": "token",
+        "seconds": 13.85031976800019
+      },
+      {
+        "type": "token",
+        "seconds": 13.850326808002137
+      },
+      {
+        "type": "token",
+        "seconds": 13.85033366800053
+      },
+      {
+        "type": "token",
+        "seconds": 13.850348097999813
+      },
+      {
+        "type": "token",
+        "seconds": 13.850356007998926
+      },
+      {
+        "type": "token",
+        "seconds": 13.85040041799948
+      },
+      {
+        "type": "token",
+        "seconds": 13.850409168000624
+      },
+      {
+        "type": "token",
+        "seconds": 13.850447397999233
+      },
+      {
+        "type": "token",
+        "seconds": 13.85045670800173
+      },
+      {
+        "type": "token",
+        "seconds": 13.850489438002114
+      },
+      {
+        "type": "token",
+        "seconds": 13.850520288000553
+      },
+      {
+        "type": "token",
+        "seconds": 13.850572318002378
+      },
+      {
+        "type": "token",
+        "seconds": 13.85060472799887
+      },
+      {
+        "type": "token",
+        "seconds": 13.850653617999342
+      },
+      {
+        "type": "token",
+        "seconds": 13.85068482800125
+      },
+      {
+        "type": "token",
+        "seconds": 13.850736188000155
+      },
+      {
+        "type": "token",
+        "seconds": 13.850766878000286
+      },
+      {
+        "type": "token",
+        "seconds": 13.850819457999023
+      },
+      {
+        "type": "token",
+        "seconds": 13.850849798000127
+      },
+      {
+        "type": "token",
+        "seconds": 13.850902398000471
+      },
+      {
+        "type": "token",
+        "seconds": 13.850932757999544
+      },
+      {
+        "type": "token",
+        "seconds": 13.850986958001158
+      },
+      {
+        "type": "token",
+        "seconds": 13.851017918001162
+      },
+      {
+        "type": "token",
+        "seconds": 13.851070438002353
+      },
+      {
+        "type": "token",
+        "seconds": 13.851101108000876
+      },
+      {
+        "type": "token",
+        "seconds": 13.851153907999105
+      },
+      {
+        "type": "token",
+        "seconds": 13.851184318002197
+      },
+      {
+        "type": "token",
+        "seconds": 13.851237208000384
+      },
+      {
+        "type": "token",
+        "seconds": 13.851267238002038
+      },
+      {
+        "type": "token",
+        "seconds": 13.851320408000902
+      },
+      {
+        "type": "token",
+        "seconds": 13.85135106800226
+      },
+      {
+        "type": "token",
+        "seconds": 13.851404267999897
+      },
+      {
+        "type": "token",
+        "seconds": 13.851434288000746
+      },
+      {
+        "type": "token",
+        "seconds": 13.851491527999315
+      },
+      {
+        "type": "token",
+        "seconds": 13.85152325799936
+      },
+      {
+        "type": "token",
+        "seconds": 13.851575847998902
+      },
+      {
+        "type": "token",
+        "seconds": 13.851606447999075
+      },
+      {
+        "type": "token",
+        "seconds": 13.851658137999038
+      },
+      {
+        "type": "token",
+        "seconds": 13.851687678001326
+      },
+      {
+        "type": "token",
+        "seconds": 13.851740168000106
+      },
+      {
+        "type": "token",
+        "seconds": 13.851770347999263
+      },
+      {
+        "type": "token",
+        "seconds": 13.851824077999481
+      },
+      {
+        "type": "token",
+        "seconds": 13.85185399799957
+      },
+      {
+        "type": "token",
+        "seconds": 13.851906767999026
+      },
+      {
+        "type": "token",
+        "seconds": 13.851978798000346
+      },
+      {
+        "type": "token",
+        "seconds": 13.85204529800103
+      },
+      {
+        "type": "token",
+        "seconds": 13.852075128001161
+      },
+      {
+        "type": "done",
+        "seconds": 13.852290548002202
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1543,
+          "prompt_tokens": 893,
+          "completion_tokens": 650
+        }
+      ],
+      "rag_sources": [
+        {
+          "id": 1,
+          "page": 1,
+          "score": 0.5359,
+          "snippet": "Mutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции. На ревью такое замечание относится к корректности поведения, а не только к стилю.",
+          "file_name": "pep8_style_guide.md"
+        }
+      ],
+      "rag_confident": true,
+      "review_answer": {
+        "text": "В коде нарушено требование о независимости словарей при вызовах без `cache`. Использование изменяемого значения по умолчанию (`cache={}`) приводит к тому, что все вызовы функции `remember()` без аргумента `cache` будут использовать один и тот же словарь. Это нарушает ожидание, что вызовы без кэша возвращают независимые словари [1].\n\n**Дефект**:  \nИзменяемый аргумент по умолчанию (`cache={}`) создает общее состояние между вызовами функции, что противоречит требованиям к независимости [1].\n\n**Исправленная версия**:  \n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```\n\n**Обоснование**:  \n- Если `cache` не указан, создается новый словарь для каждого вызова.  \n- Это гарантирует, что вызовы без `cache` возвращают независимые словари [1].",
+        "status": "answered",
+        "sources": [
+          {
+            "id": 1,
+            "page": 1,
+            "score": 0.5359,
+            "snippet": "Mutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции. На ревью такое замечание относится к корректности поведения, а не только к стилю.",
+            "file_name": "pep8_style_guide.md"
+          }
+        ],
+        "confident": true
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [
+      true
+    ],
+    "review": {
+      "true_positives": null,
+      "false_positives": null,
+      "false_negatives": null,
+      "fix_usable": null,
+      "notes": ""
+    }
+  },
+  {
+    "id": "shared_cache-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Вызовы без cache должны возвращать независимые словари.",
+    "code": "def remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "message_id": "ad9f3701-1076-462b-a434-590156e0f3f1"
+      }
+    ],
+    "latency_seconds": 18.313125969001703,
+    "started_at": "2026-11-03T09:57:48.810099+00:00",
+    "request_id": "57af9186cfc8",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.00437493299978
+      },
+      {
+        "type": "token",
+        "seconds": 18.312808819002385
+      },
+      {
+        "type": "done",
+        "seconds": 18.312910319000366
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 2009,
+          "prompt_tokens": 903,
+          "completion_tokens": 1106
+        }
+      ],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": null,
+      "false_positives": null,
+      "false_negatives": null,
+      "fix_usable": null,
+      "notes": ""
+    }
+  },
+  {
+    "id": "shared_cache-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом.",
+    "code": "def remember(value):\n    return {value: True}\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "message_id": "1f2f92b9-6986-4bef-b941-f9dc37e02ad8"
+      }
+    ],
+    "latency_seconds": 10.617267525001807,
+    "started_at": "2026-11-03T09:58:07.156834+00:00",
+    "request_id": "f3a7a9256fdf",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.004286669001885
+      },
+      {
+        "type": "token",
+        "seconds": 10.61693917500088
+      },
+      {
+        "type": "done",
+        "seconds": 10.617039525001019
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1552,
+          "prompt_tokens": 1070,
+          "completion_tokens": 482
+        }
+      ],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": null,
+      "false_positives": null,
+      "false_negatives": null,
+      "fix_usable": null,
+      "notes": ""
+    }
+  },
+  {
+    "id": "file_handle-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Файл должен закрываться, в том числе при исключении чтения.",
+    "code": "def first_line(path):\n    stream = open(path, encoding=\"utf-8\")\n    return stream.readline()\n",
+    "expected_defects": [
+      "unclosed-file"
+    ],
+    "reference_fix": "def first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n",
+    "answer": "В коде отсутствует гарантия закрытия файла, включая случаи исключения чтения. Это нарушает правило из [3], где подчеркивается использование контекстных менеджеров для детерминированного освобождения ресурсов. В [4] и [5] демонстрируется шаблон закрытия файлов через `with`, который обеспечивает закрытие даже при ошибке.\n\n**Исправленная версия:**\n```python\ndef first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n```\n\nПри использовании `with` файл автоматически закрывается после завершения блока, включая случаи исключения.",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В"
+      },
+      {
+        "type": "token",
+        "delta": " код"
+      },
+      {
+        "type": "token",
+        "delta": "е"
+      },
+      {
+        "type": "token",
+        "delta": " от"
+      },
+      {
+        "type": "token",
+        "delta": "сут"
+      },
+      {
+        "type": "token",
+        "delta": "ств"
+      },
+      {
+        "type": "token",
+        "delta": "ует"
+      },
+      {
+        "type": "token",
+        "delta": " гаранти"
+      },
+      {
+        "type": "token",
+        "delta": "я"
+      },
+      {
+        "type": "token",
+        "delta": " зак"
+      },
+      {
+        "type": "token",
+        "delta": "ры"
+      },
+      {
+        "type": "token",
+        "delta": "ти"
+      },
+      {
+        "type": "token",
+        "delta": "я"
+      },
+      {
+        "type": "token",
+        "delta": " файла"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " в"
+      },
+      {
+        "type": "token",
+        "delta": "ключ"
+      },
+      {
+        "type": "token",
+        "delta": "ая"
+      },
+      {
+        "type": "token",
+        "delta": " случа"
+      },
+      {
+        "type": "token",
+        "delta": "и"
+      },
+      {
+        "type": "token",
+        "delta": " ис"
+      },
+      {
+        "type": "token",
+        "delta": "ключения"
+      },
+      {
+        "type": "token",
+        "delta": " чт"
+      },
+      {
+        "type": "token",
+        "delta": "ения"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": " Это"
+      },
+      {
+        "type": "token",
+        "delta": " на"
+      },
+      {
+        "type": "token",
+        "delta": "руш"
+      },
+      {
+        "type": "token",
+        "delta": "ает"
+      },
+      {
+        "type": "token",
+        "delta": " правило"
+      },
+      {
+        "type": "token",
+        "delta": " из"
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "3"
+      },
+      {
+        "type": "token",
+        "delta": "],"
+      },
+      {
+        "type": "token",
+        "delta": " где"
+      },
+      {
+        "type": "token",
+        "delta": " под"
+      },
+      {
+        "type": "token",
+        "delta": "чер"
+      },
+      {
+        "type": "token",
+        "delta": "ки"
+      },
+      {
+        "type": "token",
+        "delta": "в"
+      },
+      {
+        "type": "token",
+        "delta": "ается"
+      },
+      {
+        "type": "token",
+        "delta": " использование"
+      },
+      {
+        "type": "token",
+        "delta": " конт"
+      },
+      {
+        "type": "token",
+        "delta": "ек"
+      },
+      {
+        "type": "token",
+        "delta": "ст"
+      },
+      {
+        "type": "token",
+        "delta": "ных"
+      },
+      {
+        "type": "token",
+        "delta": " мен"
+      },
+      {
+        "type": "token",
+        "delta": "ед"
+      },
+      {
+        "type": "token",
+        "delta": "ж"
+      },
+      {
+        "type": "token",
+        "delta": "ер"
+      },
+      {
+        "type": "token",
+        "delta": "ов"
+      },
+      {
+        "type": "token",
+        "delta": " для"
+      },
+      {
+        "type": "token",
+        "delta": " дет"
+      },
+      {
+        "type": "token",
+        "delta": "ер"
+      },
+      {
+        "type": "token",
+        "delta": "мин"
+      },
+      {
+        "type": "token",
+        "delta": "ирован"
+      },
+      {
+        "type": "token",
+        "delta": "ного"
+      },
+      {
+        "type": "token",
+        "delta": " ос"
+      },
+      {
+        "type": "token",
+        "delta": "в"
+      },
+      {
+        "type": "token",
+        "delta": "об"
+      },
+      {
+        "type": "token",
+        "delta": "ож"
+      },
+      {
+        "type": "token",
+        "delta": "д"
+      },
+      {
+        "type": "token",
+        "delta": "ения"
+      },
+      {
+        "type": "token",
+        "delta": " р"
+      },
+      {
+        "type": "token",
+        "delta": "ес"
+      },
+      {
+        "type": "token",
+        "delta": "урс"
+      },
+      {
+        "type": "token",
+        "delta": "ов"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": " В"
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "4"
+      },
+      {
+        "type": "token",
+        "delta": "]"
+      },
+      {
+        "type": "token",
+        "delta": " и"
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "5"
+      },
+      {
+        "type": "token",
+        "delta": "]"
+      },
+      {
+        "type": "token",
+        "delta": " дем"
+      },
+      {
+        "type": "token",
+        "delta": "он"
+      },
+      {
+        "type": "token",
+        "delta": "ст"
+      },
+      {
+        "type": "token",
+        "delta": "ри"
+      },
+      {
+        "type": "token",
+        "delta": "ру"
+      },
+      {
+        "type": "token",
+        "delta": "ется"
+      },
+      {
+        "type": "token",
+        "delta": " ш"
+      },
+      {
+        "type": "token",
+        "delta": "аб"
+      },
+      {
+        "type": "token",
+        "delta": "лон"
+      },
+      {
+        "type": "token",
+        "delta": " зак"
+      },
+      {
+        "type": "token",
+        "delta": "ры"
+      },
+      {
+        "type": "token",
+        "delta": "ти"
+      },
+      {
+        "type": "token",
+        "delta": "я"
+      },
+      {
+        "type": "token",
+        "delta": " файл"
+      },
+      {
+        "type": "token",
+        "delta": "ов"
+      },
+      {
+        "type": "token",
+        "delta": " через"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "with"
+      },
+      {
+        "type": "token",
+        "delta": "`,"
+      },
+      {
+        "type": "token",
+        "delta": " который"
+      },
+      {
+        "type": "token",
+        "delta": " обеспеч"
+      },
+      {
+        "type": "token",
+        "delta": "ивает"
+      },
+      {
+        "type": "token",
+        "delta": " зак"
+      },
+      {
+        "type": "token",
+        "delta": "ры"
+      },
+      {
+        "type": "token",
+        "delta": "ти"
+      },
+      {
+        "type": "token",
+        "delta": "е"
+      },
+      {
+        "type": "token",
+        "delta": " даже"
+      },
+      {
+        "type": "token",
+        "delta": " при"
+      },
+      {
+        "type": "token",
+        "delta": " ошиб"
+      },
+      {
+        "type": "token",
+        "delta": "ке"
+      },
+      {
+        "type": "token",
+        "delta": ".\n\n"
+      },
+      {
+        "type": "token",
+        "delta": "**"
+      },
+      {
+        "type": "token",
+        "delta": "И"
+      },
+      {
+        "type": "token",
+        "delta": "сп"
+      },
+      {
+        "type": "token",
+        "delta": "рав"
+      },
+      {
+        "type": "token",
+        "delta": "лен"
+      },
+      {
+        "type": "token",
+        "delta": "ная"
+      },
+      {
+        "type": "token",
+        "delta": " вер"
+      },
+      {
+        "type": "token",
+        "delta": "с"
+      },
+      {
+        "type": "token",
+        "delta": "ия"
+      },
+      {
+        "type": "token",
+        "delta": ":"
+      },
+      {
+        "type": "token",
+        "delta": "**\n"
+      },
+      {
+        "type": "token",
+        "delta": "```"
+      },
+      {
+        "type": "token",
+        "delta": "python"
+      },
+      {
+        "type": "token",
+        "delta": "\n"
+      },
+      {
+        "type": "token",
+        "delta": "def"
+      },
+      {
+        "type": "token",
+        "delta": " first"
+      },
+      {
+        "type": "token",
+        "delta": "_line"
+      },
+      {
+        "type": "token",
+        "delta": "(path"
+      },
+      {
+        "type": "token",
+        "delta": "):\n"
+      },
+      {
+        "type": "token",
+        "delta": "   "
+      },
+      {
+        "type": "token",
+        "delta": " with"
+      },
+      {
+        "type": "token",
+        "delta": " open"
+      },
+      {
+        "type": "token",
+        "delta": "(path"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " encoding"
+      },
+      {
+        "type": "token",
+        "delta": "=\""
+      },
+      {
+        "type": "token",
+        "delta": "utf"
+      },
+      {
+        "type": "token",
+        "delta": "-"
+      },
+      {
+        "type": "token",
+        "delta": "8"
+      },
+      {
+        "type": "token",
+        "delta": "\")"
+      },
+      {
+        "type": "token",
+        "delta": " as"
+      },
+      {
+        "type": "token",
+        "delta": " stream"
+      },
+      {
+        "type": "token",
+        "delta": ":\n"
+      },
+      {
+        "type": "token",
+        "delta": "       "
+      },
+      {
+        "type": "token",
+        "delta": " return"
+      },
+      {
+        "type": "token",
+        "delta": " stream"
+      },
+      {
+        "type": "token",
+        "delta": ".readline"
+      },
+      {
+        "type": "token",
+        "delta": "()\n"
+      },
+      {
+        "type": "token",
+        "delta": "``"
+      },
+      {
+        "type": "token",
+        "delta": "`\n\n"
+      },
+      {
+        "type": "token",
+        "delta": "П"
+      },
+      {
+        "type": "token",
+        "delta": "ри"
+      },
+      {
+        "type": "token",
+        "delta": " использов"
+      },
+      {
+        "type": "token",
+        "delta": "ании"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "with"
+      },
+      {
+        "type": "token",
+        "delta": "`"
+      },
+      {
+        "type": "token",
+        "delta": " файл"
+      },
+      {
+        "type": "token",
+        "delta": " автомат"
+      },
+      {
+        "type": "token",
+        "delta": "ически"
+      },
+      {
+        "type": "token",
+        "delta": " зак"
+      },
+      {
+        "type": "token",
+        "delta": "рыв"
+      },
+      {
+        "type": "token",
+        "delta": "ается"
+      },
+      {
+        "type": "token",
+        "delta": " после"
+      },
+      {
+        "type": "token",
+        "delta": " зав"
+      },
+      {
+        "type": "token",
+        "delta": "ер"
+      },
+      {
+        "type": "token",
+        "delta": "ш"
+      },
+      {
+        "type": "token",
+        "delta": "ения"
+      },
+      {
+        "type": "token",
+        "delta": " бл"
+      },
+      {
+        "type": "token",
+        "delta": "ока"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " в"
+      },
+      {
+        "type": "token",
+        "delta": "ключ"
+      },
+      {
+        "type": "token",
+        "delta": "ая"
+      },
+      {
+        "type": "token",
+        "delta": " случа"
+      },
+      {
+        "type": "token",
+        "delta": "и"
+      },
+      {
+        "type": "token",
+        "delta": " ис"
+      },
+      {
+        "type": "token",
+        "delta": "ключения"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "done",
+        "sources": [
+          {
+            "id": 3,
+            "page": 1,
+            "score": 0.5301,
+            "snippet": "def sin(x):\n    with localcontext(ExtendedContext):\n        # Rest of sin calculation algorithm\n        # uses the Extended Context from the\n        # General Decimal Arithmetic Specification\n    return +s # Convert result to normal context\n\n\n\nA generic “object-closing” context manager:class closing(object):\n    def __init__(self, obj):\n        self.obj = obj\n    def __enter__(self):\n        return self.obj\n    def __exit__(self, *exc_info):\n        try:\n            close_it = self.obj.close\n        except AttributeError:\n            pass\n        else:\n            close_it()\n\n\nThis can be used to deterministically close anything with a\nclose method, be it file, generator, or something else. It\ncan even be used when the object isn’t guaranteed to require\nclosing (e.g., a function that accepts an arbitrary\niterable):\n# emulate opening():\nwith closing(open(\"argument.txt\")) as contradiction:\n   for line in contradiction:\n       print line",
+            "file_name": "pep-0343-v1.0.html"
+          },
+          {
+            "id": 4,
+            "page": 1,
+            "score": 0.5277,
+            "snippet": "A variant on opened() that also returns an error condition:@contextmanager\ndef opened_w_error(filename, mode=\"r\"):\n    try:\n        f = open(filename, mode)\n    except IOError, err:\n        yield None, err\n    else:\n        try:\n            yield f, None\n        finally:\n            f.close()\n\n\nUsed as follows:\nwith opened_w_error(\"/etc/passwd\", \"a\") as (f, err):\n    if err:\n        print \"IOError:\", err\n    else:\n        f.write(\"guido::0:0::/:/bin/sh\\n\")\n\n\n\nAnother useful example would be an operation that blocks\nsignals.  The use could be like this:import signal\n\nwith signal.blocked():\n    # code executed without worrying about signals\n\n\nAn optional argument might be a list of signals to be blocked;\nby default all signals are blocked.  The implementation is left\nas an exercise to the reader.",
+            "file_name": "pep-0343-v1.0.html"
+          },
+          {
+            "id": 5,
+            "page": 1,
+            "score": 0.5271,
+            "snippet": "Used as follows:\nwith locked(myLock):\n    # Code here executes with myLock held.  The lock is\n    # guaranteed to be released when the block is left (even\n    # if via return or by an uncaught exception).\n\n\n\nA template for opening a file that ensures the file is closed\nwhen the block is left:@contextmanager\ndef opened(filename, mode=\"r\"):\n    f = open(filename, mode)\n    try:\n        yield f\n    finally:\n        f.close()\n\n\nUsed as follows:\nwith opened(\"/etc/passwd\") as f:\n    for line in f:\n        print line.rstrip()\n\n\n\nA template for committing or rolling back a database\ntransaction:@contextmanager\ndef transaction(db):\n    db.begin()\n    try:\n        yield None\n    except:\n        db.rollback()\n        raise\n    else:\n        db.commit()",
+            "file_name": "pep-0343-v1.0.html"
+          }
+        ],
+        "confident": true,
+        "text": "В коде отсутствует гарантия закрытия файла, включая случаи исключения чтения. Это нарушает правило из [3], где подчеркивается использование контекстных менеджеров для детерминированного освобождения ресурсов. В [4] и [5] демонстрируется шаблон закрытия файлов через `with`, который обеспечивает закрытие даже при ошибке.\n\n**Исправленная версия:**\n```python\ndef first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n```\n\nПри использовании `with` файл автоматически закрывается после завершения блока, включая случаи исключения.",
+        "status": "answered",
+        "message_id": "cb7e2901-b9aa-4569-b5f9-d80a63c13cdf"
+      }
+    ],
+    "latency_seconds": 12.732725115001813,
+    "started_at": "2026-11-03T09:58:17.806715+00:00",
+    "request_id": "ec4e14bc4056",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.003850687000522
+      },
+      {
+        "type": "token",
+        "seconds": 12.72508625500268
+      },
+      {
+        "type": "token",
+        "seconds": 12.72511794499951
+      },
+      {
+        "type": "token",
+        "seconds": 12.725255915000162
+      },
+      {
+        "type": "token",
+        "seconds": 12.72527566500139
+      },
+      {
+        "type": "token",
+        "seconds": 12.725292215000081
+      },
+      {
+        "type": "token",
+        "seconds": 12.725307194999914
+      },
+      {
+        "type": "token",
+        "seconds": 12.725321005000296
+      },
+      {
+        "type": "token",
+        "seconds": 12.725328595002793
+      },
+      {
+        "type": "token",
+        "seconds": 12.725375545000134
+      },
+      {
+        "type": "token",
+        "seconds": 12.725383355002123
+      },
+      {
+        "type": "token",
+        "seconds": 12.725390555002377
+      },
+      {
+        "type": "token",
+        "seconds": 12.725397595000686
+      },
+      {
+        "type": "token",
+        "seconds": 12.725433735002298
+      },
+      {
+        "type": "token",
+        "seconds": 12.725466595002217
+      },
+      {
+        "type": "token",
+        "seconds": 12.72549977500239
+      },
+      {
+        "type": "token",
+        "seconds": 12.725530765001167
+      },
+      {
+        "type": "token",
+        "seconds": 12.725575374999607
+      },
+      {
+        "type": "token",
+        "seconds": 12.725605175000965
+      },
+      {
+        "type": "token",
+        "seconds": 12.725654105001013
+      },
+      {
+        "type": "token",
+        "seconds": 12.725683725002455
+      },
+      {
+        "type": "token",
+        "seconds": 12.725734875002672
+      },
+      {
+        "type": "token",
+        "seconds": 12.725763984999503
+      },
+      {
+        "type": "token",
+        "seconds": 12.72582263500226
+      },
+      {
+        "type": "token",
+        "seconds": 12.725853784999344
+      },
+      {
+        "type": "token",
+        "seconds": 12.726024505001988
+      },
+      {
+        "type": "token",
+        "seconds": 12.726057014999242
+      },
+      {
+        "type": "token",
+        "seconds": 12.726165475000016
+      },
+      {
+        "type": "token",
+        "seconds": 12.726189715001965
+      },
+      {
+        "type": "token",
+        "seconds": 12.726204995000444
+      },
+      {
+        "type": "token",
+        "seconds": 12.726219765001588
+      },
+      {
+        "type": "token",
+        "seconds": 12.72627524500058
+      },
+      {
+        "type": "token",
+        "seconds": 12.726284005002526
+      },
+      {
+        "type": "token",
+        "seconds": 12.726291984999989
+      },
+      {
+        "type": "token",
+        "seconds": 12.726299375000963
+      },
+      {
+        "type": "token",
+        "seconds": 12.72633354500067
+      },
+      {
+        "type": "token",
+        "seconds": 12.726365995000378
+      },
+      {
+        "type": "token",
+        "seconds": 12.726409875001991
+      },
+      {
+        "type": "token",
+        "seconds": 12.726442114999372
+      },
+      {
+        "type": "token",
+        "seconds": 12.726490004999505
+      },
+      {
+        "type": "token",
+        "seconds": 12.72652075500082
+      },
+      {
+        "type": "token",
+        "seconds": 12.726574765001715
+      },
+      {
+        "type": "token",
+        "seconds": 12.726605855001253
+      },
+      {
+        "type": "token",
+        "seconds": 12.726657035000244
+      },
+      {
+        "type": "token",
+        "seconds": 12.72668642500139
+      },
+      {
+        "type": "token",
+        "seconds": 12.726737475000846
+      },
+      {
+        "type": "token",
+        "seconds": 12.726768025000638
+      },
+      {
+        "type": "token",
+        "seconds": 12.72682668500056
+      },
+      {
+        "type": "token",
+        "seconds": 12.726860965001833
+      },
+      {
+        "type": "token",
+        "seconds": 12.726913225000317
+      },
+      {
+        "type": "token",
+        "seconds": 12.726942544999474
+      },
+      {
+        "type": "token",
+        "seconds": 12.726994594999269
+      },
+      {
+        "type": "token",
+        "seconds": 12.727025905001938
+      },
+      {
+        "type": "token",
+        "seconds": 12.727079985001183
+      },
+      {
+        "type": "token",
+        "seconds": 12.72710992499924
+      },
+      {
+        "type": "token",
+        "seconds": 12.727164485000685
+      },
+      {
+        "type": "token",
+        "seconds": 12.72719592499925
+      },
+      {
+        "type": "token",
+        "seconds": 12.727248195002176
+      },
+      {
+        "type": "token",
+        "seconds": 12.727277674999641
+      },
+      {
+        "type": "token",
+        "seconds": 12.727330665002228
+      },
+      {
+        "type": "token",
+        "seconds": 12.727360255001258
+      },
+      {
+        "type": "token",
+        "seconds": 12.727412665000884
+      },
+      {
+        "type": "token",
+        "seconds": 12.727441685001395
+      },
+      {
+        "type": "token",
+        "seconds": 12.72749311500229
+      },
+      {
+        "type": "token",
+        "seconds": 12.727522215001954
+      },
+      {
+        "type": "token",
+        "seconds": 12.72757555499993
+      },
+      {
+        "type": "token",
+        "seconds": 12.727605825002684
+      },
+      {
+        "type": "token",
+        "seconds": 12.727657344999898
+      },
+      {
+        "type": "token",
+        "seconds": 12.727686135000113
+      },
+      {
+        "type": "token",
+        "seconds": 12.72773955500088
+      },
+      {
+        "type": "token",
+        "seconds": 12.727768545002618
+      },
+      {
+        "type": "token",
+        "seconds": 12.727822774999368
+      },
+      {
+        "type": "token",
+        "seconds": 12.727853135002078
+      },
+      {
+        "type": "token",
+        "seconds": 12.727904485000181
+      },
+      {
+        "type": "token",
+        "seconds": 12.72793395500048
+      },
+      {
+        "type": "token",
+        "seconds": 12.72798439500184
+      },
+      {
+        "type": "token",
+        "seconds": 12.728014115000406
+      },
+      {
+        "type": "token",
+        "seconds": 12.728064955001173
+      },
+      {
+        "type": "token",
+        "seconds": 12.72809532500105
+      },
+      {
+        "type": "token",
+        "seconds": 12.728145724999194
+      },
+      {
+        "type": "token",
+        "seconds": 12.72817504500199
+      },
+      {
+        "type": "token",
+        "seconds": 12.72822529500263
+      },
+      {
+        "type": "token",
+        "seconds": 12.728254955000011
+      },
+      {
+        "type": "token",
+        "seconds": 12.72830412500116
+      },
+      {
+        "type": "token",
+        "seconds": 12.728332325001247
+      },
+      {
+        "type": "token",
+        "seconds": 12.72838415500155
+      },
+      {
+        "type": "token",
+        "seconds": 12.72841281500223
+      },
+      {
+        "type": "token",
+        "seconds": 12.728464645002532
+      },
+      {
+        "type": "token",
+        "seconds": 12.728493645001436
+      },
+      {
+        "type": "token",
+        "seconds": 12.728546084999834
+      },
+      {
+        "type": "token",
+        "seconds": 12.728574985001615
+      },
+      {
+        "type": "token",
+        "seconds": 12.728626715001155
+      },
+      {
+        "type": "token",
+        "seconds": 12.728655704999255
+      },
+      {
+        "type": "token",
+        "seconds": 12.728706735000742
+      },
+      {
+        "type": "token",
+        "seconds": 12.728735955002776
+      },
+      {
+        "type": "token",
+        "seconds": 12.728785945000709
+      },
+      {
+        "type": "token",
+        "seconds": 12.728818515002786
+      },
+      {
+        "type": "token",
+        "seconds": 12.7288719950011
+      },
+      {
+        "type": "token",
+        "seconds": 12.728900755002542
+      },
+      {
+        "type": "token",
+        "seconds": 12.728953044999798
+      },
+      {
+        "type": "token",
+        "seconds": 12.728982324999379
+      },
+      {
+        "type": "token",
+        "seconds": 12.729033575000358
+      },
+      {
+        "type": "token",
+        "seconds": 12.729062465001334
+      },
+      {
+        "type": "token",
+        "seconds": 12.729113314999267
+      },
+      {
+        "type": "token",
+        "seconds": 12.729142765001598
+      },
+      {
+        "type": "token",
+        "seconds": 12.729193015002238
+      },
+      {
+        "type": "token",
+        "seconds": 12.729222695001226
+      },
+      {
+        "type": "token",
+        "seconds": 12.729275055000471
+      },
+      {
+        "type": "token",
+        "seconds": 12.729305135002505
+      },
+      {
+        "type": "token",
+        "seconds": 12.729353124999761
+      },
+      {
+        "type": "token",
+        "seconds": 12.729381835000822
+      },
+      {
+        "type": "token",
+        "seconds": 12.729434675002267
+      },
+      {
+        "type": "token",
+        "seconds": 12.72946460499952
+      },
+      {
+        "type": "token",
+        "seconds": 12.729517114999908
+      },
+      {
+        "type": "token",
+        "seconds": 12.729547445000208
+      },
+      {
+        "type": "token",
+        "seconds": 12.729600155002117
+      },
+      {
+        "type": "token",
+        "seconds": 12.729629274999752
+      },
+      {
+        "type": "token",
+        "seconds": 12.729681355001958
+      },
+      {
+        "type": "token",
+        "seconds": 12.72971006499938
+      },
+      {
+        "type": "token",
+        "seconds": 12.729761695001798
+      },
+      {
+        "type": "token",
+        "seconds": 12.729790684999898
+      },
+      {
+        "type": "token",
+        "seconds": 12.729845195000962
+      },
+      {
+        "type": "token",
+        "seconds": 12.72987389500122
+      },
+      {
+        "type": "token",
+        "seconds": 12.729925085001014
+      },
+      {
+        "type": "token",
+        "seconds": 12.72995404500034
+      },
+      {
+        "type": "token",
+        "seconds": 12.730005195000558
+      },
+      {
+        "type": "token",
+        "seconds": 12.730033935000392
+      },
+      {
+        "type": "token",
+        "seconds": 12.730085095001414
+      },
+      {
+        "type": "token",
+        "seconds": 12.730114325000613
+      },
+      {
+        "type": "token",
+        "seconds": 12.7301665949999
+      },
+      {
+        "type": "token",
+        "seconds": 12.730195915002696
+      },
+      {
+        "type": "token",
+        "seconds": 12.730246565002744
+      },
+      {
+        "type": "token",
+        "seconds": 12.730276005000633
+      },
+      {
+        "type": "token",
+        "seconds": 12.730326935001358
+      },
+      {
+        "type": "token",
+        "seconds": 12.730356665000727
+      },
+      {
+        "type": "token",
+        "seconds": 12.730406315000437
+      },
+      {
+        "type": "token",
+        "seconds": 12.730435615001625
+      },
+      {
+        "type": "token",
+        "seconds": 12.730486655000277
+      },
+      {
+        "type": "token",
+        "seconds": 12.73051529499935
+      },
+      {
+        "type": "token",
+        "seconds": 12.730568225000752
+      },
+      {
+        "type": "token",
+        "seconds": 12.730596805002278
+      },
+      {
+        "type": "token",
+        "seconds": 12.730649094999535
+      },
+      {
+        "type": "token",
+        "seconds": 12.730677715000638
+      },
+      {
+        "type": "token",
+        "seconds": 12.730729065002379
+      },
+      {
+        "type": "token",
+        "seconds": 12.730758944999252
+      },
+      {
+        "type": "token",
+        "seconds": 12.730818795000232
+      },
+      {
+        "type": "token",
+        "seconds": 12.730850885000109
+      },
+      {
+        "type": "token",
+        "seconds": 12.730901894999988
+      },
+      {
+        "type": "token",
+        "seconds": 12.73093122499995
+      },
+      {
+        "type": "token",
+        "seconds": 12.730983265002578
+      },
+      {
+        "type": "token",
+        "seconds": 12.73101216500072
+      },
+      {
+        "type": "token",
+        "seconds": 12.731065225001657
+      },
+      {
+        "type": "token",
+        "seconds": 12.731095455001196
+      },
+      {
+        "type": "token",
+        "seconds": 12.731145295001625
+      },
+      {
+        "type": "token",
+        "seconds": 12.731175575001544
+      },
+      {
+        "type": "token",
+        "seconds": 12.731226355001127
+      },
+      {
+        "type": "token",
+        "seconds": 12.73125619500206
+      },
+      {
+        "type": "token",
+        "seconds": 12.731308335001813
+      },
+      {
+        "type": "token",
+        "seconds": 12.731337234999955
+      },
+      {
+        "type": "token",
+        "seconds": 12.731390975000977
+      },
+      {
+        "type": "token",
+        "seconds": 12.73142097500022
+      },
+      {
+        "type": "token",
+        "seconds": 12.73147275500014
+      },
+      {
+        "type": "token",
+        "seconds": 12.731502394999552
+      },
+      {
+        "type": "token",
+        "seconds": 12.731554994999897
+      },
+      {
+        "type": "token",
+        "seconds": 12.731584475001
+      },
+      {
+        "type": "token",
+        "seconds": 12.73163634500088
+      },
+      {
+        "type": "token",
+        "seconds": 12.731665455001348
+      },
+      {
+        "type": "token",
+        "seconds": 12.731722824999451
+      },
+      {
+        "type": "token",
+        "seconds": 12.731752955001866
+      },
+      {
+        "type": "token",
+        "seconds": 12.731808545002423
+      },
+      {
+        "type": "token",
+        "seconds": 12.731844395002554
+      },
+      {
+        "type": "token",
+        "seconds": 12.73189926499981
+      },
+      {
+        "type": "token",
+        "seconds": 12.731928724999307
+      },
+      {
+        "type": "token",
+        "seconds": 12.732036305002111
+      },
+      {
+        "type": "token",
+        "seconds": 12.732077865002793
+      },
+      {
+        "type": "token",
+        "seconds": 12.732137625000178
+      },
+      {
+        "type": "done",
+        "seconds": 12.732428744999197
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 2150,
+          "prompt_tokens": 1539,
+          "completion_tokens": 611
+        }
+      ],
+      "rag_sources": [
+        {
+          "id": 3,
+          "page": 1,
+          "score": 0.5301,
+          "snippet": "def sin(x):\n    with localcontext(ExtendedContext):\n        # Rest of sin calculation algorithm\n        # uses the Extended Context from the\n        # General Decimal Arithmetic Specification\n    return +s # Convert result to normal context\n\n\n\nA generic “object-closing” context manager:class closing(object):\n    def __init__(self, obj):\n        self.obj = obj\n    def __enter__(self):\n        return self.obj\n    def __exit__(self, *exc_info):\n        try:\n            close_it = self.obj.close\n        except AttributeError:\n            pass\n        else:\n            close_it()\n\n\nThis can be used to deterministically close anything with a\nclose method, be it file, generator, or something else. It\ncan even be used when the object isn’t guaranteed to require\nclosing (e.g., a function that accepts an arbitrary\niterable):\n# emulate opening():\nwith closing(open(\"argument.txt\")) as contradiction:\n   for line in contradiction:\n       print line",
+          "file_name": "pep-0343-v1.0.html"
+        },
+        {
+          "id": 4,
+          "page": 1,
+          "score": 0.5277,
+          "snippet": "A variant on opened() that also returns an error condition:@contextmanager\ndef opened_w_error(filename, mode=\"r\"):\n    try:\n        f = open(filename, mode)\n    except IOError, err:\n        yield None, err\n    else:\n        try:\n            yield f, None\n        finally:\n            f.close()\n\n\nUsed as follows:\nwith opened_w_error(\"/etc/passwd\", \"a\") as (f, err):\n    if err:\n        print \"IOError:\", err\n    else:\n        f.write(\"guido::0:0::/:/bin/sh\\n\")\n\n\n\nAnother useful example would be an operation that blocks\nsignals.  The use could be like this:import signal\n\nwith signal.blocked():\n    # code executed without worrying about signals\n\n\nAn optional argument might be a list of signals to be blocked;\nby default all signals are blocked.  The implementation is left\nas an exercise to the reader.",
+          "file_name": "pep-0343-v1.0.html"
+        },
+        {
+          "id": 5,
+          "page": 1,
+          "score": 0.5271,
+          "snippet": "Used as follows:\nwith locked(myLock):\n    # Code here executes with myLock held.  The lock is\n    # guaranteed to be released when the block is left (even\n    # if via return or by an uncaught exception).\n\n\n\nA template for opening a file that ensures the file is closed\nwhen the block is left:@contextmanager\ndef opened(filename, mode=\"r\"):\n    f = open(filename, mode)\n    try:\n        yield f\n    finally:\n        f.close()\n\n\nUsed as follows:\nwith opened(\"/etc/passwd\") as f:\n    for line in f:\n        print line.rstrip()\n\n\n\nA template for committing or rolling back a database\ntransaction:@contextmanager\ndef transaction(db):\n    db.begin()\n    try:\n        yield None\n    except:\n        db.rollback()\n        raise\n    else:\n        db.commit()",
+          "file_name": "pep-0343-v1.0.html"
+        }
+      ],
+      "rag_confident": true,
+      "review_answer": {
+        "text": "В коде отсутствует гарантия закрытия файла, включая случаи исключения чтения. Это нарушает правило из [3], где подчеркивается использование контекстных менеджеров для детерминированного освобождения ресурсов. В [4] и [5] демонстрируется шаблон закрытия файлов через `with`, который обеспечивает закрытие даже при ошибке.\n\n**Исправленная версия:**\n```python\ndef first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n```\n\nПри использовании `with` файл автоматически закрывается после завершения блока, включая случаи исключения.",
+        "status": "answered",
+        "sources": [
+          {
+            "id": 3,
+            "page": 1,
+            "score": 0.5301,
+            "snippet": "def sin(x):\n    with localcontext(ExtendedContext):\n        # Rest of sin calculation algorithm\n        # uses the Extended Context from the\n        # General Decimal Arithmetic Specification\n    return +s # Convert result to normal context\n\n\n\nA generic “object-closing” context manager:class closing(object):\n    def __init__(self, obj):\n        self.obj = obj\n    def __enter__(self):\n        return self.obj\n    def __exit__(self, *exc_info):\n        try:\n            close_it = self.obj.close\n        except AttributeError:\n            pass\n        else:\n            close_it()\n\n\nThis can be used to deterministically close anything with a\nclose method, be it file, generator, or something else. It\ncan even be used when the object isn’t guaranteed to require\nclosing (e.g., a function that accepts an arbitrary\niterable):\n# emulate opening():\nwith closing(open(\"argument.txt\")) as contradiction:\n   for line in contradiction:\n       print line",
+            "file_name": "pep-0343-v1.0.html"
+          },
+          {
+            "id": 4,
+            "page": 1,
+            "score": 0.5277,
+            "snippet": "A variant on opened() that also returns an error condition:@contextmanager\ndef opened_w_error(filename, mode=\"r\"):\n    try:\n        f = open(filename, mode)\n    except IOError, err:\n        yield None, err\n    else:\n        try:\n            yield f, None\n        finally:\n            f.close()\n\n\nUsed as follows:\nwith opened_w_error(\"/etc/passwd\", \"a\") as (f, err):\n    if err:\n        print \"IOError:\", err\n    else:\n        f.write(\"guido::0:0::/:/bin/sh\\n\")\n\n\n\nAnother useful example would be an operation that blocks\nsignals.  The use could be like this:import signal\n\nwith signal.blocked():\n    # code executed without worrying about signals\n\n\nAn optional argument might be a list of signals to be blocked;\nby default all signals are blocked.  The implementation is left\nas an exercise to the reader.",
+            "file_name": "pep-0343-v1.0.html"
+          },
+          {
+            "id": 5,
+            "page": 1,
+            "score": 0.5271,
+            "snippet": "Used as follows:\nwith locked(myLock):\n    # Code here executes with myLock held.  The lock is\n    # guaranteed to be released when the block is left (even\n    # if via return or by an uncaught exception).\n\n\n\nA template for opening a file that ensures the file is closed\nwhen the block is left:@contextmanager\ndef opened(filename, mode=\"r\"):\n    f = open(filename, mode)\n    try:\n        yield f\n    finally:\n        f.close()\n\n\nUsed as follows:\nwith opened(\"/etc/passwd\") as f:\n    for line in f:\n        print line.rstrip()\n\n\n\nA template for committing or rolling back a database\ntransaction:@contextmanager\ndef transaction(db):\n    db.begin()\n    try:\n        yield None\n    except:\n        db.rollback()\n        raise\n    else:\n        db.commit()",
+            "file_name": "pep-0343-v1.0.html"
+          }
+        ],
+        "confident": true
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [
+      true
+    ],
+    "review": {
+      "true_positives": null,
+      "false_positives": null,
+      "false_negatives": null,
+      "fix_usable": null,
+      "notes": ""
+    }
+  },
+  {
+    "id": "file_handle-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Файл должен закрываться, в том числе при исключении чтения.",
+    "code": "def first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+        "status": "refused",
+        "message_id": "02acc2f4-2833-4710-b15e-21d4e89ff7e7"
+      }
+    ],
+    "latency_seconds": 3.937781709999399,
+    "started_at": "2026-11-03T09:58:30.564299+00:00",
+    "request_id": "a57114757cfa",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 3.937527919999411
+      },
+      {
+        "type": "done",
+        "seconds": 3.9376256100003957
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": null,
+      "false_positives": null,
+      "false_negatives": null,
+      "fix_usable": null,
+      "notes": ""
+    }
+  },
+  {
+    "id": "file_handle-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом.",
+    "code": "from pathlib import Path\n\ndef read_config(path):\n    return Path(path).read_text(encoding=\"utf-8\")\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В коде отсутствует документация (docstring) для функции `read_config`, что нарушает правило согласованности между сигнатурой функции и её описанием [5]. Функция принимает параметр `path`, но не объясняет, что ожидает от него (например, путь к файлу, обработку ошибок) или что возвращает. Это делает код менее понятным для других разработчиков. \n\nДополнительно: типы не аннотированы, но это не дефект по правилам, так как в контексте не указано обязательное использование type hints.",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В"
+      },
+      {
+        "type": "token",
+        "delta": " код"
+      },
+      {
+        "type": "token",
+        "delta": "е"
+      },
+      {
+        "type": "token",
+        "delta": " от"
+      },
+      {
+        "type": "token",
+        "delta": "сут"
+      },
+      {
+        "type": "token",
+        "delta": "ств"
+      },
+      {
+        "type": "token",
+        "delta": "ует"
+      },
+      {
+        "type": "token",
+        "delta": " документ"
+      },
+      {
+        "type": "token",
+        "delta": "ация"
+      },
+      {
+        "type": "token",
+        "delta": " ("
+      },
+      {
+        "type": "token",
+        "delta": "doc"
+      },
+      {
+        "type": "token",
+        "delta": "string"
+      },
+      {
+        "type": "token",
+        "delta": ")"
+      },
+      {
+        "type": "token",
+        "delta": " для"
+      },
+      {
+        "type": "token",
+        "delta": " функци"
+      },
+      {
+        "type": "token",
+        "delta": "и"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "read"
+      },
+      {
+        "type": "token",
+        "delta": "_config"
+      },
+      {
+        "type": "token",
+        "delta": "`,"
+      },
+      {
+        "type": "token",
+        "delta": " что"
+      },
+      {
+        "type": "token",
+        "delta": " на"
+      },
+      {
+        "type": "token",
+        "delta": "руш"
+      },
+      {
+        "type": "token",
+        "delta": "ает"
+      },
+      {
+        "type": "token",
+        "delta": " правило"
+      },
+      {
+        "type": "token",
+        "delta": " соглас"
+      },
+      {
+        "type": "token",
+        "delta": "ован"
+      },
+      {
+        "type": "token",
+        "delta": "ности"
+      },
+      {
+        "type": "token",
+        "delta": " между"
+      },
+      {
+        "type": "token",
+        "delta": " сиг"
+      },
+      {
+        "type": "token",
+        "delta": "н"
+      },
+      {
+        "type": "token",
+        "delta": "атур"
+      },
+      {
+        "type": "token",
+        "delta": "ой"
+      },
+      {
+        "type": "token",
+        "delta": " функци"
+      },
+      {
+        "type": "token",
+        "delta": "и"
+      },
+      {
+        "type": "token",
+        "delta": " и"
+      },
+      {
+        "type": "token",
+        "delta": " её"
+      },
+      {
+        "type": "token",
+        "delta": " о"
+      },
+      {
+        "type": "token",
+        "delta": "пис"
+      },
+      {
+        "type": "token",
+        "delta": "ани"
+      },
+      {
+        "type": "token",
+        "delta": "ем"
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "5"
+      },
+      {
+        "type": "token",
+        "delta": "]."
+      },
+      {
+        "type": "token",
+        "delta": " Ф"
+      },
+      {
+        "type": "token",
+        "delta": "ункци"
+      },
+      {
+        "type": "token",
+        "delta": "я"
+      },
+      {
+        "type": "token",
+        "delta": " приним"
+      },
+      {
+        "type": "token",
+        "delta": "ает"
+      },
+      {
+        "type": "token",
+        "delta": " парамет"
+      },
+      {
+        "type": "token",
+        "delta": "р"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "path"
+      },
+      {
+        "type": "token",
+        "delta": "`,"
+      },
+      {
+        "type": "token",
+        "delta": " но"
+      },
+      {
+        "type": "token",
+        "delta": " не"
+      },
+      {
+        "type": "token",
+        "delta": " объ"
+      },
+      {
+        "type": "token",
+        "delta": "яс"
+      },
+      {
+        "type": "token",
+        "delta": "ня"
+      },
+      {
+        "type": "token",
+        "delta": "ет"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " что"
+      },
+      {
+        "type": "token",
+        "delta": " о"
+      },
+      {
+        "type": "token",
+        "delta": "ж"
+      },
+      {
+        "type": "token",
+        "delta": "ид"
+      },
+      {
+        "type": "token",
+        "delta": "ает"
+      },
+      {
+        "type": "token",
+        "delta": " от"
+      },
+      {
+        "type": "token",
+        "delta": " него"
+      },
+      {
+        "type": "token",
+        "delta": " ("
+      },
+      {
+        "type": "token",
+        "delta": "например"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " п"
+      },
+      {
+        "type": "token",
+        "delta": "уть"
+      },
+      {
+        "type": "token",
+        "delta": " к"
+      },
+      {
+        "type": "token",
+        "delta": " файл"
+      },
+      {
+        "type": "token",
+        "delta": "у"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " об"
+      },
+      {
+        "type": "token",
+        "delta": "работ"
+      },
+      {
+        "type": "token",
+        "delta": "ку"
+      },
+      {
+        "type": "token",
+        "delta": " ошиб"
+      },
+      {
+        "type": "token",
+        "delta": "ок"
+      },
+      {
+        "type": "token",
+        "delta": ")"
+      },
+      {
+        "type": "token",
+        "delta": " или"
+      },
+      {
+        "type": "token",
+        "delta": " что"
+      },
+      {
+        "type": "token",
+        "delta": " в"
+      },
+      {
+        "type": "token",
+        "delta": "озвращает"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": " Это"
+      },
+      {
+        "type": "token",
+        "delta": " дел"
+      },
+      {
+        "type": "token",
+        "delta": "ает"
+      },
+      {
+        "type": "token",
+        "delta": " код"
+      },
+      {
+        "type": "token",
+        "delta": " менее"
+      },
+      {
+        "type": "token",
+        "delta": " пон"
+      },
+      {
+        "type": "token",
+        "delta": "ят"
+      },
+      {
+        "type": "token",
+        "delta": "ным"
+      },
+      {
+        "type": "token",
+        "delta": " для"
+      },
+      {
+        "type": "token",
+        "delta": " других"
+      },
+      {
+        "type": "token",
+        "delta": " раз"
+      },
+      {
+        "type": "token",
+        "delta": "работ"
+      },
+      {
+        "type": "token",
+        "delta": "чик"
+      },
+      {
+        "type": "token",
+        "delta": "ов"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": " \n\n"
+      },
+      {
+        "type": "token",
+        "delta": "Д"
+      },
+      {
+        "type": "token",
+        "delta": "оп"
+      },
+      {
+        "type": "token",
+        "delta": "олн"
+      },
+      {
+        "type": "token",
+        "delta": "ительно"
+      },
+      {
+        "type": "token",
+        "delta": ":"
+      },
+      {
+        "type": "token",
+        "delta": " тип"
+      },
+      {
+        "type": "token",
+        "delta": "ы"
+      },
+      {
+        "type": "token",
+        "delta": " не"
+      },
+      {
+        "type": "token",
+        "delta": " ан"
+      },
+      {
+        "type": "token",
+        "delta": "н"
+      },
+      {
+        "type": "token",
+        "delta": "от"
+      },
+      {
+        "type": "token",
+        "delta": "ирован"
+      },
+      {
+        "type": "token",
+        "delta": "ы"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " но"
+      },
+      {
+        "type": "token",
+        "delta": " это"
+      },
+      {
+        "type": "token",
+        "delta": " не"
+      },
+      {
+        "type": "token",
+        "delta": " де"
+      },
+      {
+        "type": "token",
+        "delta": "ф"
+      },
+      {
+        "type": "token",
+        "delta": "ект"
+      },
+      {
+        "type": "token",
+        "delta": " по"
+      },
+      {
+        "type": "token",
+        "delta": " прав"
+      },
+      {
+        "type": "token",
+        "delta": "ил"
+      },
+      {
+        "type": "token",
+        "delta": "ам"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " так"
+      },
+      {
+        "type": "token",
+        "delta": " как"
+      },
+      {
+        "type": "token",
+        "delta": " в"
+      },
+      {
+        "type": "token",
+        "delta": " конт"
+      },
+      {
+        "type": "token",
+        "delta": "ек"
+      },
+      {
+        "type": "token",
+        "delta": "сте"
+      },
+      {
+        "type": "token",
+        "delta": " не"
+      },
+      {
+        "type": "token",
+        "delta": " указан"
+      },
+      {
+        "type": "token",
+        "delta": "о"
+      },
+      {
+        "type": "token",
+        "delta": " обязатель"
+      },
+      {
+        "type": "token",
+        "delta": "ное"
+      },
+      {
+        "type": "token",
+        "delta": " использование"
+      },
+      {
+        "type": "token",
+        "delta": " type"
+      },
+      {
+        "type": "token",
+        "delta": " hints"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "done",
+        "sources": [
+          {
+            "id": 5,
+            "page": 1,
+            "score": 0.5494,
+            "snippet": "Документация должна оставаться синхронной с сигнатурой. Если PR переименовал параметр, изменил тип результата или исключение, старый docstring становится дефектом. На ревью проверяется не только наличие текста, но и его соответствие фактическому поведению и type hints.",
+            "file_name": "pep257_docstrings.md"
+          }
+        ],
+        "confident": true,
+        "text": "В коде отсутствует документация (docstring) для функции `read_config`, что нарушает правило согласованности между сигнатурой функции и её описанием [5]. Функция принимает параметр `path`, но не объясняет, что ожидает от него (например, путь к файлу, обработку ошибок) или что возвращает. Это делает код менее понятным для других разработчиков. \n\nДополнительно: типы не аннотированы, но это не дефект по правилам, так как в контексте не указано обязательное использование type hints.",
+        "status": "answered",
+        "message_id": "884ebd49-e8f1-49ad-b626-f78f6efb7453"
+      }
+    ],
+    "latency_seconds": 22.079704986997967,
+    "started_at": "2026-11-03T09:58:34.535554+00:00",
+    "request_id": "34f69136a5b8",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.003698290998727
+      },
+      {
+        "type": "progress",
+        "seconds": 20.004249429999618
+      },
+      {
+        "type": "token",
+        "seconds": 22.073339865997696
+      },
+      {
+        "type": "token",
+        "seconds": 22.073371915997996
+      },
+      {
+        "type": "token",
+        "seconds": 22.073520345998986
+      },
+      {
+        "type": "token",
+        "seconds": 22.07353363599759
+      },
+      {
+        "type": "token",
+        "seconds": 22.073541675999877
+      },
+      {
+        "type": "token",
+        "seconds": 22.073549246000766
+      },
+      {
+        "type": "token",
+        "seconds": 22.073556835999625
+      },
+      {
+        "type": "token",
+        "seconds": 22.073564266000176
+      },
+      {
+        "type": "token",
+        "seconds": 22.073605295998277
+      },
+      {
+        "type": "token",
+        "seconds": 22.073614075998194
+      },
+      {
+        "type": "token",
+        "seconds": 22.07362185599777
+      },
+      {
+        "type": "token",
+        "seconds": 22.07363209599862
+      },
+      {
+        "type": "token",
+        "seconds": 22.073665665997396
+      },
+      {
+        "type": "token",
+        "seconds": 22.07369903599829
+      },
+      {
+        "type": "token",
+        "seconds": 22.073730796000746
+      },
+      {
+        "type": "token",
+        "seconds": 22.07376144599766
+      },
+      {
+        "type": "token",
+        "seconds": 22.07381570600046
+      },
+      {
+        "type": "token",
+        "seconds": 22.073846616000083
+      },
+      {
+        "type": "token",
+        "seconds": 22.073899615999835
+      },
+      {
+        "type": "token",
+        "seconds": 22.07393079599933
+      },
+      {
+        "type": "token",
+        "seconds": 22.073993615998916
+      },
+      {
+        "type": "token",
+        "seconds": 22.074023705998115
+      },
+      {
+        "type": "token",
+        "seconds": 22.074078186000406
+      },
+      {
+        "type": "token",
+        "seconds": 22.074109065997618
+      },
+      {
+        "type": "token",
+        "seconds": 22.074165755999275
+      },
+      {
+        "type": "token",
+        "seconds": 22.074195736000547
+      },
+      {
+        "type": "token",
+        "seconds": 22.07424859599996
+      },
+      {
+        "type": "token",
+        "seconds": 22.074278195999796
+      },
+      {
+        "type": "token",
+        "seconds": 22.074330855997687
+      },
+      {
+        "type": "token",
+        "seconds": 22.074361086000863
+      },
+      {
+        "type": "token",
+        "seconds": 22.07441426600053
+      },
+      {
+        "type": "token",
+        "seconds": 22.074444776000746
+      },
+      {
+        "type": "token",
+        "seconds": 22.07449813600033
+      },
+      {
+        "type": "token",
+        "seconds": 22.074528696000925
+      },
+      {
+        "type": "token",
+        "seconds": 22.074584035999578
+      },
+      {
+        "type": "token",
+        "seconds": 22.074614925997594
+      },
+      {
+        "type": "token",
+        "seconds": 22.07466838599794
+      },
+      {
+        "type": "token",
+        "seconds": 22.07470022599955
+      },
+      {
+        "type": "token",
+        "seconds": 22.07475300599981
+      },
+      {
+        "type": "token",
+        "seconds": 22.074783845997445
+      },
+      {
+        "type": "token",
+        "seconds": 22.074836895997578
+      },
+      {
+        "type": "token",
+        "seconds": 22.07486849599809
+      },
+      {
+        "type": "token",
+        "seconds": 22.07492118599839
+      },
+      {
+        "type": "token",
+        "seconds": 22.074951316000806
+      },
+      {
+        "type": "token",
+        "seconds": 22.075007486000686
+      },
+      {
+        "type": "token",
+        "seconds": 22.07503715599887
+      },
+      {
+        "type": "token",
+        "seconds": 22.075091565999173
+      },
+      {
+        "type": "token",
+        "seconds": 22.07512090599994
+      },
+      {
+        "type": "token",
+        "seconds": 22.075173776000156
+      },
+      {
+        "type": "token",
+        "seconds": 22.075205385997833
+      },
+      {
+        "type": "token",
+        "seconds": 22.075257255997712
+      },
+      {
+        "type": "token",
+        "seconds": 22.075289045998943
+      },
+      {
+        "type": "token",
+        "seconds": 22.075340995997976
+      },
+      {
+        "type": "token",
+        "seconds": 22.075370015998487
+      },
+      {
+        "type": "token",
+        "seconds": 22.07542275599917
+      },
+      {
+        "type": "token",
+        "seconds": 22.07545353599926
+      },
+      {
+        "type": "token",
+        "seconds": 22.075506146000407
+      },
+      {
+        "type": "token",
+        "seconds": 22.07553693599766
+      },
+      {
+        "type": "token",
+        "seconds": 22.075590635999106
+      },
+      {
+        "type": "token",
+        "seconds": 22.075621365998813
+      },
+      {
+        "type": "token",
+        "seconds": 22.075686535998102
+      },
+      {
+        "type": "token",
+        "seconds": 22.075718976000644
+      },
+      {
+        "type": "token",
+        "seconds": 22.07577157599735
+      },
+      {
+        "type": "token",
+        "seconds": 22.075801655999385
+      },
+      {
+        "type": "token",
+        "seconds": 22.075854745999095
+      },
+      {
+        "type": "token",
+        "seconds": 22.075884525998845
+      },
+      {
+        "type": "token",
+        "seconds": 22.07593810599792
+      },
+      {
+        "type": "token",
+        "seconds": 22.075968955999997
+      },
+      {
+        "type": "token",
+        "seconds": 22.07615631599765
+      },
+      {
+        "type": "token",
+        "seconds": 22.076220015998842
+      },
+      {
+        "type": "token",
+        "seconds": 22.07644462600001
+      },
+      {
+        "type": "token",
+        "seconds": 22.076455645998067
+      },
+      {
+        "type": "token",
+        "seconds": 22.076464115998533
+      },
+      {
+        "type": "token",
+        "seconds": 22.07647167599862
+      },
+      {
+        "type": "token",
+        "seconds": 22.076479595998535
+      },
+      {
+        "type": "token",
+        "seconds": 22.076518375997694
+      },
+      {
+        "type": "token",
+        "seconds": 22.07652729599795
+      },
+      {
+        "type": "token",
+        "seconds": 22.076560815999983
+      },
+      {
+        "type": "token",
+        "seconds": 22.076592326000537
+      },
+      {
+        "type": "token",
+        "seconds": 22.07662366599834
+      },
+      {
+        "type": "token",
+        "seconds": 22.07668277599805
+      },
+      {
+        "type": "token",
+        "seconds": 22.07671429599941
+      },
+      {
+        "type": "token",
+        "seconds": 22.07676500600064
+      },
+      {
+        "type": "token",
+        "seconds": 22.076795696000772
+      },
+      {
+        "type": "token",
+        "seconds": 22.07684894599879
+      },
+      {
+        "type": "token",
+        "seconds": 22.076879796000867
+      },
+      {
+        "type": "token",
+        "seconds": 22.076929605998885
+      },
+      {
+        "type": "token",
+        "seconds": 22.076958776000538
+      },
+      {
+        "type": "token",
+        "seconds": 22.077018395997584
+      },
+      {
+        "type": "token",
+        "seconds": 22.077047865997883
+      },
+      {
+        "type": "token",
+        "seconds": 22.077101155999117
+      },
+      {
+        "type": "token",
+        "seconds": 22.077130835998105
+      },
+      {
+        "type": "token",
+        "seconds": 22.077183135999803
+      },
+      {
+        "type": "token",
+        "seconds": 22.07721264599968
+      },
+      {
+        "type": "token",
+        "seconds": 22.07726415599973
+      },
+      {
+        "type": "token",
+        "seconds": 22.077294935999817
+      },
+      {
+        "type": "token",
+        "seconds": 22.077346205998765
+      },
+      {
+        "type": "token",
+        "seconds": 22.077377186000376
+      },
+      {
+        "type": "token",
+        "seconds": 22.07742928600055
+      },
+      {
+        "type": "token",
+        "seconds": 22.077459215997806
+      },
+      {
+        "type": "token",
+        "seconds": 22.07751171599739
+      },
+      {
+        "type": "token",
+        "seconds": 22.077541605998704
+      },
+      {
+        "type": "token",
+        "seconds": 22.077593475998583
+      },
+      {
+        "type": "token",
+        "seconds": 22.077624546000152
+      },
+      {
+        "type": "token",
+        "seconds": 22.077675836000708
+      },
+      {
+        "type": "token",
+        "seconds": 22.07770554599847
+      },
+      {
+        "type": "token",
+        "seconds": 22.077758235998772
+      },
+      {
+        "type": "token",
+        "seconds": 22.07778750599755
+      },
+      {
+        "type": "token",
+        "seconds": 22.077839416000643
+      },
+      {
+        "type": "token",
+        "seconds": 22.077868355998362
+      },
+      {
+        "type": "token",
+        "seconds": 22.07791934600027
+      },
+      {
+        "type": "token",
+        "seconds": 22.077948636000656
+      },
+      {
+        "type": "token",
+        "seconds": 22.078034935999312
+      },
+      {
+        "type": "token",
+        "seconds": 22.078064675999485
+      },
+      {
+        "type": "token",
+        "seconds": 22.07809878599801
+      },
+      {
+        "type": "token",
+        "seconds": 22.078127655997378
+      },
+      {
+        "type": "token",
+        "seconds": 22.07816909599933
+      },
+      {
+        "type": "token",
+        "seconds": 22.07819976599785
+      },
+      {
+        "type": "token",
+        "seconds": 22.07825168599811
+      },
+      {
+        "type": "token",
+        "seconds": 22.07828115599841
+      },
+      {
+        "type": "token",
+        "seconds": 22.07833063599901
+      },
+      {
+        "type": "token",
+        "seconds": 22.07836022599804
+      },
+      {
+        "type": "token",
+        "seconds": 22.07841240599737
+      },
+      {
+        "type": "token",
+        "seconds": 22.07844204600042
+      },
+      {
+        "type": "token",
+        "seconds": 22.07849105599962
+      },
+      {
+        "type": "token",
+        "seconds": 22.07852026600085
+      },
+      {
+        "type": "token",
+        "seconds": 22.07857397599946
+      },
+      {
+        "type": "token",
+        "seconds": 22.078606455997942
+      },
+      {
+        "type": "token",
+        "seconds": 22.078654725999513
+      },
+      {
+        "type": "token",
+        "seconds": 22.078683886000363
+      },
+      {
+        "type": "token",
+        "seconds": 22.078734446000453
+      },
+      {
+        "type": "token",
+        "seconds": 22.07876342599775
+      },
+      {
+        "type": "token",
+        "seconds": 22.07881355599966
+      },
+      {
+        "type": "token",
+        "seconds": 22.078842076
+      },
+      {
+        "type": "token",
+        "seconds": 22.078894577000028
+      },
+      {
+        "type": "token",
+        "seconds": 22.078925066998636
+      },
+      {
+        "type": "token",
+        "seconds": 22.07898320700042
+      },
+      {
+        "type": "token",
+        "seconds": 22.079014786999323
+      },
+      {
+        "type": "token",
+        "seconds": 22.07906736699806
+      },
+      {
+        "type": "token",
+        "seconds": 22.079096856999968
+      },
+      {
+        "type": "token",
+        "seconds": 22.07914985699972
+      },
+      {
+        "type": "token",
+        "seconds": 22.079219536997698
+      },
+      {
+        "type": "token",
+        "seconds": 22.079285486997833
+      },
+      {
+        "type": "token",
+        "seconds": 22.07931557700067
+      },
+      {
+        "type": "done",
+        "seconds": 22.07952176699837
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 2427,
+          "prompt_tokens": 1082,
+          "completion_tokens": 1345
+        }
+      ],
+      "rag_sources": [
+        {
+          "id": 5,
+          "page": 1,
+          "score": 0.5494,
+          "snippet": "Документация должна оставаться синхронной с сигнатурой. Если PR переименовал параметр, изменил тип результата или исключение, старый docstring становится дефектом. На ревью проверяется не только наличие текста, но и его соответствие фактическому поведению и type hints.",
+          "file_name": "pep257_docstrings.md"
+        }
+      ],
+      "rag_confident": true,
+      "review_answer": {
+        "text": "В коде отсутствует документация (docstring) для функции `read_config`, что нарушает правило согласованности между сигнатурой функции и её описанием [5]. Функция принимает параметр `path`, но не объясняет, что ожидает от него (например, путь к файлу, обработку ошибок) или что возвращает. Это делает код менее понятным для других разработчиков. \n\nДополнительно: типы не аннотированы, но это не дефект по правилам, так как в контексте не указано обязательное использование type hints.",
+        "status": "answered",
+        "sources": [
+          {
+            "id": 5,
+            "page": 1,
+            "score": 0.5494,
+            "snippet": "Документация должна оставаться синхронной с сигнатурой. Если PR переименовал параметр, изменил тип результата или исключение, старый docstring становится дефектом. На ревью проверяется не только наличие текста, но и его соответствие фактическому поведению и type hints.",
+            "file_name": "pep257_docstrings.md"
+          }
+        ],
+        "confident": true
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": null,
+      "false_positives": null,
+      "false_negatives": null,
+      "fix_usable": null,
+      "notes": ""
+    }
+  },
+  {
+    "id": "ensure_directory-defect",
+    "kind": "defect",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Повторное выполнение должно сохранять состояние без ошибки.",
+    "code": "- name: Create app cache\n  ansible.builtin.shell: mkdir /opt/app-cache\n",
+    "expected_defects": [
+      "non-idempotent-shell"
+    ],
+    "reference_fix": "- name: Create app cache\n  ansible.builtin.file:\n    path: /opt/app-cache\n    state: directory\n    mode: \"0755\"\n",
+    "answer": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "message_id": "19850163-2eca-44c4-97b9-96893f05091e"
+      }
+    ],
+    "latency_seconds": 10.953392830000666,
+    "started_at": "2026-11-03T09:58:56.643081+00:00",
+    "request_id": "fe5eb348eeea",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.004024271998787
+      },
+      {
+        "type": "token",
+        "seconds": 10.953092129999277
+      },
+      {
+        "type": "done",
+        "seconds": 10.953192720000516
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1583,
+          "prompt_tokens": 1077,
+          "completion_tokens": 506
+        }
+      ],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": null,
+      "false_positives": null,
+      "false_negatives": null,
+      "fix_usable": null,
+      "notes": ""
+    }
+  },
+  {
+    "id": "ensure_directory-fixed",
+    "kind": "fixed",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Повторное выполнение должно сохранять состояние без ошибки.",
+    "code": "- name: Create app cache\n  ansible.builtin.file:\n    path: /opt/app-cache\n    state: directory\n    mode: \"0755\"\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "В"
+      },
+      {
+        "type": "token",
+        "delta": " баз"
+      },
+      {
+        "type": "token",
+        "delta": "е"
+      },
+      {
+        "type": "token",
+        "delta": " не"
+      },
+      {
+        "type": "token",
+        "delta": " наш"
+      },
+      {
+        "type": "token",
+        "delta": "ё"
+      },
+      {
+        "type": "token",
+        "delta": "л"
+      },
+      {
+        "type": "token",
+        "delta": " достат"
+      },
+      {
+        "type": "token",
+        "delta": "очных"
+      },
+      {
+        "type": "token",
+        "delta": " основ"
+      },
+      {
+        "type": "token",
+        "delta": "ани"
+      },
+      {
+        "type": "token",
+        "delta": "й"
+      },
+      {
+        "type": "token",
+        "delta": " для"
+      },
+      {
+        "type": "token",
+        "delta": " ответ"
+      },
+      {
+        "type": "token",
+        "delta": "а"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": " Можно"
+      },
+      {
+        "type": "token",
+        "delta": " зарегистри"
+      },
+      {
+        "type": "token",
+        "delta": "ров"
+      },
+      {
+        "type": "token",
+        "delta": "ать"
+      },
+      {
+        "type": "token",
+        "delta": " заяв"
+      },
+      {
+        "type": "token",
+        "delta": "ку"
+      },
+      {
+        "type": "token",
+        "delta": ":"
+      },
+      {
+        "type": "token",
+        "delta": " /"
+      },
+      {
+        "type": "token",
+        "delta": "escal"
+      },
+      {
+        "type": "token",
+        "delta": "ate"
+      },
+      {
+        "type": "token",
+        "delta": " <в"
+      },
+      {
+        "type": "token",
+        "delta": "оп"
+      },
+      {
+        "type": "token",
+        "delta": "рос"
+      },
+      {
+        "type": "token",
+        "delta": ">."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "message_id": "30efc02a-a9df-4777-b6f3-f9accccd3f6a"
+      }
+    ],
+    "latency_seconds": 9.056743028999335,
+    "started_at": "2026-11-03T09:59:07.629385+00:00",
+    "request_id": "42273d8b5e12",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 9.05507420900176
+      },
+      {
+        "type": "token",
+        "seconds": 9.055095349001931
+      },
+      {
+        "type": "token",
+        "seconds": 9.05519375899894
+      },
+      {
+        "type": "token",
+        "seconds": 9.05520579899894
+      },
+      {
+        "type": "token",
+        "seconds": 9.055216109001776
+      },
+      {
+        "type": "token",
+        "seconds": 9.055226268999832
+      },
+      {
+        "type": "token",
+        "seconds": 9.055275979000726
+      },
+      {
+        "type": "token",
+        "seconds": 9.055287538998527
+      },
+      {
+        "type": "token",
+        "seconds": 9.05532907900124
+      },
+      {
+        "type": "token",
+        "seconds": 9.055367348999425
+      },
+      {
+        "type": "token",
+        "seconds": 9.055405008999514
+      },
+      {
+        "type": "token",
+        "seconds": 9.05544172900045
+      },
+      {
+        "type": "token",
+        "seconds": 9.055486608998763
+      },
+      {
+        "type": "token",
+        "seconds": 9.055523688999529
+      },
+      {
+        "type": "token",
+        "seconds": 9.05557596899962
+      },
+      {
+        "type": "token",
+        "seconds": 9.055614248998609
+      },
+      {
+        "type": "token",
+        "seconds": 9.055661439000687
+      },
+      {
+        "type": "token",
+        "seconds": 9.05569831899993
+      },
+      {
+        "type": "token",
+        "seconds": 9.055749048999132
+      },
+      {
+        "type": "token",
+        "seconds": 9.055784668998967
+      },
+      {
+        "type": "token",
+        "seconds": 9.055835209001089
+      },
+      {
+        "type": "token",
+        "seconds": 9.055871448999824
+      },
+      {
+        "type": "token",
+        "seconds": 9.05592223900021
+      },
+      {
+        "type": "token",
+        "seconds": 9.055958189001103
+      },
+      {
+        "type": "token",
+        "seconds": 9.056007659000898
+      },
+      {
+        "type": "token",
+        "seconds": 9.056043229000352
+      },
+      {
+        "type": "token",
+        "seconds": 9.056094128998666
+      },
+      {
+        "type": "token",
+        "seconds": 9.056165838999732
+      },
+      {
+        "type": "token",
+        "seconds": 9.056232408998767
+      },
+      {
+        "type": "token",
+        "seconds": 9.056267569001648
+      },
+      {
+        "type": "done",
+        "seconds": 9.056533439001214
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1498,
+          "prompt_tokens": 1093,
+          "completion_tokens": 405
+        }
+      ],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": null,
+      "false_positives": null,
+      "false_negatives": null,
+      "fix_usable": null,
+      "notes": ""
+    }
+  },
+  {
+    "id": "ensure_directory-clean",
+    "kind": "clean",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом.",
+    "code": "- name: Install package\n  ansible.builtin.package:\n    name: git\n    state: present\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+        "status": "refused",
+        "message_id": "2f82d13b-9f33-4b61-b820-738a4ea8fd5a"
+      }
+    ],
+    "latency_seconds": 3.749856696002098,
+    "started_at": "2026-11-03T09:59:16.704814+00:00",
+    "request_id": "b2bf840d304c",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 3.749492636001378
+      },
+      {
+        "type": "done",
+        "seconds": 3.7496453759995347
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": null,
+      "false_positives": null,
+      "false_negatives": null,
+      "fix_usable": null,
+      "notes": ""
+    }
+  }
+]

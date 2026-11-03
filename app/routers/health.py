@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import asyncio
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
-from redis.exceptions import RedisError
+
 
 from app.deps.providers import CacheDep
 from app.routers.responses import HEALTH_RESPONSES, READINESS_RESPONSES

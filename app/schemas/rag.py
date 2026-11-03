@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -17,6 +19,7 @@ class RAGSource(BaseModel):
 
 class RAGQueryResponse(BaseModel):
     answer: str
+    status: Literal["answered", "clarify", "refused", "blocked"] = "answered"
     top_score: float | None
     confident: bool
     sources: list[RAGSource]

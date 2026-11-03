@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import operator
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
@@ -13,7 +12,7 @@ from zoneinfo import ZoneInfo
 from uuid import uuid4
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage, ToolMessage, RemoveMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import BaseTool, tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
@@ -23,9 +22,12 @@ from langgraph.graph.message import add_messages
 from langgraph.types import interrupt
 
 from app.core.config import Settings, get_settings
+from app.services.model_adapter import ModelAdapter
 from app.services.notifier import notify_user
 
 MAX_ITERATIONS = 6
+MAX_CONTEXT_CHARS = 24_000
+MAX_CONTEXT_TURNS = 10
 DANGEROUS_TOOL_NAME = "send_telegram_message"
 SYSTEM_PROMPT = (
     "Ты ReAct-агент помощи при разработке и ревью кода. Используй tools только по "
@@ -47,6 +49,22 @@ _DELIVERY_COMMAND = re.compile(
     r"(?:вызови|call)\s+send_telegram_message)\b",
     re.IGNORECASE,
 )
+
+
+def context_removals(messages: list[AnyMessage]) -> list[RemoveMessage]:
+    """Drop whole old user turns; preserve every call/result in the active turn."""
+    starts = [i for i, m in enumerate(messages) if isinstance(m, HumanMessage)]
+    if not starts:
+        return []
+    start = starts[-1]
+    size = sum(len(str(m.content)) + len(str(getattr(m, "tool_calls", []))) for m in messages[start:])
+    for index in reversed(starts[:-1][-MAX_CONTEXT_TURNS + 1:]):
+        extra = sum(len(str(m.content)) + len(str(getattr(m, "tool_calls", []))) for m in messages[index:start])
+        if size + extra > MAX_CONTEXT_CHARS:
+            break
+        size += extra
+        start = index
+    return [RemoveMessage(id=m.id) for m in messages[:start]]
 
 
 def _latest_question(messages: list[AnyMessage]) -> str:
@@ -128,16 +146,15 @@ Sender = Callable[[int, str], Awaitable[None]]
 def _build_model(settings: Settings) -> BaseChatModel:
     from langchain_openai import ChatOpenAI
 
-    model_options: dict[str, Any] = {}
-    if "11434" in settings.openai_base_url:
-        model_options["extra_body"] = {"think": False}
+    from app.services.ollama import model_options
     return ChatOpenAI(
         model=settings.default_model,
         temperature=0,
         api_key=settings.openai_api_key,
         base_url=settings.openai_base_url,
         timeout=settings.request_timeout,
-        **model_options,
+        max_retries=0,
+        **model_options(settings.openai_base_url),
     )
 
 
@@ -145,6 +162,28 @@ def _serialize_result(result: Any) -> str:
     if isinstance(result, str):
         return result
     return json.dumps(result, ensure_ascii=False, default=str)
+
+
+def _knowledge_answer(message: AnyMessage) -> str | None:
+    """Publish retrieved evidence, without a second model inventing additions.
+
+Only the current knowledge tool result is eligible. Other tool kinds and later
+conversation turns keep the normal agent loop. Text is explicitly attributed
+to its source rather than represented as newly verified model prose.
+"""
+    if not isinstance(message, ToolMessage) or message.name != "search_knowledge_base":
+        return None
+    try:
+        sources = json.loads(str(message.content))["sources"]
+        source = sources[0]
+        if not isinstance(source, dict) or type(source.get("id")) is not int or source["id"] < 1:
+            raise ValueError("Invalid source")
+        text = source.get("text") or source["snippet"]
+        if not isinstance(text, str) or not text.strip() or len(text) > 12000:
+            raise ValueError("Invalid evidence")
+        return f"Найденное правило [{source['id']}]:\n{text}\n\nИсточник: {source['file_name']}"
+    except (ValueError, TypeError, KeyError, IndexError):
+        return "Инструмент не вернул проверяемый источник. Уточните запрос к базе знаний."
 
 
 def _last_tool_call(state: AgentState) -> dict[str, Any]:
@@ -165,7 +204,9 @@ def build_agent(
 
     from app.moderation import ModerationService
     moderator = ModerationService()
-    selected_model = model or _build_model(settings or get_settings())
+    selected = settings or get_settings()
+    adapter = ModelAdapter(selected.request_timeout)
+    selected_model = model or _build_model(selected)
 
     async def call_model(state: AgentState, config: RunnableConfig) -> dict[str, Any]:
         options = config.get("configurable", {})
@@ -186,9 +227,11 @@ def build_agent(
             # Keep the current request, so the model cannot copy an old answer
             # instead of issuing the explicitly requested tool call.
             model_messages = model_messages[last_user:]
-        response = await bound_model.ainvoke(
-            [SystemMessage(content=prompt), *model_messages]
-        )
+        if sum(len(str(m.content)) + len(str(getattr(m, "tool_calls", []))) for m in model_messages) > MAX_CONTEXT_CHARS:
+            raise ValueError("Контекст текущего хода агента слишком большой. Уменьшите запрос.")
+        grounded = _knowledge_answer(model_messages[-1])
+        response = (AIMessage(content=grounded) if grounded is not None
+                    else await adapter.invoke(bound_model, [SystemMessage(content=prompt), *model_messages]))
         if required_tool and not any(call["name"] == required_tool for call in response.tool_calls):
             raise RuntimeError("Модель не вызвала явно запрошенный инструмент; ответ без свежих данных отклонён.")
         output = str(response.content) + json.dumps(getattr(response, "tool_calls", []), ensure_ascii=False)
@@ -224,6 +267,8 @@ def build_agent(
                 if selected_tool is None:
                     raise ValueError("Для отправки сформируй отдельный одиночный вызов с подтверждением.")
                 content = _serialize_result(await selected_tool.ainvoke(args))
+                if len(content) > 12000:
+                    content = "Результат инструмента слишком большой. Уточните запрос для меньшего результата."
             except Exception as exc:
                 error = type(exc).__name__
                 if name == DANGEROUS_TOOL_NAME and not _delivery_requested(state["messages"]):
@@ -238,7 +283,8 @@ def build_agent(
         return {"messages": messages, "tool_results": results}
 
     def initialize(state: AgentState):
-        return {"iteration_count": 0, "tool_results": [], "pending_action": None,
+        return {"messages": context_removals(state["messages"]),
+                "iteration_count": 0, "tool_results": [], "pending_action": None,
                 "sent": False, "decision": None, "delivery_result": None}
 
     def stop_at_limit(state: AgentState):

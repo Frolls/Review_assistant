@@ -1,0 +1,188 @@
+{
+  "date": "2026-10-04",
+  "change": "Remove retry example from generic RAG instruction; constrain topic and distinguish dialogue history from evidence.",
+  "runtime": "Actual ChatService with temporary JSON history, current Qdrant index and local Ollama; Telegram system prompt.",
+  "rag_unit_tests": 9,
+  "cases": [
+    {
+      "scenario": "fresh",
+      "question": "Пишу Python-функцию со списком по умолчанию. Почему элементы из предыдущего вызова сохраняются и как правильно задавать такой аргумент?",
+      "previous_answer": null,
+      "answer": "В Python изменяемые объекты (например, списки) по умолчанию создаются один раз при определении функции и разделяются между вызовами. Это приводит к тому, что изменения в одном вызове влияют на последующие. \n\n**Правильный способ:**  \nИспользуйте `None` как значение по умолчанию, а затем инициализируйте объект внутри функции.  \n```python\ndef example(arg=None):\n    if arg is None:\n        arg = []\n    # работа с arg\n```\n\n**Почему это работает:**  \nСоздание списка внутри функции для каждого вызова изолирует состояния между вызовами [1], [4]. \n\n**Проблема:**  \nИспользование `list` напрямую везде, где требуется значение по умолчанию, ведёт к общему состоянию [1].",
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "pep8_style_guide.md",
+          "page": 1,
+          "score": 0.5627,
+          "snippet": "Bare `except:` перехватывает также системные исключения и скрывает дефекты.Следует ловить максимально конкретное исключение и оставлять тело `try` коротким, чтобы было ясно, какая операция ожидаемо падает. `try/except/else` отделяет успешную ветку от обработки ошибки, а `finally` применяется для обязательного освобождения ресурса.Mutable default argument создаётся один раз при определении функции и разделяется между вызовами.Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции."
+        },
+        {
+          "id": 2,
+          "file_name": "pep-0612-v1.0.html",
+          "page": 1,
+          "score": 0.4889,
+          "snippet": "return bar\n\n\nThis is not an implementation convenience, but a soundness requirement.  If we\nwere to allow that second calling style, then the following snippet would be\nproblematic.\n@outer\ndef problem(*, x: object) -> None:\n  pass\n\nproblem(x=\"uh-oh\")"
+        },
+        {
+          "id": 3,
+          "file_name": "pep-0484-v1.0.html",
+          "page": 1,
+          "score": 0.4825,
+          "snippet": "def a_func(arg: 'expensive_mod.SomeClass') -> None:\n    a_var = arg  # type: expensive_mod.SomeClass\n    ...\n\n\n(Note that the type annotation must be enclosed in quotes, making it a\n“forward reference”, to hide the expensive_mod reference from the\ninterpreter runtime.  In the # type comment no quotes are needed.)\nThis approach may also be useful to handle import cycles.\n\n\nArbitrary argument lists and default argument values\nArbitrary argument lists can as well be type annotated,\nso that the definition:\ndef foo(*args: str, **kwds: int): ...\n\n\nis acceptable and it means that, e.g., all of the following\nrepresent function calls with valid types of arguments:\nfoo('a', 'b', 'c')\nfoo(x=1, y=2)\nfoo('', z=0)"
+        },
+        {
+          "id": 4,
+          "file_name": "pep484_type_hints.md",
+          "page": 1,
+          "score": 0.4671,
+          "snippet": "Не следует скрывать сложный callback под `Callable[..., Any]`, если библиотека реально зависит от формы вызова.Аннотации экземпляров и class variables должны различаться. `ClassVar` сообщает анализатору, что поле принадлежит классу и не является обычным instance attribute.Изменяемое значение уровня класса требует особого внимания, поскольку разделяется между экземплярами так же, как mutable default argument функции.Forward reference применяется, когда имя типа ещё не определено; современные версии Python также поддерживают отложенную обработку аннотаций."
+        },
+        {
+          "id": 5,
+          "file_name": "pep-0008-v1.0.html",
+          "page": 1,
+          "score": 0.4643,
+          "snippet": "# Wrong:\ndef munge(input:AnyStr): ...\ndef munge()->PosInt: ...\n\n\n\nDon’t use spaces around the = sign when used to indicate a\nkeyword argument, or when used to indicate a default value for an\nunannotated function parameter:# Correct:\ndef complex(real, imag=0.0):\n    return magic(r=real, i=imag)\n\n\n# Wrong:\ndef complex(real, imag = 0.0):\n    return magic(r = real, i = imag)\n\n\nWhen combining an argument annotation with a default value, however, do use\nspaces around the = sign:\n# Correct:\ndef munge(sep: AnyStr = None): ...\ndef munge(input: AnyStr, sep: AnyStr = None, limit=1000): ...\n\n\n# Wrong:\ndef munge(input: AnyStr=None): ...\ndef munge(input: AnyStr, limit = 1000): ..."
+        }
+      ],
+      "seconds": 102.0,
+      "unrelated_terms": []
+    },
+    {
+      "scenario": "previous_wrong_answer",
+      "question": "Пишу Python-функцию со списком по умолчанию. Почему элементы из предыдущего вызова сохраняются и как правильно задавать такой аргумент?",
+      "previous_answer": "Параметр по умолчанию list создаётся один раз и разделяется между вызовами. Используйте None [1]. Риски: повторная операция без защиты от повторного действия (например, retry) может вызвать дубликаты. Фрагмент [1] подчёркивает необходимость явной инициализации объекта в теле функции.",
+      "answer": "Параметр по умолчанию `list` создаётся один раз при определении функции и разделяется между вызовами. Это приводит к тому, что изменения в предыдущих вызовах сохраняются в последующих. Используйте `None` как значение по умолчанию, а затем инициализируйте список внутри функции:  \n\n```python\ndef my_func(items=None):\n    if items is None:\n        items = []\n    # работа с items\n```\n\nФрагмент [1] подчёркивает, что для списков по умолчанию следует использовать `None` и явно создавать объект внутри функции.",
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "pep8_style_guide.md",
+          "page": 1,
+          "score": 0.5627,
+          "snippet": "Bare `except:` перехватывает также системные исключения и скрывает дефекты.Следует ловить максимально конкретное исключение и оставлять тело `try` коротким, чтобы было ясно, какая операция ожидаемо падает. `try/except/else` отделяет успешную ветку от обработки ошибки, а `finally` применяется для обязательного освобождения ресурса.Mutable default argument создаётся один раз при определении функции и разделяется между вызовами.Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции."
+        },
+        {
+          "id": 2,
+          "file_name": "pep-0612-v1.0.html",
+          "page": 1,
+          "score": 0.4889,
+          "snippet": "return bar\n\n\nThis is not an implementation convenience, but a soundness requirement.  If we\nwere to allow that second calling style, then the following snippet would be\nproblematic.\n@outer\ndef problem(*, x: object) -> None:\n  pass\n\nproblem(x=\"uh-oh\")"
+        },
+        {
+          "id": 3,
+          "file_name": "pep-0484-v1.0.html",
+          "page": 1,
+          "score": 0.4825,
+          "snippet": "def a_func(arg: 'expensive_mod.SomeClass') -> None:\n    a_var = arg  # type: expensive_mod.SomeClass\n    ...\n\n\n(Note that the type annotation must be enclosed in quotes, making it a\n“forward reference”, to hide the expensive_mod reference from the\ninterpreter runtime.  In the # type comment no quotes are needed.)\nThis approach may also be useful to handle import cycles.\n\n\nArbitrary argument lists and default argument values\nArbitrary argument lists can as well be type annotated,\nso that the definition:\ndef foo(*args: str, **kwds: int): ...\n\n\nis acceptable and it means that, e.g., all of the following\nrepresent function calls with valid types of arguments:\nfoo('a', 'b', 'c')\nfoo(x=1, y=2)\nfoo('', z=0)"
+        },
+        {
+          "id": 4,
+          "file_name": "pep484_type_hints.md",
+          "page": 1,
+          "score": 0.4671,
+          "snippet": "Не следует скрывать сложный callback под `Callable[..., Any]`, если библиотека реально зависит от формы вызова.Аннотации экземпляров и class variables должны различаться. `ClassVar` сообщает анализатору, что поле принадлежит классу и не является обычным instance attribute.Изменяемое значение уровня класса требует особого внимания, поскольку разделяется между экземплярами так же, как mutable default argument функции.Forward reference применяется, когда имя типа ещё не определено; современные версии Python также поддерживают отложенную обработку аннотаций."
+        },
+        {
+          "id": 5,
+          "file_name": "pep-0008-v1.0.html",
+          "page": 1,
+          "score": 0.4643,
+          "snippet": "# Wrong:\ndef munge(input:AnyStr): ...\ndef munge()->PosInt: ...\n\n\n\nDon’t use spaces around the = sign when used to indicate a\nkeyword argument, or when used to indicate a default value for an\nunannotated function parameter:# Correct:\ndef complex(real, imag=0.0):\n    return magic(r=real, i=imag)\n\n\n# Wrong:\ndef complex(real, imag = 0.0):\n    return magic(r = real, i = imag)\n\n\nWhen combining an argument annotation with a default value, however, do use\nspaces around the = sign:\n# Correct:\ndef munge(sep: AnyStr = None): ...\ndef munge(input: AnyStr, sep: AnyStr = None, limit=1000): ...\n\n\n# Wrong:\ndef munge(input: AnyStr=None): ...\ndef munge(input: AnyStr, limit = 1000): ..."
+        }
+      ],
+      "seconds": 11.2,
+      "unrelated_terms": []
+    },
+    {
+      "scenario": "relevant_retry",
+      "question": "В PR добавили HTTP-запрос без timeout и автоматический повтор POST, создающего заказ. Какие риски отметить?",
+      "previous_answer": null,
+      "answer": "Риски:  \n1. Отсутствие `timeout` для HTTP-запроса может привести к блокировке потока или зависанию клиента [2].  \n2. Автоматический retry для неидемпотентной операции (POST, создающей заказ) вызывает риски дублирования заказов без проверки состояния [2], [3].  \n\n**Дополнительно**:  \n- Нужно добавить idempotency key или уникальный constraint для предотвращения дублей [3].  \n- Для внешних вызовов рекомендуется логировать метрики latency и error rate [5].  \n\nКонтекст не упоминает ограничения на количество retries или защиту от side effects, что может усугубить проблему.",
+      "sources": [
+        {
+          "id": 1,
+          "file_name": "architecture_review.md",
+          "page": 1,
+          "score": 0.5858,
+          "snippet": "Абстракция на один вызов без понятного контракта усложняет чтение и должна быть отклонена.Ревьюер должен искать нарушение инвариантов: состояние обновляется в нескольких местах, retry повторяет неидемпотентную операцию, cache invalidation не описан, transaction boundary размазан между слоями.Для долгих операций нужен явный async или background-контур.Если HTTP-запрос держит соединение, пока обрабатывает большой diff или много внешних вызовов, нужно обсудить очередь, статус job и лимиты времени."
+        },
+        {
+          "id": 2,
+          "file_name": "secure_code_review.md",
+          "page": 1,
+          "score": 0.5624,
+          "snippet": "Secure Code Review\nВ PR нельзя добавлять секреты, токены, приватные ключи, cookie и реальные credentials.Если секрет уже попал в diff, ревьюер обязан попросить ротацию секрета и убедиться, что значение удалено из истории или обработано по внутреннему incident-процессу.Любой новый outbound HTTP-клиент должен иметь timeout.Retry разрешён только для идемпотентных операций или при явной защите от повторного side effect.Для внешних URL нужен allowlist доменов, чтобы не открыть SSRF.Пользовательский ввод нельзя напрямую передавать в shell, SQL, шаблоны или файловые пути."
+        },
+        {
+          "id": 3,
+          "file_name": "api_contract_review.md",
+          "page": 1,
+          "score": 0.562,
+          "snippet": "Нельзя заставлять клиента парсить свободный текст ошибки.Идемпотентность важна для POST/PUT операций, которые могут повториться из-за retry.Если операция создаёт ресурс, нужен idempotency key, естественный unique constraint или явная защита от дублей.Для streaming API нужно проверить формат событий, завершение потока, обработку client disconnect и поведение при ошибке LLM или downstream-сервиса.Поток не должен зависать без финального события или закрытия соединения."
+        },
+        {
+          "id": 4,
+          "file_name": "api_contract_review.md",
+          "page": 1,
+          "score": 0.5005,
+          "snippet": "API Contract Review\nРевью API начинается с совместимости контракта.Новый endpoint должен иметь явную request schema, response schema, коды ошибок и ограничения размеров входа.Нельзя принимать произвольный dict без валидации, если endpoint публичный или вызывается другим сервисом.Backward incompatible изменения требуют версии API, feature flag или миграционного периода.Если поле ответа переименовано или меняет тип, ревьюер должен спросить, какие клиенты уже зависят от старого контракта.Ошибки должны быть машинно-читаемыми.Хороший формат содержит стабильный `code`, человекочитаемый `message` и, при необходимости, список field-level details."
+        },
+        {
+          "id": 5,
+          "file_name": "observability_review.md",
+          "page": 1,
+          "score": 0.4687,
+          "snippet": "Observability Review\nРевью observability проверяет, сможет ли команда расследовать incident после merge.Важные операции должны писать structured logs с request id, стабильным event name, latency, outcome и безопасным набором параметров.Логи не должны содержать секреты, полный пользовательский prompt, приватный diff, cookie или персональные данные.Если нужен preview, он должен проходить redaction до записи.Маскирование после логирования не считается защитой.Для внешних вызовов нужны метрики latency, error rate и retry count.Если новый HTTP-клиент или LLM-клиент не даёт понять, какой backend упал и сколько занял запрос, ревьюер должен попросить добавить instrumentation."
+        }
+      ],
+      "seconds": 12.5,
+      "unrelated_terms": []
+    }
+  ],
+  "limitations": "Small live regression check, not a new RAGAS evaluation or guarantee against hallucinations.",
+  "deployed_bot_client_check": {
+    "question": "Пишу Python-функцию со списком по умолчанию. Почему элементы из предыдущего вызова сохраняются и как правильно задавать такой аргумент?",
+    "answer": "В Python списки (и другие муtable объекты) в качестве значений по умолчанию создаются один раз при определении функции и разделяются между вызовами. Это приводит к тому, что изменения в одном вызове влияют на последующие [1].  \n\n**Правильный способ:**  \nУстанавливайте значение по умолчанию как `None`, а внутри функции инициализируйте список новым объектом. Пример:  \n```python\ndef append_item(item, my_list=None):\n    if my_list is None:\n        my_list = []\n    my_list.append(item)\n    return my_list\n```  \nТакой подход гарантирует, что каждый вызов получает отдельный список [1].  \n\n**Почему это работает:**  \nПри передаче `None` интерпретатор не создаёт список до тех пор, пока не потребуется (т.е. при первом вызове, где `my_list is None`). После инициализации список локализуется для каждого вызова [1].",
+    "retrieved_sources": [
+      {
+        "id": 1,
+        "file_name": "pep8_style_guide.md",
+        "page": 1,
+        "score": 0.5627,
+        "snippet": "Bare `except:` перехватывает также системные исключения и скрывает дефекты.Следует ловить максимально конкретное исключение и оставлять тело `try` коротким, чтобы было ясно, какая операция ожидаемо падает. `try/except/else` отделяет успешную ветку от обработки ошибки, а `finally` применяется для обязательного освобождения ресурса.Mutable default argument создаётся один раз при определении функции и разделяется между вызовами.Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции."
+      },
+      {
+        "id": 2,
+        "file_name": "pep-0612-v1.0.html",
+        "page": 1,
+        "score": 0.4889,
+        "snippet": "return bar\n\n\nThis is not an implementation convenience, but a soundness requirement.  If we\nwere to allow that second calling style, then the following snippet would be\nproblematic.\n@outer\ndef problem(*, x: object) -> None:\n  pass\n\nproblem(x=\"uh-oh\")"
+      },
+      {
+        "id": 3,
+        "file_name": "pep-0484-v1.0.html",
+        "page": 1,
+        "score": 0.4825,
+        "snippet": "def a_func(arg: 'expensive_mod.SomeClass') -> None:\n    a_var = arg  # type: expensive_mod.SomeClass\n    ...\n\n\n(Note that the type annotation must be enclosed in quotes, making it a\n“forward reference”, to hide the expensive_mod reference from the\ninterpreter runtime.  In the # type comment no quotes are needed.)\nThis approach may also be useful to handle import cycles.\n\n\nArbitrary argument lists and default argument values\nArbitrary argument lists can as well be type annotated,\nso that the definition:\ndef foo(*args: str, **kwds: int): ...\n\n\nis acceptable and it means that, e.g., all of the following\nrepresent function calls with valid types of arguments:\nfoo('a', 'b', 'c')\nfoo(x=1, y=2)\nfoo('', z=0)"
+      },
+      {
+        "id": 4,
+        "file_name": "pep484_type_hints.md",
+        "page": 1,
+        "score": 0.4671,
+        "snippet": "Не следует скрывать сложный callback под `Callable[..., Any]`, если библиотека реально зависит от формы вызова.Аннотации экземпляров и class variables должны различаться. `ClassVar` сообщает анализатору, что поле принадлежит классу и не является обычным instance attribute.Изменяемое значение уровня класса требует особого внимания, поскольку разделяется между экземплярами так же, как mutable default argument функции.Forward reference применяется, когда имя типа ещё не определено; современные версии Python также поддерживают отложенную обработку аннотаций."
+      },
+      {
+        "id": 5,
+        "file_name": "pep-0008-v1.0.html",
+        "page": 1,
+        "score": 0.4643,
+        "snippet": "# Wrong:\ndef munge(input:AnyStr): ...\ndef munge()->PosInt: ...\n\n\n\nDon’t use spaces around the = sign when used to indicate a\nkeyword argument, or when used to indicate a default value for an\nunannotated function parameter:# Correct:\ndef complex(real, imag=0.0):\n    return magic(r=real, i=imag)\n\n\n# Wrong:\ndef complex(real, imag = 0.0):\n    return magic(r = real, i = imag)\n\n\nWhen combining an argument annotation with a default value, however, do use\nspaces around the = sign:\n# Correct:\ndef munge(sep: AnyStr = None): ...\ndef munge(input: AnyStr, sep: AnyStr = None, limit=1000): ...\n\n\n# Wrong:\ndef munge(input: AnyStr=None): ...\ndef munge(input: AnyStr, limit = 1000): ..."
+      }
+    ],
+    "telegram_source_pages": [
+      "Источники, указанные в ответе:\n[1] pep8_style_guide.md, стр. 1\nBare except: перехватывает также системные исключения и скрывает дефекты.Следует ловить максимально конкретное исключение и оставлять тело try коротким, чтобы было ясно, какая операция ожидаемо падает. try/except/else отделяет успешную ветку от обработки ошибки, а finally применяется для обязательного освобождения ресурса.Mutable default argument создаётся один раз при определении функции и разделяется между вызовами.Для списка, словаря или множества по умолчанию используется None, после чего объект создаётся внутри функции.\n"
+    ]
+  }
+}

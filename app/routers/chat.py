@@ -3,11 +3,12 @@ from __future__ import annotations
 import json
 from collections.abc import AsyncIterator
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 
 from app.deps.providers import LLMServiceDep
 from app.routers.responses import CHAT_RESPONSES, CHAT_STREAM_RESPONSES
+from app.observability.streaming import with_heartbeat, remaining_turn_time
 from app.schemas.chat import ChatRequest, ChatResponse
 
 
@@ -29,7 +30,7 @@ async def chat(payload: ChatRequest, llm_service: LLMServiceDep) -> ChatResponse
     summary="Stream a chat completion",
     responses=CHAT_STREAM_RESPONSES,
 )
-async def chat_stream(payload: ChatRequest, llm_service: LLMServiceDep) -> StreamingResponse:
+async def chat_stream(payload: ChatRequest, request: Request, llm_service: LLMServiceDep) -> StreamingResponse:
     async def event_stream() -> AsyncIterator[str]:
         async for delta in llm_service.stream(payload):
             if delta.content is not None:
@@ -44,4 +45,5 @@ async def chat_stream(payload: ChatRequest, llm_service: LLMServiceDep) -> Strea
 
         yield "data: [DONE]\n\n"
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    return StreamingResponse(with_heartbeat(event_stream(), deadline=remaining_turn_time(request),
+        heartbeat=": processing\n\n", timeout_event='data: {"error": "turn_timeout"}\n\n'), media_type="text/event-stream")

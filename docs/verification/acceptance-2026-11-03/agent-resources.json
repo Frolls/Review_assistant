@@ -1,0 +1,3801 @@
+{
+  "platform": "Linux-7.3.0-x86_64-with-glibc2.42",
+  "cpu_count": 32,
+  "duration_seconds": 18.884769764998055,
+  "exit_code": 0,
+  "peak_host_ram_kib": 23551072,
+  "clock_ticks_per_second": 100,
+  "scope": "host-wide; includes other processes; API price does not measure compute cost",
+  "baseline": [
+    {
+      "time": 45648.129053191,
+      "cpu_total": 146479399,
+      "cpu_idle": 144373377,
+      "ram_used_kib": 22943880,
+      "load1": 1.48779296875,
+      "utc": "2026-11-03T16:25:25.938581+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 8,
+          "mem_info_vram_used": 16544980992,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 55.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.017
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1563,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    },
+    {
+      "time": 45648.649958465,
+      "cpu_total": 146481081,
+      "cpu_idle": 144375024,
+      "ram_used_kib": 22949396,
+      "load1": 1.48779296875,
+      "utc": "2026-11-03T16:25:26.459489+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 8,
+          "mem_info_vram_used": 16544980992,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 55.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.015
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1563,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    },
+    {
+      "time": 45649.161358858,
+      "cpu_total": 146482733,
+      "cpu_idle": 144376641,
+      "ram_used_kib": 22960892,
+      "load1": 1.48779296875,
+      "utc": "2026-11-03T16:25:26.970892+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 9,
+          "mem_info_vram_used": 16544980992,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 55.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.014
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1563,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    },
+    {
+      "time": 45649.672507184,
+      "cpu_total": 146484383,
+      "cpu_idle": 144378233,
+      "ram_used_kib": 22956776,
+      "load1": 1.529296875,
+      "utc": "2026-11-03T16:25:27.482040+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 8,
+          "mem_info_vram_used": 16544980992,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 55.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.017
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1563,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ]
+    },
+    {
+      "time": 45650.184196094,
+      "cpu_total": 146486035,
+      "cpu_idle": 144379850,
+      "ram_used_kib": 22962480,
+      "load1": 1.529296875,
+      "utc": "2026-11-03T16:25:27.993731+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 8,
+          "mem_info_vram_used": 16544980992,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 54.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.014
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1563,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    },
+    {
+      "time": 45650.6958183,
+      "cpu_total": 146487690,
+      "cpu_idle": 144381436,
+      "ram_used_kib": 22950004,
+      "load1": 1.529296875,
+      "utc": "2026-11-03T16:25:28.505348+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 8,
+          "mem_info_vram_used": 16544980992,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 55.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.017
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1563,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    },
+    {
+      "time": 45651.206995062,
+      "cpu_total": 146489341,
+      "cpu_idle": 144383045,
+      "ram_used_kib": 22951360,
+      "load1": 1.529296875,
+      "utc": "2026-11-03T16:25:29.016535+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 9,
+          "mem_info_vram_used": 16544980992,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 55.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.017
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1563,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    },
+    {
+      "time": 45651.718687494,
+      "cpu_total": 146490994,
+      "cpu_idle": 144384654,
+      "ram_used_kib": 22954544,
+      "load1": 1.529296875,
+      "utc": "2026-11-03T16:25:29.528217+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 8,
+          "mem_info_vram_used": 16544980992,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 55.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.017
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1563,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    },
+    {
+      "time": 45652.229262398,
+      "cpu_total": 146492644,
+      "cpu_idle": 144386272,
+      "ram_used_kib": 22950516,
+      "load1": 1.529296875,
+      "utc": "2026-11-03T16:25:30.038792+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 9,
+          "mem_info_vram_used": 16528138240,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 55.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.028
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1563,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ]
+    },
+    {
+      "time": 45652.740798964,
+      "cpu_total": 146494300,
+      "cpu_idle": 144387892,
+      "ram_used_kib": 22960768,
+      "load1": 1.529296875,
+      "utc": "2026-11-03T16:25:30.550331+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 8,
+          "mem_info_vram_used": 16528138240,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 55.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.02
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1563,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    }
+  ],
+  "samples": [
+    {
+      "time": 45653.252666133,
+      "cpu_total": 146495955,
+      "cpu_idle": 144389514,
+      "ram_used_kib": 22966508,
+      "load1": 1.529296875,
+      "utc": "2026-11-03T16:25:31.062195+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 8,
+          "mem_info_vram_used": 16528138240,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 55.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.015
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1563,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ]
+    },
+    {
+      "time": 45653.764040114,
+      "cpu_total": 146497609,
+      "cpu_idle": 144391092,
+      "ram_used_kib": 23026248,
+      "load1": 1.529296875,
+      "utc": "2026-11-03T16:25:31.573570+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 8,
+          "mem_info_vram_used": 16528138240,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 55.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16748544,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.048
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1564,
+          "rss_bytes": 39403520
+        },
+        {
+          "pid": 381157,
+          "name": "llama-server",
+          "cpu_ticks": 30159,
+          "rss_bytes": 1990115328
+        },
+        {
+          "pid": 381219,
+          "name": "llama-server",
+          "cpu_ticks": 2147,
+          "rss_bytes": 912834560
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.354923905+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "model": "review-context-dc37a066192437ac:ctx8192",
+          "size": 10425372507,
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen2",
+            "families": [
+              "qwen2"
+            ],
+            "parameter_size": "14.8B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:28:15.318059142+05:00",
+          "size_vram": 10425372507,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 4.594921402660212
+    },
+    {
+      "time": 45654.273637863,
+      "cpu_total": 146499257,
+      "cpu_idle": 144392574,
+      "ram_used_kib": 21160712,
+      "load1": 1.529296875,
+      "utc": "2026-11-03T16:25:32.083169+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 39,
+          "mem_info_vram_used": 1915523072,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2231369728,
+          "power_watts": 76.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16674816,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12701696,
+          "power_watts": 0.038
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1569,
+          "rss_bytes": 40976384
+        }
+      ],
+      "loaded_models": [],
+      "host_cpu_percent": 10.072815533980584
+    },
+    {
+      "time": 45654.783063968,
+      "cpu_total": 146500904,
+      "cpu_idle": 144394154,
+      "ram_used_kib": 21281824,
+      "load1": 1.48681640625,
+      "utc": "2026-11-03T16:25:32.592593+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 10,
+          "mem_info_vram_used": 1915576320,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2235596800,
+          "power_watts": 34.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16711680,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.048
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1572,
+          "rss_bytes": 41435136
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 6,
+          "rss_bytes": 141643776
+        }
+      ],
+      "loaded_models": [],
+      "host_cpu_percent": 4.068002428658168
+    },
+    {
+      "time": 45655.293559469,
+      "cpu_total": 146502557,
+      "cpu_idle": 144395723,
+      "ram_used_kib": 21520848,
+      "load1": 1.48681640625,
+      "utc": "2026-11-03T16:25:33.103089+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 46,
+          "mem_info_vram_used": 8495464448,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237734912,
+          "power_watts": 69.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.064
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1573,
+          "rss_bytes": 41132032
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 56,
+          "rss_bytes": 795058176
+        }
+      ],
+      "loaded_models": [],
+      "host_cpu_percent": 5.081669691470059
+    },
+    {
+      "time": 45655.803357861,
+      "cpu_total": 146504205,
+      "cpu_idle": 144397068,
+      "ram_used_kib": 21577612,
+      "load1": 1.48681640625,
+      "utc": "2026-11-03T16:25:33.612889+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 64,
+          "mem_info_vram_used": 8798056448,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237747200,
+          "power_watts": 173.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.043
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1573,
+          "rss_bytes": 41132032
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 308,
+          "rss_bytes": 970907648
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:33.621497448+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 18.38592233009708
+    },
+    {
+      "time": 45656.31264706,
+      "cpu_total": 146505852,
+      "cpu_idle": 144398341,
+      "ram_used_kib": 21733256,
+      "load1": 1.48681640625,
+      "utc": "2026-11-03T16:25:34.122177+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 90,
+          "mem_info_vram_used": 8798535680,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237747200,
+          "power_watts": 213.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.039
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1573,
+          "rss_bytes": 41132032
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 656,
+          "rss_bytes": 1134944256
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:33.903403852+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 22.707953855494843
+    },
+    {
+      "time": 45656.821899706,
+      "cpu_total": 146507498,
+      "cpu_idle": 144399716,
+      "ram_used_kib": 21736136,
+      "load1": 1.48681640625,
+      "utc": "2026-11-03T16:25:34.631430+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 99,
+          "mem_info_vram_used": 8798834688,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237747200,
+          "power_watts": 217.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.055
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1573,
+          "rss_bytes": 41132032
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 902,
+          "rss_bytes": 1134944256
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:33.903403852+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 16.46415552855407
+    },
+    {
+      "time": 45657.331406521,
+      "cpu_total": 146509140,
+      "cpu_idle": 144400867,
+      "ram_used_kib": 21735128,
+      "load1": 1.48681640625,
+      "utc": "2026-11-03T16:25:35.140938+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 99,
+          "mem_info_vram_used": 8798834688,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237747200,
+          "power_watts": 220.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.072
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1573,
+          "rss_bytes": 41132032
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 1389,
+          "rss_bytes": 1134944256
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:33.903403852+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 29.90255785627284
+    },
+    {
+      "time": 45657.843099378,
+      "cpu_total": 146510798,
+      "cpu_idle": 144401960,
+      "ram_used_kib": 21726064,
+      "load1": 1.48681640625,
+      "utc": "2026-11-03T16:25:35.652629+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 91,
+          "mem_info_vram_used": 8798834688,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237747200,
+          "power_watts": 204.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.077
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1573,
+          "rss_bytes": 41132032
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 1904,
+          "rss_bytes": 1134944256
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:35.601653534+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 34.07720144752714
+    },
+    {
+      "time": 45658.352280558,
+      "cpu_total": 146512442,
+      "cpu_idle": 144403160,
+      "ram_used_kib": 21900352,
+      "load1": 1.48681640625,
+      "utc": "2026-11-03T16:25:36.161811+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 83,
+          "mem_info_vram_used": 8799428608,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237747200,
+          "power_watts": 205.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.085
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1573,
+          "rss_bytes": 41132032
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 2312,
+          "rss_bytes": 1310842880
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:35.601653534+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 27.00729927007299
+    },
+    {
+      "time": 45658.862554231,
+      "cpu_total": 146514091,
+      "cpu_idle": 144404306,
+      "ram_used_kib": 21917120,
+      "load1": 1.48681640625,
+      "utc": "2026-11-03T16:25:36.672084+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 92,
+          "mem_info_vram_used": 8800026624,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237747200,
+          "power_watts": 216.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.101
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1575,
+          "rss_bytes": 40861696
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 2771,
+          "rss_bytes": 1311105024
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:36.547971941+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 30.503335354760463
+    },
+    {
+      "time": 45659.372061539,
+      "cpu_total": 146515740,
+      "cpu_idle": 144405457,
+      "ram_used_kib": 21902972,
+      "load1": 1.48681640625,
+      "utc": "2026-11-03T16:25:37.181591+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 99,
+          "mem_info_vram_used": 8800026624,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237747200,
+          "power_watts": 219.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.094
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1575,
+          "rss_bytes": 40861696
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 3256,
+          "rss_bytes": 1311105024
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:36.547971941+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 30.200121285627656
+    },
+    {
+      "time": 45659.883373195,
+      "cpu_total": 146517397,
+      "cpu_idle": 144406528,
+      "ram_used_kib": 21934728,
+      "load1": 1.6083984375,
+      "utc": "2026-11-03T16:25:37.692903+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 84,
+          "mem_info_vram_used": 8800325632,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237747200,
+          "power_watts": 196.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.109
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1576,
+          "rss_bytes": 41123840
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 3774,
+          "rss_bytes": 1311629312
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:37.633287326+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 35.36511768255885
+    },
+    {
+      "time": 45660.39317863,
+      "cpu_total": 146519046,
+      "cpu_idle": 144407666,
+      "ram_used_kib": 21936332,
+      "load1": 1.6083984375,
+      "utc": "2026-11-03T16:25:38.202709+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 99,
+          "mem_info_vram_used": 8800624640,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237747200,
+          "power_watts": 222.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.058
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1576,
+          "rss_bytes": 41123840
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 4248,
+          "rss_bytes": 1311629312
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:37.633287326+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 30.988477865372953
+    },
+    {
+      "time": 45660.903135323,
+      "cpu_total": 146520691,
+      "cpu_idle": 144408854,
+      "ram_used_kib": 21949136,
+      "load1": 1.6083984375,
+      "utc": "2026-11-03T16:25:38.712665+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 93,
+          "mem_info_vram_used": 8800923648,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2237747200,
+          "power_watts": 217.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16715776,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12709888,
+          "power_watts": 0.069
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1576,
+          "rss_bytes": 41123840
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 4679,
+          "rss_bytes": 1311891456
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:38.23569518+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 27.781155015197566
+    },
+    {
+      "time": 45661.412542401,
+      "cpu_total": 146522343,
+      "cpu_idle": 144410153,
+      "ram_used_kib": 22029852,
+      "load1": 1.6083984375,
+      "utc": "2026-11-03T16:25:39.222073+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 45,
+          "mem_info_vram_used": 9024778240,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244091904,
+          "power_watts": 123.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.064
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1579,
+          "rss_bytes": 40796160
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 4971,
+          "rss_bytes": 1311891456
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 22,
+          "rss_bytes": 268730368
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:38.914152886+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 21.368038740920092
+    },
+    {
+      "time": 45661.92232356,
+      "cpu_total": 146523993,
+      "cpu_idle": 144411599,
+      "ram_used_kib": 22244828,
+      "load1": 1.6083984375,
+      "utc": "2026-11-03T16:25:39.731855+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 34,
+          "mem_info_vram_used": 12548468736,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 74.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.05
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1579,
+          "rss_bytes": 40796160
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 4971,
+          "rss_bytes": 1311891456
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 172,
+          "rss_bytes": 883924992
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:38.914152886+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 12.363636363636365
+    },
+    {
+      "time": 45662.431763374,
+      "cpu_total": 146525640,
+      "cpu_idle": 144412808,
+      "ram_used_kib": 22373312,
+      "load1": 1.6083984375,
+      "utc": "2026-11-03T16:25:40.241293+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 82,
+          "mem_info_vram_used": 12617551872,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 203.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.064
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1581,
+          "rss_bytes": 40521728
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 5257,
+          "rss_bytes": 1269948416
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:38.914152886+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 26.593806921675778
+    },
+    {
+      "time": 45662.941294767,
+      "cpu_total": 146527285,
+      "cpu_idle": 144414087,
+      "ram_used_kib": 22568620,
+      "load1": 1.6083984375,
+      "utc": "2026-11-03T16:25:40.750824+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 91,
+          "mem_info_vram_used": 12617535488,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 211.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.048
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1581,
+          "rss_bytes": 40521728
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 5573,
+          "rss_bytes": 1309347840
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:40.258788186+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 22.24924012158055
+    },
+    {
+      "time": 45663.450960138,
+      "cpu_total": 146528936,
+      "cpu_idle": 144415332,
+      "ram_used_kib": 22570272,
+      "load1": 1.6083984375,
+      "utc": "2026-11-03T16:25:41.260490+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 99,
+          "mem_info_vram_used": 12617834496,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 219.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.102
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1581,
+          "rss_bytes": 40521728
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 5957,
+          "rss_bytes": 1309347840
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:40.258788186+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 24.591156874621444
+    },
+    {
+      "time": 45663.960276925,
+      "cpu_total": 146530580,
+      "cpu_idle": 144416467,
+      "ram_used_kib": 22575336,
+      "load1": 1.6083984375,
+      "utc": "2026-11-03T16:25:41.769807+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 99,
+          "mem_info_vram_used": 12617834496,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 219.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.097
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1581,
+          "rss_bytes": 40521728
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 6441,
+          "rss_bytes": 1309347840
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:40.258788186+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 30.961070559610704
+    },
+    {
+      "time": 45664.470884638,
+      "cpu_total": 146532227,
+      "cpu_idle": 144417619,
+      "ram_used_kib": 22570848,
+      "load1": 1.64013671875,
+      "utc": "2026-11-03T16:25:42.280415+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 99,
+          "mem_info_vram_used": 12617834496,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 219.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.105
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1581,
+          "rss_bytes": 40521728
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 6924,
+          "rss_bytes": 1309347840
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:40.258788186+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 30.05464480874317
+    },
+    {
+      "time": 45664.981850672,
+      "cpu_total": 146533880,
+      "cpu_idle": 144418765,
+      "ram_used_kib": 22575240,
+      "load1": 1.64013671875,
+      "utc": "2026-11-03T16:25:42.791380+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 99,
+          "mem_info_vram_used": 12617834496,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 219.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.094
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1582,
+          "rss_bytes": 40521728
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 7408,
+          "rss_bytes": 1309347840
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:40.258788186+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 30.671506352087118
+    },
+    {
+      "time": 45665.493051765,
+      "cpu_total": 146535528,
+      "cpu_idle": 144419891,
+      "ram_used_kib": 22551600,
+      "load1": 1.64013671875,
+      "utc": "2026-11-03T16:25:43.302582+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 99,
+          "mem_info_vram_used": 12617834496,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 220.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.091
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1582,
+          "rss_bytes": 40521728
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 7892,
+          "rss_bytes": 1309347840
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:40.258788186+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 31.6747572815534
+    },
+    {
+      "time": 45666.004615208,
+      "cpu_total": 146537189,
+      "cpu_idle": 144421041,
+      "ram_used_kib": 22542668,
+      "load1": 1.64013671875,
+      "utc": "2026-11-03T16:25:43.814145+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 98,
+          "mem_info_vram_used": 12618133504,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 220.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.058
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1582,
+          "rss_bytes": 40521728
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 8366,
+          "rss_bytes": 1309347840
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:40.258788186+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 30.764599638771827
+    },
+    {
+      "time": 45666.515341573,
+      "cpu_total": 146538844,
+      "cpu_idle": 144422191,
+      "ram_used_kib": 22543028,
+      "load1": 1.64013671875,
+      "utc": "2026-11-03T16:25:44.324874+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 99,
+          "mem_info_vram_used": 12618133504,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 219.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.065
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1582,
+          "rss_bytes": 40521728
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 8843,
+          "rss_bytes": 1309347840
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:40.258788186+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 30.513595166163142
+    },
+    {
+      "time": 45667.024973671,
+      "cpu_total": 146540490,
+      "cpu_idle": 144423525,
+      "ram_used_kib": 22842480,
+      "load1": 1.64013671875,
+      "utc": "2026-11-03T16:25:44.834503+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 75,
+          "mem_info_vram_used": 12618461184,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 180.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.077
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1583,
+          "rss_bytes": 40783872
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 9132,
+          "rss_bytes": 1660358656
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:44.604082907+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 18.955042527339007
+    },
+    {
+      "time": 45667.535136898,
+      "cpu_total": 146542137,
+      "cpu_idle": 144425040,
+      "ram_used_kib": 22845244,
+      "load1": 1.64013671875,
+      "utc": "2026-11-03T16:25:45.344668+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 100,
+          "mem_info_vram_used": 12618461184,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 230.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.131
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1583,
+          "rss_bytes": 40783872
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 9234,
+          "rss_bytes": 1660358656
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:44.604082907+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 8.014571948998183
+    },
+    {
+      "time": 45668.048164543,
+      "cpu_total": 146543795,
+      "cpu_idle": 144426502,
+      "ram_used_kib": 23173660,
+      "load1": 1.64013671875,
+      "utc": "2026-11-03T16:25:45.857696+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 76,
+          "mem_info_vram_used": 12619096064,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 186.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.065
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1583,
+          "rss_bytes": 40783872
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 9385,
+          "rss_bytes": 2017923072
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:45.511062988+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 11.821471652593484
+    },
+    {
+      "time": 45668.557508241,
+      "cpu_total": 146545441,
+      "cpu_idle": 144427905,
+      "ram_used_kib": 23176108,
+      "load1": 1.64013671875,
+      "utc": "2026-11-03T16:25:46.367040+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 100,
+          "mem_info_vram_used": 12619096064,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 220.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.052
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1583,
+          "rss_bytes": 40783872
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 9606,
+          "rss_bytes": 2017923072
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:45.511062988+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 14.763061968408264
+    },
+    {
+      "time": 45669.06699391,
+      "cpu_total": 146547087,
+      "cpu_idle": 144429254,
+      "ram_used_kib": 23166300,
+      "load1": 1.64013671875,
+      "utc": "2026-11-03T16:25:46.876525+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 99,
+          "mem_info_vram_used": 12619395072,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 219.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.097
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1583,
+          "rss_bytes": 40783872
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 9891,
+          "rss_bytes": 2017923072
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:45.511062988+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 18.04374240583232
+    },
+    {
+      "time": 45669.578703099,
+      "cpu_total": 146548739,
+      "cpu_idle": 144430445,
+      "ram_used_kib": 23170296,
+      "load1": 1.5888671875,
+      "utc": "2026-11-03T16:25:47.388232+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 90,
+          "mem_info_vram_used": 12619694080,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 205.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.041
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1583,
+          "rss_bytes": 40783872
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 10312,
+          "rss_bytes": 2017923072
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:47.341888148+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 27.90556900726392
+    },
+    {
+      "time": 45670.087900841,
+      "cpu_total": 146550382,
+      "cpu_idle": 144431615,
+      "ram_used_kib": 23153104,
+      "load1": 1.5888671875,
+      "utc": "2026-11-03T16:25:47.897431+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 82,
+          "mem_info_vram_used": 12619993088,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 200.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.064
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1585,
+          "rss_bytes": 40783872
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 10767,
+          "rss_bytes": 2018447360
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:47.341888148+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 28.788800973828366
+    },
+    {
+      "time": 45670.597635294,
+      "cpu_total": 146552030,
+      "cpu_idle": 144432882,
+      "ram_used_kib": 23551072,
+      "load1": 1.5888671875,
+      "utc": "2026-11-03T16:25:48.407165+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 69,
+          "mem_info_vram_used": 12620333056,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 167.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.053
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1585,
+          "rss_bytes": 40783872
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 11113,
+          "rss_bytes": 2417954816
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:48.120687115+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 23.11893203883495
+    },
+    {
+      "time": 45671.106923172,
+      "cpu_total": 146553672,
+      "cpu_idle": 144434002,
+      "ram_used_kib": 23534500,
+      "load1": 1.5888671875,
+      "utc": "2026-11-03T16:25:48.916453+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 96,
+          "mem_info_vram_used": 12620636160,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 227.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.097
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1586,
+          "rss_bytes": 41046016
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 11612,
+          "rss_bytes": 2417954816
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:48.676489676+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 31.790499390986604
+    },
+    {
+      "time": 45671.616979033,
+      "cpu_total": 146555317,
+      "cpu_idle": 144435155,
+      "ram_used_kib": 23536068,
+      "load1": 1.5888671875,
+      "utc": "2026-11-03T16:25:49.426509+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 98,
+          "mem_info_vram_used": 12620935168,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 219.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.065
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1586,
+          "rss_bytes": 41046016
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 12083,
+          "rss_bytes": 2417954816
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:49.425681879+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 29.908814589665656
+    },
+    {
+      "time": 45672.127316584,
+      "cpu_total": 146556970,
+      "cpu_idle": 144436774,
+      "ram_used_kib": 23464904,
+      "load1": 1.5888671875,
+      "utc": "2026-11-03T16:25:49.936846+00:00",
+      "amd_gpus": [
+        {
+          "card": "card1",
+          "gpu_busy_percent": 8,
+          "mem_info_vram_used": 12620935168,
+          "mem_info_vram_total": 17163091968,
+          "mem_info_gtt_used": 2244124672,
+          "power_watts": 58.0
+        },
+        {
+          "card": "card0",
+          "gpu_busy_percent": 0,
+          "mem_info_vram_used": 16752640,
+          "mem_info_vram_total": 2147483648,
+          "mem_info_gtt_used": 12718080,
+          "power_watts": 0.048
+        }
+      ],
+      "ollama_processes": [
+        {
+          "pid": 18233,
+          "name": ".ollama-wrapped",
+          "cpu_ticks": 1586,
+          "rss_bytes": 41046016
+        },
+        {
+          "pid": 386768,
+          "name": "llama-server",
+          "cpu_ticks": 12083,
+          "rss_bytes": 2417954816
+        },
+        {
+          "pid": 386897,
+          "name": "llama-server",
+          "cpu_ticks": 297,
+          "rss_bytes": 908238848
+        }
+      ],
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "model": "review-context-4db687d067cf2f20:ctx8192",
+          "size": 6312228290,
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "8.2B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:49.425681879+05:00",
+          "size_vram": 6312228290,
+          "context_length": 8192,
+          "runner": "llamacpp"
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "model": "qwen3-embedding:4b",
+          "size": 3434537287,
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "details": {
+            "parent_model": "",
+            "format": "gguf",
+            "family": "qwen3",
+            "families": [
+              "qwen3"
+            ],
+            "parameter_size": "4.0B",
+            "quantization_level": "Q4_K_M"
+          },
+          "expires_at": "2026-11-03T21:30:39.792596877+05:00",
+          "size_vram": 3434537287,
+          "context_length": 4096,
+          "runner": "llamacpp"
+        }
+      ],
+      "host_cpu_percent": 2.0568663036902635
+    }
+  ]
+}

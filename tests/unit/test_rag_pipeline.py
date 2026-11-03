@@ -148,7 +148,8 @@ async def test_missing_citation_is_disclosed_without_fabricated_marker() -> None
 
     result = await service.answer("How should an Ansible task be written?")
 
-    assert result["answer"] == "Use a dedicated module.\n\nОтвет не содержит ссылок на найденные источники."
+    assert result["answer"] == UNKNOWN_ANSWER
+    assert result["sources"] == [] and result["confident"] is False
 
 
 @pytest.mark.asyncio
@@ -159,7 +160,8 @@ async def test_type_annotation_is_not_mistaken_for_source_marker() -> None:
 
     result = await service.answer("What does the function return?")
 
-    assert result["answer"] == "Return list[str].\n\nОтвет не содержит ссылок на найденные источники."
+    assert result["answer"] == UNKNOWN_ANSWER
+    assert result["status"] == "refused"
 
 
 @pytest.mark.asyncio
@@ -283,3 +285,20 @@ async def test_assessment_disables_ollama_reasoning_without_changing_external_pr
     await service.prepare("How should an Ansible task be written?")
     request = service._llm.chat.completions.calls[0]
     assert request.get("reasoning_effort") == expected
+
+
+@pytest.mark.asyncio
+async def test_image_review_extracts_object_before_searching_rules():
+    service = RAGService(settings(VISION_MODEL="vision-test"))
+    service._retriever = FakeRetriever([scored_node(.8)])
+    fake = FakeLLM("def sample(): pass")
+    service._llm = fake
+    part = {"type": "image_url", "image_url": {"url": "data:image/png;base64,AAA="}}
+    prepared = await service.prepare("Проверь", review_image=part)
+    calls = fake.chat.completions.calls
+    assert calls[0]["model"] == "vision-test"
+    assert calls[0]["messages"][-1]["content"][-1] == part
+    assert "def sample" in calls[1]["messages"][-1]["content"]
+    assert prepared.confident
+    messages = service.generation_messages(prepared, history=[{"role": "user", "content": [part]}])
+    assert part in messages[1]["content"]

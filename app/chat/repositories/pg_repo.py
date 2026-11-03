@@ -139,15 +139,17 @@ class PostgresChatRepository:
         sources: list[dict] | None = None,
     ) -> None:
         chat_result = await self.session.execute(
-            select(ChatRow.owner_external_id)
+            select(ChatRow.owner_external_id, ChatMessageRow.media_refs)
             .join(ChatMessageRow, ChatMessageRow.chat_id == ChatRow.id)
-            .where(ChatRow.id == chat_id, ChatMessageRow.id == message_id)
+            .where(ChatRow.id == chat_id, ChatMessageRow.id == message_id, ChatMessageRow.role == "assistant", ChatMessageRow.deleted_at.is_(None))
             .limit(1)
         )
-        owner_external_id = chat_result.scalar_one_or_none()
-        if owner_external_id is None:
+        row = chat_result.one_or_none()
+        if row is None:
             raise LookupError("Message was not found in this chat")
 
+        owner_external_id, media_refs = row
+        sources = (media_refs or {}).get("review_answer", {}).get("sources", [])
         statement = (
             insert(MessageFeedbackRow)
             .values(

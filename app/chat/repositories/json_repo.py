@@ -20,10 +20,6 @@ from app.moderation import ModerationResult
 def _use_aiofiles() -> bool:
     if os.getenv("CHAT_JSON_FORCE_SYNC_IO", "").lower() in {"1", "true", "yes"}:
         return False
-    # In the Codex sandbox, aiofiles/run_in_executor file opens can hang. Production
-    # and ordinary CI should take the aiofiles path required by the storage contract.
-    if os.getenv("CODEX_CI"):
-        return False
     return True
 
 
@@ -213,6 +209,11 @@ class JsonChatRepository:
         if value not in {"up", "down"}:
             raise ValueError("Unsupported feedback value")
 
+        messages = await self.list_messages(chat_id, limit=100000)
+        message = next((m for m in messages if m.id == message_id and m.role == "assistant"), None)
+        if message is None:
+            raise LookupError("Message was not found in this chat")
+        sources = (message.media_refs or {}).get("review_answer", {}).get("sources", [])
         feedback_path = self._chat_dir(chat_id) / "message_feedback.jsonl"
         existing: list[dict[str, Any]] = []
         if feedback_path.exists():

@@ -47,6 +47,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("DEFAULT_MODEL", "OPENAI_MODEL"),
     )
     vision_model: str | None = Field(default=None, validation_alias="VISION_MODEL")
+    review_model: str | None = Field(default=None, validation_alias="REVIEW_MODEL")
     request_timeout: float = Field(default=30.0, validation_alias="REQUEST_TIMEOUT")
     llm_num_ctx: int | None = Field(default=None, validation_alias="LLM_NUM_CTX")
     redis_url: str = Field(default="redis://localhost:6379/0", validation_alias="REDIS_URL")

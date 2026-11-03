@@ -1,0 +1,102 @@
+{
+  "python": [
+    {
+      "case": "event_queue-defect",
+      "passed": [
+        "independent_keyword_defaults",
+        "explicit_list_identity"
+      ]
+    }
+  ],
+  "ansible": [
+    {
+      "case": "archive_directory-defect",
+      "passed": [
+        "executes_on_localhost",
+        "repeat_has_no_changes"
+      ],
+      "runs": [
+        {
+          "repeat": 0,
+          "returncode": 0,
+          "stdout": "\nPLAY [localhost] ***************************************************************\n\nTASK [Prepare archive directory] ***********************************************\nchanged: [localhost]\n\nPLAY RECAP *********************************************************************\nlocalhost                  : ok=1    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \n\n",
+          "stderr": ""
+        },
+        {
+          "repeat": 1,
+          "returncode": 0,
+          "stdout": "\nPLAY [localhost] ***************************************************************\n\nTASK [Prepare archive directory] ***********************************************\nok: [localhost]\n\nPLAY RECAP *********************************************************************\nlocalhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   \n\n",
+          "stderr": ""
+        }
+      ]
+    }
+  ],
+  "missing_fixes": [
+    "json_import-defect",
+    "finally_override-defect",
+    "mean_contract-defect",
+    "nested_secret-defect"
+  ],
+  "ground_truth": [
+    {
+      "case": "event_queue-defect",
+      "observed_defect": true,
+      "matches_label": true
+    },
+    {
+      "case": "event_queue-fixed",
+      "observed_defect": false,
+      "matches_label": true
+    },
+    {
+      "case": "event_queue-clean",
+      "observed_defect": false,
+      "matches_label": true
+    },
+    {
+      "case": "json_import-defect",
+      "observed_defect": true,
+      "matches_label": true
+    },
+    {
+      "case": "json_import-fixed",
+      "observed_defect": false,
+      "matches_label": true
+    },
+    {
+      "case": "json_import-clean",
+      "observed_defect": false,
+      "matches_label": true
+    },
+    {
+      "case": "finally_override-defect",
+      "observed_defect": true,
+      "matches_label": true
+    },
+    {
+      "case": "finally_override-fixed",
+      "observed_defect": false,
+      "matches_label": true
+    },
+    {
+      "case": "finally_override-clean",
+      "observed_defect": false,
+      "matches_label": true
+    },
+    {
+      "case": "mean_contract-defect",
+      "observed_defect": true,
+      "matches_label": true
+    },
+    {
+      "case": "mean_contract-fixed",
+      "observed_defect": false,
+      "matches_label": true
+    },
+    {
+      "case": "mean_contract-clean",
+      "observed_defect": false,
+      "matches_label": true
+    }
+  ]
+}

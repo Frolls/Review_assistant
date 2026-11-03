@@ -21,6 +21,38 @@ class Model:
 
 
 @pytest.mark.asyncio
+async def test_clear_agent_removes_pending_and_rejects_old_approval_after_restart(tmp_path):
+    from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
+    sender = AsyncMock()
+    app = FastAPI()
+    app.state.llm_semaphore = asyncio.Semaphore(1)
+
+    @app.middleware("http")
+    async def identity(request: Request, call_next):
+        request.state.owner_id = request.headers.get("X-User-ID", "1001")
+        return await call_next(request)
+
+    app.include_router(router)
+    path = str(tmp_path / "checkpoints.sqlite")
+    async with AsyncSqliteSaver.from_conn_string(path) as saver:
+        app.state.agent_graph = build_agent(saver, model=Model(), sender=sender)
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            await client.post("/agent/stream", json={"thread_id": "telegram-actions", "input": {"messages": [{"role": "user", "content": "Send"}]}})
+            pending = (await client.get("/agent/pending")).json()["pending"]
+            await client.delete("/agent/history", headers={"X-User-ID": "2002"})
+            assert (await client.get("/agent/pending")).json()["pending"] == pending
+            assert (await client.delete("/agent/history")).status_code == 200
+    async with AsyncSqliteSaver.from_conn_string(path) as saver:
+        app.state.agent_graph = build_agent(saver, model=Model(), sender=sender)
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            assert (await client.get("/agent/pending")).json()["pending"] is None
+            resume = {"thread_id": "telegram-actions", "resume": True, "request_id": pending["request_id"]}
+            assert (await client.post("/agent/stream", json=resume)).status_code == 409
+    sender.assert_not_called()
+
+
+@pytest.mark.asyncio
 async def test_pending_actions_are_owner_bound_and_cannot_be_resumed_twice():
     sender = AsyncMock()
     app = FastAPI()

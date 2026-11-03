@@ -1,0 +1,6 @@
+{
+  "model_response": {
+    "fix": "def average(values):\n    if len(values) == 0:\n        return 0\n    return sum(values) / len(values)"
+  },
+  "rejection": "Unsupported multi-statement function in bounded interpreter; v12 asks only for replacement expression and preserves function structure."
+}

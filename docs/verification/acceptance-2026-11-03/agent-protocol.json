@@ -1,0 +1,21 @@
+{
+  "script_sha256": "5500295201233a85f0fca357c29f919411db5af1dd6a384caa7b76249b4d0480",
+  "script": "scripts/live_agent_acceptance.py",
+  "expected_steps": 9,
+  "checks": [
+    "real readiness of both services",
+    "RAG citation",
+    "remember label",
+    "fresh local time",
+    "fresh UTC follow-up",
+    "knowledge tool",
+    "recall after tools",
+    "exact preview",
+    "cancel",
+    "new unique request ID",
+    "clear pending and memory",
+    "reject stale request"
+  ],
+  "positive_resume": false,
+  "notify_calls_expected": 0
+}

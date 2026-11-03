@@ -38,6 +38,7 @@ async def test_rag_query_returns_answer_with_sources() -> None:
     assert response.status_code == 200
     assert response.json() == {
         "answer": "answer for Что проверить?",
+        "status": "answered",
         "top_score": 0.75,
         "confident": True,
         "sources": [

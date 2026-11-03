@@ -1,0 +1,176 @@
+[
+  {
+    "id": "cache_map-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Каждый вызов без cache получает независимый словарь; переданный словарь меняется на месте.",
+    "code": "def record(key, *, cache={}):\n    cache[key] = True\n    return cache\n",
+    "expected_defects": [
+      "mutable-default"
+    ],
+    "reference_fix": "def record(key, *, cache=None):\n    if cache is None:\n        cache = {}\n    cache[key] = True\n    return cache\n"
+  },
+  {
+    "id": "cache_map-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Каждый вызов без cache получает независимый словарь; переданный словарь меняется на месте.",
+    "code": "def record(key, *, cache=None):\n    if cache is None:\n        cache = {}\n    cache[key] = True\n    return cache\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "cache_map-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Каждый вызов без cache получает независимый словарь; переданный словарь меняется на месте.",
+    "code": "def record(key):\n    return {key: True}\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "math_import-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Самодостаточный модуль вычисляет квадратный корень неотрицательного числа. Скрытых глобальных имён нет.",
+    "code": "def root(number):\n    return math.sqrt(number)\n",
+    "expected_defects": [
+      "undefined-name"
+    ],
+    "reference_fix": "import math\n\ndef root(number):\n    return math.sqrt(number)\n"
+  },
+  {
+    "id": "math_import-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Самодостаточный модуль вычисляет квадратный корень неотрицательного числа. Скрытых глобальных имён нет.",
+    "code": "import math\n\ndef root(number):\n    return math.sqrt(number)\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "math_import-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Самодостаточный модуль вычисляет квадратный корень неотрицательного числа. Скрытых глобальных имён нет.",
+    "code": "from math import sqrt\n\ndef root(number):\n    return sqrt(number)\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "cleanup_finally-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Вернуть частное 10/value; ZeroDivisionError должен дойти до вызывающего кода, а журнал events должен пополниться строкой done при любом исходе.",
+    "code": "def divide(value, events):\n    try:\n        return 10 / value\n    finally:\n        events.append('done')\n        return None\n",
+    "expected_defects": [
+      "finally-suppresses-result-and-error"
+    ],
+    "reference_fix": "def divide(value, events):\n    try:\n        return 10 / value\n    finally:\n        events.append('done')\n"
+  },
+  {
+    "id": "cleanup_finally-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Вернуть частное 10/value; ZeroDivisionError должен дойти до вызывающего кода, а журнал events должен пополниться строкой done при любом исходе.",
+    "code": "def divide(value, events):\n    try:\n        return 10 / value\n    finally:\n        events.append('done')\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "cleanup_finally-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Вернуть частное 10/value; ZeroDivisionError должен дойти до вызывающего кода, а журнал events должен пополниться строкой done при любом исходе.",
+    "code": "def divide(value, events):\n    events.append('done')\n    return 10 / value\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "temperature-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Преобразовать градусы Цельсия в Фаренгейты: 0 -> 32; 10 -> 50; -10 -> 14.",
+    "code": "def fahrenheit(celsius):\n    return celsius + 32\n",
+    "expected_defects": [
+      "incorrect-conversion"
+    ],
+    "reference_fix": "def fahrenheit(celsius):\n    return celsius * 1.8 + 32\n"
+  },
+  {
+    "id": "temperature-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Преобразовать градусы Цельсия в Фаренгейты: 0 -> 32; 10 -> 50; -10 -> 14.",
+    "code": "def fahrenheit(celsius):\n    return celsius * 1.8 + 32\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "temperature-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Преобразовать градусы Цельсия в Фаренгейты: 0 -> 32; 10 -> 50; -10 -> 14.",
+    "code": "def fahrenheit(celsius):\n    return celsius * 9 / 5 + 32\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "cache_directory-defect",
+    "kind": "defect",
+    "language": "ansible",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Повторный запуск создания /tmp/review-final-cache не должен завершаться ошибкой. /tmp существует.",
+    "code": "- name: Create cache\n  ansible.builtin.shell:\n    cmd: mkdir /tmp/review-final-cache\n  args:\n    chdir: /tmp\n",
+    "expected_defects": [
+      "non-idempotent-shell"
+    ],
+    "reference_fix": "- name: Create cache\n  ansible.builtin.file:\n    path: /tmp/review-final-cache\n    state: directory\n    mode: \"0700\"\n"
+  },
+  {
+    "id": "cache_directory-fixed",
+    "kind": "fixed",
+    "language": "ansible",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Повторный запуск создания /tmp/review-final-cache не должен завершаться ошибкой. /tmp существует.",
+    "code": "- name: Create cache\n  ansible.builtin.file:\n    path: /tmp/review-final-cache\n    state: directory\n    mode: \"0700\"\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "cache_directory-clean",
+    "kind": "clean",
+    "language": "ansible",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. Повторный запуск создания /tmp/review-final-cache не должен завершаться ошибкой. /tmp существует.",
+    "code": "- name: Inspect cache\n  ansible.builtin.stat:\n    path: /tmp/review-final-cache\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "override_secret-defect",
+    "kind": "defect",
+    "language": "ansible",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. service_token — секрет. Не выводить его в журнал. Учитывай переопределение no_log внутри block.",
+    "code": "- name: Diagnose\n  no_log: true\n  block:\n    - name: Token\n      ansible.builtin.debug:\n        var: service_token\n      no_log: false\n",
+    "expected_defects": [
+      "secret-debug"
+    ],
+    "reference_fix": "- name: Diagnose\n  no_log: true\n  block:\n    - name: Token\n      ansible.builtin.debug:\n        var: service_token\n      no_log: true\n"
+  },
+  {
+    "id": "override_secret-fixed",
+    "kind": "fixed",
+    "language": "ansible",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. service_token — секрет. Не выводить его в журнал. Учитывай переопределение no_log внутри block.",
+    "code": "- name: Diagnose\n  no_log: true\n  block:\n    - name: Token\n      ansible.builtin.debug:\n        var: service_token\n      no_log: true\n",
+    "expected_defects": [],
+    "reference_fix": null
+  },
+  {
+    "id": "override_secret-clean",
+    "kind": "clean",
+    "language": "ansible",
+    "task": "Проверь код по требованию. Назови доказуемые дефекты со ссылками и дай полный исправленный код. Для корректного кода укажи границы проверки. service_token — секрет. Не выводить его в журнал. Учитывай переопределение no_log внутри block.",
+    "code": "- name: Diagnose\n  no_log: false\n  block:\n    - name: Public status\n      ansible.builtin.debug:\n        msg: Ready\n",
+    "expected_defects": [],
+    "reference_fix": null
+  }
+]

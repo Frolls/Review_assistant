@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import os
-from contextlib import nullcontext
+from contextlib import nullcontext, contextmanager
 from typing import Any, ContextManager
 from urllib.parse import urlparse, urlunparse
 
+
+from app.observability.privacy import safe_attributes, configure_content_policy
 
 _TRACING_CONFIGURED = False
 _TRACER: Any | None = None
@@ -16,6 +18,8 @@ def setup_tracing(
     observability_include_content: bool | None = None,
 ) -> None:
     global _TRACER, _TRACING_CONFIGURED
+    if observability_include_content is not None:
+        configure_content_policy(observability_include_content)
     if os.environ.get("PHOENIX_TRACING_ENABLED", "true").lower() == "false":
         _TRACING_CONFIGURED = True
         return
@@ -76,21 +80,23 @@ def rag_span(name: str, **attributes: Any) -> ContextManager[Any]:
     if _TRACER is None:
         return nullcontext()
     span = _TRACER.start_span(name, attributes=_safe_attributes(attributes))
-    return _use_span(span)
+    return _private_span(span)
 
 
 def _use_span(span: Any) -> ContextManager[Any]:
     from opentelemetry import trace
 
-    return trace.use_span(span, end_on_exit=True)
+    return trace.use_span(span, end_on_exit=True, record_exception=False, set_status_on_exception=False)
 
 
 def _safe_attributes(attributes: dict[str, Any]) -> dict[str, Any]:
-    return {
-        key: value
-        for key, value in attributes.items()
-        if isinstance(value, (bool, float, int, str))
-    }
+    return safe_attributes(attributes)
+
+
+def set_span_attributes(span: Any, attributes: dict[str, Any]) -> None:
+    if span is not None:
+        for key, value in safe_attributes(attributes).items():
+            span.set_attribute(key, value)
 
 
 def _normalize_collector_endpoint(endpoint: str) -> str:
@@ -100,3 +106,20 @@ def _normalize_collector_endpoint(endpoint: str) -> str:
     if parsed.path not in {"", "/"}:
         return endpoint
     return urlunparse(parsed._replace(path="/v1/traces"))
+
+
+class _PrivateSpan:
+    def __init__(self, span: Any):
+        self._span = span
+
+    def set_attribute(self, key: str, value: Any) -> None:
+        set_span_attributes(self._span, {key: value})
+
+    def set_attributes(self, values: dict[str, Any]) -> None:
+        set_span_attributes(self._span, values)
+
+
+@contextmanager
+def _private_span(span: Any):
+    with _use_span(span):
+        yield _PrivateSpan(span)

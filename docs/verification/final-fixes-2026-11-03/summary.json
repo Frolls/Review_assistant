@@ -1,0 +1,314 @@
+{
+  "regression-v12": {
+    "metrics": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "clean_false_positive_rate": 0.0,
+      "usable_fix_rate": 1.0,
+      "cases": 18
+    },
+    "counts": {
+      "true_positives": 6,
+      "false_positives": 0,
+      "false_negatives": 0
+    },
+    "statuses": {
+      "answered": 18
+    },
+    "latency_seconds": {
+      "count": 18,
+      "median": 0.5449100679979892,
+      "mean": 1.0578992551102904,
+      "p95_nearest_rank": 5.518487679997634
+    },
+    "defect_latency_seconds": {
+      "count": 6,
+      "median": 0.6272767304981244,
+      "mean": 1.5421055176666414,
+      "p95_nearest_rank": 5.518487679997634
+    },
+    "usage_original_run": {
+      "model_calls": 21,
+      "usage_available_calls": 21,
+      "tokens": {
+        "prompt_tokens": 8102,
+        "completion_tokens": 527,
+        "total_tokens": 8629
+      }
+    },
+    "usage_matches_saved_history": true,
+    "resources_original_run": {
+      "duration_seconds_including_management_waits": 78.19282534100057,
+      "exit_code": 0,
+      "host_cpu_mean_percent": 8.13638828942079,
+      "peak_host_ram_gib": 21.682796478271484,
+      "peak_device_vram_gib": 15.571514129638672,
+      "gpu_busy_mean_percent": 23.51948051948052,
+      "gpu_sensor_energy_wh": 1.9058986257580364,
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "context_length": 8192,
+          "size_vram": 10425372507
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "context_length": 4096,
+          "size_vram": 3434537287
+        }
+      ],
+      "scope": "host/device-wide, includes other processes and management waits; GPU sensor energy is not total system energy"
+    },
+    "ground_truth_replacement": {
+      "excluded": "event_queue-clean",
+      "replacement": "event_queue-clean-contract-v2",
+      "reason": "Original clean fixtures omitted the optional keyword argument although the task required in-place modification when it is supplied. Treat as ambiguous ground truth; preserve original answers and replace only these fixtures with fully compliant functions. Production code unchanged."
+    }
+  },
+  "fresh": {
+    "metrics": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "clean_false_positive_rate": 0.0,
+      "usable_fix_rate": 1.0,
+      "cases": 18
+    },
+    "counts": {
+      "true_positives": 6,
+      "false_positives": 0,
+      "false_negatives": 0
+    },
+    "statuses": {
+      "answered": 18
+    },
+    "latency_seconds": {
+      "count": 18,
+      "median": 0.5084338790002221,
+      "mean": 0.9520921332785091,
+      "p95_nearest_rank": 6.262048295000568
+    },
+    "defect_latency_seconds": {
+      "count": 6,
+      "median": 0.7023648660033359,
+      "mean": 1.7315530021672505,
+      "p95_nearest_rank": 6.262048295000568
+    },
+    "usage_original_run": {
+      "model_calls": 21,
+      "usage_available_calls": 21,
+      "tokens": {
+        "prompt_tokens": 9099,
+        "completion_tokens": 460,
+        "total_tokens": 9559
+      }
+    },
+    "usage_matches_saved_history": true,
+    "resources_original_run": {
+      "duration_seconds_including_management_waits": 78.71774770999764,
+      "exit_code": 0,
+      "host_cpu_mean_percent": 8.03088126909248,
+      "peak_host_ram_gib": 21.010780334472656,
+      "peak_device_vram_gib": 15.572368621826172,
+      "gpu_busy_mean_percent": 23.34193548387097,
+      "gpu_sensor_energy_wh": 1.9143317235923436,
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "context_length": 8192,
+          "size_vram": 10425372507
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "context_length": 4096,
+          "size_vram": 3434537287
+        }
+      ],
+      "scope": "host/device-wide, includes other processes and management waits; GPU sensor energy is not total system energy"
+    },
+    "ground_truth_replacement": {
+      "excluded": "cache_map-clean",
+      "replacement": "cache_map-clean-contract-v2",
+      "reason": "Original clean fixtures omitted the optional keyword argument although the task required in-place modification when it is supplied. Treat as ambiguous ground truth; preserve original answers and replace only these fixtures with fully compliant functions. Production code unchanged."
+    }
+  },
+  "agent": {
+    "status": "passed",
+    "steps": 9,
+    "turn_seconds": {
+      "count": 9,
+      "median": 0.8326075869990746,
+      "mean": 0.8825153137772254,
+      "p95_nearest_rank": 1.7021564370006672
+    },
+    "notify_requests": 0,
+    "stale_request_rejected": true,
+    "knowledge_answer": "exact attributed source verified by live harness, no generated additions",
+    "usage": {
+      "model_calls": 14,
+      "usage_available_calls": 14,
+      "tokens": {
+        "prompt_tokens": 14117,
+        "completion_tokens": 451,
+        "total_tokens": 14568
+      }
+    },
+    "resources": {
+      "duration_seconds_including_management_waits": 12.757186208997155,
+      "exit_code": 0,
+      "host_cpu_mean_percent": 20.494484153837554,
+      "peak_host_ram_gib": 20.84454345703125,
+      "peak_device_vram_gib": 15.473072052001953,
+      "gpu_busy_mean_percent": 72.8076923076923,
+      "gpu_sensor_energy_wh": 0.6280803968027552,
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "context_length": 8192,
+          "size_vram": 10425372507
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "context_length": 4096,
+          "size_vram": 3434537287
+        },
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "context_length": 8192,
+          "size_vram": 6312228290
+        }
+      ],
+      "scope": "host/device-wide, includes other processes and management waits; GPU sensor energy is not total system energy"
+    }
+  },
+  "inference": {
+    "decode_tokens_per_second": {
+      "count": 3,
+      "median": 46.93531241969209,
+      "mean": 46.967195395590196,
+      "p95_nearest_rank": 47.036005772072805
+    },
+    "wall_seconds": {
+      "count": 3,
+      "median": 3.4785802720070933,
+      "mean": 3.480624670005151,
+      "p95_nearest_rank": 3.4857125180060393
+    },
+    "resources": {
+      "duration_seconds_including_management_waits": 15.82130772999517,
+      "exit_code": 0,
+      "host_cpu_mean_percent": 28.000134212833206,
+      "peak_host_ram_gib": 20.476951599121094,
+      "peak_device_vram_gib": 11.95394515991211,
+      "gpu_busy_mean_percent": 89,
+      "gpu_sensor_energy_wh": 0.8809905886401975,
+      "loaded_models": [
+        {
+          "name": "review-context-4db687d067cf2f20:ctx8192",
+          "digest": "7874ff9ffce9a9b7a5ca45a70addcef2d8605332a532ab3528ad01757f879584",
+          "context_length": 8192,
+          "size_vram": 6312228290
+        },
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "context_length": 8192,
+          "size_vram": 10425372507
+        }
+      ],
+      "scope": "host/device-wide, includes other processes and management waits; GPU sensor energy is not total system energy"
+    },
+    "scope": "native Ollama; identical synthetic prompt, warmup saved separately, prefix cache may affect prefill; not application latency"
+  },
+  "tests": {
+    "backend_passed": 257,
+    "bot_passed": 39,
+    "pair_passed": 1,
+    "ruff": "passed backend app/tests/scripts and bot/root scripts/integration tests",
+    "warnings": "two backend Pydantic dependency warnings; one pair-test warning",
+    "source_unchanged_during_live_runs": true,
+    "post_live_format_patch": {
+      "recorded_at": "2026-11-03T17:39:06.847198+00:00",
+      "reason": "A singleton list such as [7] in a rendered diagnostic could be misread as source citation 7. Render input values as inline code, already excluded by citation validation. No retrieval, model settings, rules or interpreter behavior changed.",
+      "file": "Review_bot/app/services/review_contracts.py",
+      "before_sha256": "d465d349b5e7e37f3de7a712bed4bec57676ee1c7a78ebf813ae22a7017fe3ef",
+      "after_sha256": "3c7078f1c863572728c3f76a635d7b31ff929d3403ea22010d50379ee3308413",
+      "validation": "test_single_item_example_is_data_not_an_unknown_citation plus full backend suite; prior live results apply to the frozen pre-format-patch version."
+    }
+  },
+  "retained_v11_failure": {
+    "file": "regression-raw.json",
+    "tp": 5,
+    "fp": 0,
+    "fn": 1,
+    "usable_fixes": 4,
+    "defect_cases": 6,
+    "causes": [
+      "mkdir source/finding model gate refused known check",
+      "arithmetic correction introduced branch outside supported interpreter"
+    ]
+  },
+  "ground_truth_corrections": {
+    "original_observed_v12_cases": 36,
+    "additional_observed_replacements": 2,
+    "ambiguous_ground_truth_cases": 2,
+    "valid_cases_for_quality_metrics": 36,
+    "reason": "Original clean fixtures omitted the optional keyword argument although the task required in-place modification when it is supplied. Treat as ambiguous ground truth; preserve original answers and replace only these fixtures with fully compliant functions. Production code unchanged.",
+    "usage": {
+      "model_calls": 2,
+      "usage_available_calls": 2,
+      "tokens": {
+        "prompt_tokens": 663,
+        "completion_tokens": 51,
+        "total_tokens": 714
+      }
+    },
+    "resources": {
+      "duration_seconds_including_management_waits": 5.113315094000427,
+      "exit_code": 0,
+      "host_cpu_mean_percent": 16.031879531832757,
+      "peak_host_ram_gib": 20.738243103027344,
+      "peak_device_vram_gib": 15.486190795898438,
+      "gpu_busy_mean_percent": 43.18181818181818,
+      "gpu_sensor_energy_wh": 0.15676668583821488,
+      "loaded_models": [
+        {
+          "name": "review-context-dc37a066192437ac:ctx8192",
+          "digest": "af304f5cbd06a0b1aed7ea71216aaadddd05c2028dd706a5e465873306e0dd60",
+          "context_length": 8192,
+          "size_vram": 10425372507
+        },
+        {
+          "name": "qwen3-embedding:4b",
+          "digest": "df5bd2e3c74cd8d069d21dc038f1b359fcdc9458fce1c99bd43c9eb1518ff907",
+          "context_length": 4096,
+          "size_vram": 3434537287
+        }
+      ],
+      "scope": "host/device-wide, includes other processes and management waits; GPU sensor energy is not total system energy"
+    },
+    "validation": [
+      {
+        "case": "event_queue-clean-contract-v2",
+        "passed": [
+          "independent defaults",
+          "explicit argument accepted and mutated in place"
+        ]
+      },
+      {
+        "case": "cache_map-clean-contract-v2",
+        "passed": [
+          "independent defaults",
+          "explicit argument accepted and mutated in place"
+        ]
+      }
+    ]
+  },
+  "scope": "Bounded Python/Ansible checks, same author/evaluator. Original 18 regression + 18 frozen held-out variants; two ambiguous clean fixtures replaced after output review, with production unchanged. All 38 observed v12 answers retained; quality metrics use 36 valid fixtures. Not an independent human review or general semantic accuracy claim. Historical RAGAS remains unchanged."
+}

@@ -1,0 +1,1307 @@
+[
+  {
+    "id": "event_queue-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Без явно переданного queue каждый вызов должен создавать независимый список; явно переданный список изменяется на месте.",
+    "code": "def enqueue(event, *, queue=[]):\n    queue.append(event)\n    return queue\n",
+    "expected_defects": [
+      "mutable-default"
+    ],
+    "reference_fix": "def enqueue(event, *, queue=None):\n    if queue is None:\n        queue = []\n    queue.append(event)\n    return queue\n",
+    "answer": "Do not use mutable data structures for argument defaults [1]\n\nИсправленный код:\n```python\ndef enqueue(event, *, queue=None):\n    if queue is None:\n        queue = []\n    queue.append(event)\n    return queue\n```",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Do not use mutable data structures for argument defaults [1]\n\nИсправленный код:\n```python\ndef enqueue(event, *, queue=None):\n    if queue is None:\n        queue = []\n    queue.append(event)\n    return queue\n```"
+      },
+      {
+        "type": "done",
+        "sources": [
+          {
+            "id": 1,
+            "page": 1,
+            "score": 0.7295,
+            "snippet": "Mutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции. На ревью такое замечание относится к корректности поведения, а не только к стилю.",
+            "file_name": "pep8_style_guide.md"
+          }
+        ],
+        "confident": true,
+        "text": "Do not use mutable data structures for argument defaults [1]\n\nИсправленный код:\n```python\ndef enqueue(event, *, queue=None):\n    if queue is None:\n        queue = []\n    queue.append(event)\n    return queue\n```",
+        "status": "answered",
+        "message_id": "6eb23dc8-453b-4d94-b49b-22023f630f1b"
+      }
+    ],
+    "latency_seconds": 8.469873282003391,
+    "started_at": "2026-11-03T16:21:34.987246+00:00",
+    "request_id": "5b89f615e71e",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 8.469386306998786
+      },
+      {
+        "type": "done",
+        "seconds": 8.469500368002628
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1098,
+          "prompt_tokens": 928,
+          "completion_tokens": 170
+        },
+        {
+          "total_tokens": 845,
+          "prompt_tokens": 826,
+          "completion_tokens": 19
+        }
+      ],
+      "rag_sources": [
+        {
+          "id": 1,
+          "page": 1,
+          "score": 0.7295,
+          "snippet": "Mutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции. На ревью такое замечание относится к корректности поведения, а не только к стилю.",
+          "file_name": "pep8_style_guide.md"
+        }
+      ],
+      "rag_confident": true,
+      "review_answer": {
+        "text": "Do not use mutable data structures for argument defaults [1]\n\nИсправленный код:\n```python\ndef enqueue(event, *, queue=None):\n    if queue is None:\n        queue = []\n    queue.append(event)\n    return queue\n```",
+        "status": "answered",
+        "sources": [
+          {
+            "id": 1,
+            "page": 1,
+            "score": 0.7295,
+            "snippet": "Mutable default argument создаётся один раз при определении функции и разделяется между вызовами. Для списка, словаря или множества по умолчанию используется `None`, после чего объект создаётся внутри функции. На ревью такое замечание относится к корректности поведения, а не только к стилю.",
+            "file_name": "pep8_style_guide.md"
+          }
+        ],
+        "confident": true
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [
+      true
+    ],
+    "review": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": true,
+      "notes": "True B006 finding with applicable mutable-default rule. Full fix matches reference AST; behavioral checks passed."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "event_queue-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Без явно переданного queue каждый вызов должен создавать независимый список; явно переданный список изменяется на месте.",
+    "code": "def enqueue(event, *, queue=None):\n    if queue is None:\n        queue = []\n    queue.append(event)\n    return queue\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "2142146b-1552-49d6-85c2-6682c683a494"
+      }
+    ],
+    "latency_seconds": 0.9840853690038784,
+    "started_at": "2026-11-03T16:21:43.491922+00:00",
+    "request_id": "4415b2e9ca4b",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.9838074959989171
+      },
+      {
+        "type": "done",
+        "seconds": 0.983901177001826
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "event_queue-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Без явно переданного queue каждый вызов должен создавать независимый список; явно переданный список изменяется на месте.",
+    "code": "def enqueue(event):\n    return [event]\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "2e00ed6f-8f82-4593-8e1c-5966532a103c"
+      }
+    ],
+    "latency_seconds": 0.676625165004225,
+    "started_at": "2026-11-03T16:21:44.490160+00:00",
+    "request_id": "4cfc5ba5119e",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.6763295530035975
+      },
+      {
+        "type": "done",
+        "seconds": 0.6764449039983447
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "json_import-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Самодостаточный модуль должен разобрать JSON-строку без NameError. Никаких скрытых глобальных переменных нет.",
+    "code": "def decode_config(payload):\n    return json.loads(payload)\n",
+    "expected_defects": [
+      "undefined-name"
+    ],
+    "reference_fix": "import json\n\ndef decode_config(payload):\n    return json.loads(payload)\n",
+    "answer": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "message_id": "58e9e410-b7b2-4505-9c31-ff6330cc8b97"
+      }
+    ],
+    "latency_seconds": 0.6146007389979786,
+    "started_at": "2026-11-03T16:21:45.194380+00:00",
+    "request_id": "a4f87a230aaf",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.614332735996868
+      },
+      {
+        "type": "done",
+        "seconds": 0.6144326470021042
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "fix_usable": false,
+      "notes": "Refusal, no published diagnostic: counted as FN despite F821 being within the declared static checks. Not excluded from denominator."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "json_import-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Самодостаточный модуль должен разобрать JSON-строку без NameError. Никаких скрытых глобальных переменных нет.",
+    "code": "import json\n\ndef decode_config(payload):\n    return json.loads(payload)\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "05751fc0-9e9e-4cc5-adc8-1b31b9bb9beb"
+      }
+    ],
+    "latency_seconds": 0.5596879849981633,
+    "started_at": "2026-11-03T16:21:45.822731+00:00",
+    "request_id": "8a1de7f26f24",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.5594263029997819
+      },
+      {
+        "type": "done",
+        "seconds": 0.5595209940001951
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "json_import-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Самодостаточный модуль должен разобрать JSON-строку без NameError. Никаких скрытых глобальных переменных нет.",
+    "code": "from json import loads\n\ndef decode_config(payload):\n    return loads(payload)\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "c50d5b2f-8614-4720-8ebf-59fb7a28a642"
+      }
+    ],
+    "latency_seconds": 0.47335627100255806,
+    "started_at": "2026-11-03T16:21:46.395285+00:00",
+    "request_id": "b3829762e5a6",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.47288348599977326
+      },
+      {
+        "type": "done",
+        "seconds": 0.4729789270058973
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "finally_override-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Возвращать обратное число; при делении на ноль ZeroDivisionError должен дойти до вызывающего кода.",
+    "code": "def reciprocal(value):\n    try:\n        return 1 / value\n    finally:\n        return 0\n",
+    "expected_defects": [
+      "finally-suppresses-result-and-error"
+    ],
+    "reference_fix": "def reciprocal(value):\n    return 1 / value\n",
+    "answer": "`return` inside `finally` blocks cause exceptions to be silenced [1]",
+    "events": [
+      {
+        "type": "token",
+        "delta": "`return` inside `finally` blocks cause exceptions to be silenced [1]"
+      },
+      {
+        "type": "done",
+        "sources": [
+          {
+            "id": 1,
+            "page": 1,
+            "score": 0.6004,
+            "snippet": "If the exception handler will be printing out or logging the\ntraceback; at least the user will be aware that an error has\noccurred.\nIf the code needs to do some cleanup work, but then lets the\nexception propagate upwards with raise.  try...finally\ncan be a better way to handle this case.\n\n\nWhen catching operating system errors, prefer the explicit exception\nhierarchy introduced in Python 3.3 over introspection of errno\nvalues.\nAdditionally, for all try/except clauses, limit the try clause\nto the absolute minimum amount of code necessary.  Again, this\navoids masking bugs:# Correct:\ntry:\n    value = collection[key]\nexcept KeyError:\n    return key_not_found(key)\nelse:\n    return handle_value(value)\n\n\n# Wrong:\ntry:\n    # Too broad!\n    return handle_value(collection[key])\nexcept KeyError:\n    # Will also catch KeyError raised by handle_value()\n    return key_not_found(key)",
+            "file_name": "pep-0008-v1.0.html"
+          }
+        ],
+        "confident": true,
+        "text": "`return` inside `finally` blocks cause exceptions to be silenced [1]",
+        "status": "answered",
+        "message_id": "54b79ba3-8316-49ff-8229-17da05f3798d"
+      }
+    ],
+    "latency_seconds": 7.677425083995331,
+    "started_at": "2026-11-03T16:21:46.901534+00:00",
+    "request_id": "35d1fc8c23e8",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 7.67716331200063
+      },
+      {
+        "type": "done",
+        "seconds": 7.677264231999288
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1824,
+          "prompt_tokens": 1650,
+          "completion_tokens": 174
+        },
+        {
+          "total_tokens": 307,
+          "prompt_tokens": 272,
+          "completion_tokens": 35
+        },
+        {
+          "total_tokens": 1581,
+          "prompt_tokens": 1562,
+          "completion_tokens": 19
+        }
+      ],
+      "rag_sources": [
+        {
+          "id": 1,
+          "page": 1,
+          "score": 0.6004,
+          "snippet": "If the exception handler will be printing out or logging the\ntraceback; at least the user will be aware that an error has\noccurred.\nIf the code needs to do some cleanup work, but then lets the\nexception propagate upwards with raise.  try...finally\ncan be a better way to handle this case.\n\n\nWhen catching operating system errors, prefer the explicit exception\nhierarchy introduced in Python 3.3 over introspection of errno\nvalues.\nAdditionally, for all try/except clauses, limit the try clause\nto the absolute minimum amount of code necessary.  Again, this\navoids masking bugs:# Correct:\ntry:\n    value = collection[key]\nexcept KeyError:\n    return key_not_found(key)\nelse:\n    return handle_value(value)\n\n\n# Wrong:\ntry:\n    # Too broad!\n    return handle_value(collection[key])\nexcept KeyError:\n    # Will also catch KeyError raised by handle_value()\n    return key_not_found(key)",
+          "file_name": "pep-0008-v1.0.html"
+        }
+      ],
+      "rag_confident": true,
+      "review_answer": {
+        "text": "`return` inside `finally` blocks cause exceptions to be silenced [1]",
+        "status": "answered",
+        "sources": [
+          {
+            "id": 1,
+            "page": 1,
+            "score": 0.6004,
+            "snippet": "If the exception handler will be printing out or logging the\ntraceback; at least the user will be aware that an error has\noccurred.\nIf the code needs to do some cleanup work, but then lets the\nexception propagate upwards with raise.  try...finally\ncan be a better way to handle this case.\n\n\nWhen catching operating system errors, prefer the explicit exception\nhierarchy introduced in Python 3.3 over introspection of errno\nvalues.\nAdditionally, for all try/except clauses, limit the try clause\nto the absolute minimum amount of code necessary.  Again, this\navoids masking bugs:# Correct:\ntry:\n    value = collection[key]\nexcept KeyError:\n    return key_not_found(key)\nelse:\n    return handle_value(value)\n\n\n# Wrong:\ntry:\n    # Too broad!\n    return handle_value(collection[key])\nexcept KeyError:\n    # Will also catch KeyError raised by handle_value()\n    return key_not_found(key)",
+            "file_name": "pep-0008-v1.0.html"
+          }
+        ],
+        "confident": true
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "Correct B012 finding, but no fix published. Cited PEP excerpt discusses propagation/cleanup generally; it does not explicitly document return-in-finally. Strict grounding is incomplete."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "finally_override-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Возвращать обратное число; при делении на ноль ZeroDivisionError должен дойти до вызывающего кода.",
+    "code": "def reciprocal(value):\n    return 1 / value\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "aea4da68-f15f-4a04-a014-170bc77cccc6"
+      }
+    ],
+    "latency_seconds": 0.5600015380041441,
+    "started_at": "2026-11-03T16:21:54.612605+00:00",
+    "request_id": "b725361b54c0",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.559704175000661
+      },
+      {
+        "type": "done",
+        "seconds": 0.5598097460024292
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "finally_override-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Возвращать обратное число; при делении на ноль ZeroDivisionError должен дойти до вызывающего кода.",
+    "code": "def reciprocal(value):\n    if value == 0:\n        raise ZeroDivisionError(\"zero\")\n    return 1 / value\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "ac89218e-b572-47a1-b4b1-4e7e4e221597"
+      }
+    ],
+    "latency_seconds": 0.4215933640007279,
+    "started_at": "2026-11-03T16:21:55.188598+00:00",
+    "request_id": "90dcd1d251ca",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.42124788100045407
+      },
+      {
+        "type": "done",
+        "seconds": 0.42139839199808193
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "mean_contract-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Для непустого списка чисел вернуть арифметическое среднее. Например, [2, 8] должно давать 5.",
+    "code": "def average(values):\n    return sum(values) / (len(values) + 1)\n",
+    "expected_defects": [
+      "incorrect-denominator"
+    ],
+    "reference_fix": "def average(values):\n    return sum(values) / len(values)\n",
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "e9035c53-a9b5-42a9-8f7c-f09d7543e4fc"
+      }
+    ],
+    "latency_seconds": 1.0639232250032364,
+    "started_at": "2026-11-03T16:21:55.624382+00:00",
+    "request_id": "23dcdd96a35f",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 1.0636149530037073
+      },
+      {
+        "type": "done",
+        "seconds": 1.0637227940023877
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "fix_usable": false,
+      "notes": "Wrong arithmetic denominator was not detected. Scoped no-findings answer is not a false positive, but the actual defect remains FN. This case is outside the declared static checks and stays in overall recall."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "mean_contract-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Для непустого списка чисел вернуть арифметическое среднее. Например, [2, 8] должно давать 5.",
+    "code": "def average(values):\n    return sum(values) / len(values)\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "d0a39495-cc6d-465d-a82a-638ae8262ed9"
+      }
+    ],
+    "latency_seconds": 1.1355420520048938,
+    "started_at": "2026-11-03T16:22:56.770224+00:00",
+    "request_id": "8139c5e1d4ff",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 1.1352112900058273
+      },
+      {
+        "type": "done",
+        "seconds": 1.1353327300021192
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "mean_contract-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Для непустого списка чисел вернуть арифметическое среднее. Например, [2, 8] должно давать 5.",
+    "code": "from statistics import mean\n\ndef average(values):\n    return mean(values)\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "e0737e53-18b8-49d7-a8f7-594713afa01f"
+      }
+    ],
+    "latency_seconds": 1.166552270995453,
+    "started_at": "2026-11-03T16:22:57.920063+00:00",
+    "request_id": "8e30d7762f10",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 1.1662382380018244
+      },
+      {
+        "type": "done",
+        "seconds": 1.166336598995258
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Python: B006,B012,E722,F821,F822,F823,S602,SIM115, OPEN_READ, syntax. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "archive_directory-defect",
+    "kind": "defect",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Каталог /tmp/review-acceptance-archive должен создаваться без ошибки при повторном запуске. Исходно /tmp существует.",
+    "code": "- name: Prepare archive directory\n  ansible.builtin.shell:\n    cmd: mkdir /tmp/review-acceptance-archive\n",
+    "expected_defects": [
+      "non-idempotent-shell"
+    ],
+    "reference_fix": "- name: Prepare archive directory\n  ansible.builtin.file:\n    path: /tmp/review-acceptance-archive\n    state: directory\n    mode: \"0700\"\n",
+    "answer": "mkdir без -p или creates завершается ошибкой, если каталог уже существует. [3]\n\nИсправленный код:\n```yaml\n- name: Prepare archive directory\n  ansible.builtin.shell:\n    cmd: mkdir /tmp/review-acceptance-archive\n  args:\n    cmd: mkdir /tmp/review-acceptance-archive\n    creates: /tmp/review-acceptance-archive\n```",
+    "events": [
+      {
+        "type": "token",
+        "delta": "mkdir без -p или creates завершается ошибкой, если каталог уже существует. [3]\n\nИсправленный код:\n```yaml\n- name: Prepare archive directory\n  ansible.builtin.shell:\n    cmd: mkdir /tmp/review-acceptance-archive\n  args:\n    cmd: mkdir /tmp/review-acceptance-archive\n    creates: /tmp/review-acceptance-archive\n```"
+      },
+      {
+        "type": "done",
+        "sources": [
+          {
+            "id": 3,
+            "page": 1,
+            "score": 0.687,
+            "snippet": "Модули `command` и `shell` допустимы только когда нет специализированного идемпотентного модуля. Если shell неизбежен, task должен иметь `creates`, `removes`, явную проверку состояния или корректный `changed_when`.",
+            "file_name": "ansible_best_practices.md"
+          }
+        ],
+        "confident": true,
+        "text": "mkdir без -p или creates завершается ошибкой, если каталог уже существует. [3]\n\nИсправленный код:\n```yaml\n- name: Prepare archive directory\n  ansible.builtin.shell:\n    cmd: mkdir /tmp/review-acceptance-archive\n  args:\n    cmd: mkdir /tmp/review-acceptance-archive\n    creates: /tmp/review-acceptance-archive\n```",
+        "status": "answered",
+        "message_id": "4abbaccb-ff0d-4230-8942-59ec7a03fb62"
+      }
+    ],
+    "latency_seconds": 5.9873203659954015,
+    "started_at": "2026-11-03T16:22:59.100313+00:00",
+    "request_id": "54d68be58878",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 5.986989723001898
+      },
+      {
+        "type": "done",
+        "seconds": 5.987099263998971
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1407,
+          "prompt_tokens": 1248,
+          "completion_tokens": 159
+        },
+        {
+          "total_tokens": 1173,
+          "prompt_tokens": 1154,
+          "completion_tokens": 19
+        }
+      ],
+      "rag_sources": [
+        {
+          "id": 3,
+          "page": 1,
+          "score": 0.687,
+          "snippet": "Модули `command` и `shell` допустимы только когда нет специализированного идемпотентного модуля. Если shell неизбежен, task должен иметь `creates`, `removes`, явную проверку состояния или корректный `changed_when`.",
+          "file_name": "ansible_best_practices.md"
+        }
+      ],
+      "rag_confident": true,
+      "review_answer": {
+        "text": "mkdir без -p или creates завершается ошибкой, если каталог уже существует. [3]\n\nИсправленный код:\n```yaml\n- name: Prepare archive directory\n  ansible.builtin.shell:\n    cmd: mkdir /tmp/review-acceptance-archive\n  args:\n    cmd: mkdir /tmp/review-acceptance-archive\n    creates: /tmp/review-acceptance-archive\n```",
+        "status": "answered",
+        "sources": [
+          {
+            "id": 3,
+            "page": 1,
+            "score": 0.687,
+            "snippet": "Модули `command` и `shell` допустимы только когда нет специализированного идемпотентного модуля. Если shell неизбежен, task должен иметь `creates`, `removes`, явную проверку состояния или корректный `changed_when`.",
+            "file_name": "ansible_best_practices.md"
+          }
+        ],
+        "confident": true
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": true,
+      "notes": "Correct repeatability finding, applicable creates source. Generated YAML contains redundant identical cmd in args; actual Ansible run succeeds, repeat reports changed=0."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "archive_directory-fixed",
+    "kind": "fixed",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Каталог /tmp/review-acceptance-archive должен создаваться без ошибки при повторном запуске. Исходно /tmp существует.",
+    "code": "- name: Prepare archive directory\n  ansible.builtin.file:\n    path: /tmp/review-acceptance-archive\n    state: directory\n    mode: \"0700\"\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "c8624a53-3e55-4757-91d4-7321db813de9"
+      }
+    ],
+    "latency_seconds": 0.6044991560047492,
+    "started_at": "2026-11-03T16:23:05.101894+00:00",
+    "request_id": "f05e11d02c47",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.6041097930065007
+      },
+      {
+        "type": "done",
+        "seconds": 0.604237194005691
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "archive_directory-clean",
+    "kind": "clean",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: Проверка существования каталога не должна менять систему.",
+    "code": "- name: Inspect archive directory\n  ansible.builtin.stat:\n    path: /tmp/review-acceptance-archive\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "f81dcdbf-28ea-4cb2-8eb7-5cd46ba50489"
+      }
+    ],
+    "latency_seconds": 0.39316034899820806,
+    "started_at": "2026-11-03T16:23:05.721862+00:00",
+    "request_id": "8c9111b5050d",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.39283690699812723
+      },
+      {
+        "type": "done",
+        "seconds": 0.3929373979990487
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "nested_secret-defect",
+    "kind": "defect",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: deploy_password — секрет. Его нельзя выводить в лог при диагностике. Проверяй наследование no_log у block.",
+    "code": "- name: Deployment diagnostics\n  block:\n    - name: Inspect credential\n      ansible.builtin.debug:\n        var: deploy_password\n  no_log: false\n",
+    "expected_defects": [
+      "secret-debug"
+    ],
+    "reference_fix": "- name: Deployment diagnostics\n  block:\n    - name: Inspect credential\n      ansible.builtin.debug:\n        var: deploy_password\n  no_log: true\n",
+    "answer": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "message_id": "c84213bb-c807-49bc-a6f5-84dca08b36fc"
+      }
+    ],
+    "latency_seconds": 8.445750926002802,
+    "started_at": "2026-11-03T16:23:06.128360+00:00",
+    "request_id": "df5513a43fd1",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 8.445441752999614
+      },
+      {
+        "type": "done",
+        "seconds": 8.445608585003356
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1473,
+          "prompt_tokens": 1185,
+          "completion_tokens": 288
+        },
+        {
+          "total_tokens": 1236,
+          "prompt_tokens": 1217,
+          "completion_tokens": 19
+        }
+      ],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "fix_usable": false,
+      "notes": "Refusal with no finding for inherited no_log:false debug of an explicitly named secret. Counted as FN."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "nested_secret-fixed",
+    "kind": "fixed",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: deploy_password — секрет. Его нельзя выводить в лог при диагностике. Проверяй наследование no_log у block.",
+    "code": "- name: Deployment diagnostics\n  block:\n    - name: Inspect credential\n      ansible.builtin.debug:\n        var: deploy_password\n  no_log: true\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "8fdaba2a-1479-47fe-9674-f01dd02e9c9b"
+      }
+    ],
+    "latency_seconds": 0.42317707400070503,
+    "started_at": "2026-11-03T16:23:14.607183+00:00",
+    "request_id": "9c203022f0de",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.4228813110021292
+      },
+      {
+        "type": "done",
+        "seconds": 0.42298541200580075
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  },
+  {
+    "id": "nested_secret-clean",
+    "kind": "clean",
+    "language": "ansible",
+    "task": "Проверь Python/Ansible-код по требованию. Укажи доказуемые дефекты со ссылками на применимые правила и предложи полный исправленный код. Если замечаний нет, сообщи границы проверки. Требование: deploy_password — секрет. Его нельзя выводить в лог при диагностике. Проверяй наследование no_log у block.",
+    "code": "- name: Public diagnostics\n  ansible.builtin.debug:\n    msg: Deployment diagnostics ready\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "message_id": "33cef11d-8150-4fb2-91c2-69e554bba986"
+      }
+    ],
+    "latency_seconds": 0.4065410819966928,
+    "started_at": "2026-11-03T16:23:15.045152+00:00",
+    "request_id": "b5dfe5f02047",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 0.4058146460010903
+      },
+      {
+        "type": "done",
+        "seconds": 0.40594386700104224
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "Подтверждённых дефектов в пределах выполненных автопроверок не обнаружено. Проверено: Ansible: YAML syntax, mkdir-repeat, secret-debug. Это не полное доказательство корректности кода.",
+        "status": "answered",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "No finding on a correct fixture; answer explicitly states the limited static-check scope."
+    },
+    "evaluation": {
+      "evaluator": "Automated evaluation; not independent human review",
+      "labels_frozen_before_outputs": true,
+      "independent_human": false,
+      "production_retuned": false
+    }
+  }
+]

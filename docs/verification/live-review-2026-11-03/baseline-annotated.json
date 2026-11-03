@@ -1,0 +1,3361 @@
+[
+  {
+    "id": "shared_cache-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Вызовы без cache должны возвращать независимые словари.",
+    "code": "def remember(value, cache={}):\n    cache[value] = True\n    return cache\n",
+    "expected_defects": [
+      "mutable-default"
+    ],
+    "reference_fix": "def remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n",
+    "answer": "",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "error",
+        "message": "Превышено время обработки запроса."
+      }
+    ],
+    "latency_seconds": 182.84578440399855,
+    "started_at": "2026-11-03T09:00:55.717233+00:00",
+    "request_id": "0e2c4e1dd6de",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 182.8335890140006
+      },
+      {
+        "type": "error",
+        "seconds": 182.83412736600076
+      }
+    ],
+    "saved_answer_metadata": {},
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 1,
+      "fix_usable": false,
+      "notes": "Дефект пропущен: таймаут или отказ. "
+    },
+    "annotation": {
+      "evaluator": "Automated rubric-based inspection against fixed reference and returned sources",
+      "human_review": false,
+      "blind": false
+    }
+  },
+  {
+    "id": "shared_cache-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Вызовы без cache должны возвращать независимые словари.",
+    "code": "def remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "message_id": "eaa8048f-27f7-49f1-9d3a-3be661145706"
+      }
+    ],
+    "latency_seconds": 27.970830581998598,
+    "started_at": "2026-11-03T09:03:58.693652+00:00",
+    "request_id": "67911d74059f",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.004316956998082
+      },
+      {
+        "type": "progress",
+        "seconds": 20.004750686999614
+      },
+      {
+        "type": "token",
+        "seconds": 27.970512040999893
+      },
+      {
+        "type": "done",
+        "seconds": 27.970614740999736
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 2439,
+          "prompt_tokens": 903,
+          "completion_tokens": 1536
+        }
+      ],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "Отказ не засчитывается как успешная проверка корректного кода. "
+    },
+    "annotation": {
+      "evaluator": "Automated rubric-based inspection against fixed reference and returned sources",
+      "human_review": false,
+      "blind": false
+    }
+  },
+  {
+    "id": "shared_cache-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом.",
+    "code": "def remember(value):\n    return {value: True}\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "message_id": "8acc262a-29ed-4b0f-85c0-a09c68efdf46"
+      }
+    ],
+    "latency_seconds": 10.234179252998729,
+    "started_at": "2026-11-03T09:04:26.697769+00:00",
+    "request_id": "a18a84575fcd",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.005185938000068
+      },
+      {
+        "type": "token",
+        "seconds": 10.233879441999306
+      },
+      {
+        "type": "done",
+        "seconds": 10.233973891998176
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1513,
+          "prompt_tokens": 1070,
+          "completion_tokens": 443
+        }
+      ],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "Отказ не засчитывается как успешная проверка корректного кода. "
+    },
+    "annotation": {
+      "evaluator": "Automated rubric-based inspection against fixed reference and returned sources",
+      "human_review": false,
+      "blind": false
+    }
+  },
+  {
+    "id": "file_handle-defect",
+    "kind": "defect",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Файл должен закрываться, в том числе при исключении чтения.",
+    "code": "def first_line(path):\n    stream = open(path, encoding=\"utf-8\")\n    return stream.readline()\n",
+    "expected_defects": [
+      "unclosed-file"
+    ],
+    "reference_fix": "def first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n",
+    "answer": "В коде отсутствует гарантия закрытия файла, что нарушает требование. Файл не закрывается, если происходит исключение при чтении. \n\n**Дефект:**  \nФайл не закрывается, даже при исключениях. [3], [4], [5]  \n\n**Исправленный код:**  \n```python\ndef first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n```  \n\nИспользование `with` гарантирует закрытие файла, даже если возникнет исключение, как указано в примерах контекстных менеджеров.",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В"
+      },
+      {
+        "type": "token",
+        "delta": " код"
+      },
+      {
+        "type": "token",
+        "delta": "е"
+      },
+      {
+        "type": "token",
+        "delta": " от"
+      },
+      {
+        "type": "token",
+        "delta": "сут"
+      },
+      {
+        "type": "token",
+        "delta": "ств"
+      },
+      {
+        "type": "token",
+        "delta": "ует"
+      },
+      {
+        "type": "token",
+        "delta": " гаранти"
+      },
+      {
+        "type": "token",
+        "delta": "я"
+      },
+      {
+        "type": "token",
+        "delta": " зак"
+      },
+      {
+        "type": "token",
+        "delta": "ры"
+      },
+      {
+        "type": "token",
+        "delta": "ти"
+      },
+      {
+        "type": "token",
+        "delta": "я"
+      },
+      {
+        "type": "token",
+        "delta": " файла"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " что"
+      },
+      {
+        "type": "token",
+        "delta": " на"
+      },
+      {
+        "type": "token",
+        "delta": "руш"
+      },
+      {
+        "type": "token",
+        "delta": "ает"
+      },
+      {
+        "type": "token",
+        "delta": " треб"
+      },
+      {
+        "type": "token",
+        "delta": "ование"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": " Ф"
+      },
+      {
+        "type": "token",
+        "delta": "айл"
+      },
+      {
+        "type": "token",
+        "delta": " не"
+      },
+      {
+        "type": "token",
+        "delta": " зак"
+      },
+      {
+        "type": "token",
+        "delta": "рыв"
+      },
+      {
+        "type": "token",
+        "delta": "ается"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " если"
+      },
+      {
+        "type": "token",
+        "delta": " происходит"
+      },
+      {
+        "type": "token",
+        "delta": " ис"
+      },
+      {
+        "type": "token",
+        "delta": "ключение"
+      },
+      {
+        "type": "token",
+        "delta": " при"
+      },
+      {
+        "type": "token",
+        "delta": " чт"
+      },
+      {
+        "type": "token",
+        "delta": "ении"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": " \n\n"
+      },
+      {
+        "type": "token",
+        "delta": "**"
+      },
+      {
+        "type": "token",
+        "delta": "Д"
+      },
+      {
+        "type": "token",
+        "delta": "е"
+      },
+      {
+        "type": "token",
+        "delta": "ф"
+      },
+      {
+        "type": "token",
+        "delta": "ект"
+      },
+      {
+        "type": "token",
+        "delta": ":**"
+      },
+      {
+        "type": "token",
+        "delta": "  \n"
+      },
+      {
+        "type": "token",
+        "delta": "Ф"
+      },
+      {
+        "type": "token",
+        "delta": "айл"
+      },
+      {
+        "type": "token",
+        "delta": " не"
+      },
+      {
+        "type": "token",
+        "delta": " зак"
+      },
+      {
+        "type": "token",
+        "delta": "рыв"
+      },
+      {
+        "type": "token",
+        "delta": "ается"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " даже"
+      },
+      {
+        "type": "token",
+        "delta": " при"
+      },
+      {
+        "type": "token",
+        "delta": " ис"
+      },
+      {
+        "type": "token",
+        "delta": "ключения"
+      },
+      {
+        "type": "token",
+        "delta": "х"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "3"
+      },
+      {
+        "type": "token",
+        "delta": "],"
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "4"
+      },
+      {
+        "type": "token",
+        "delta": "],"
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "5"
+      },
+      {
+        "type": "token",
+        "delta": "]"
+      },
+      {
+        "type": "token",
+        "delta": "  \n\n"
+      },
+      {
+        "type": "token",
+        "delta": "**"
+      },
+      {
+        "type": "token",
+        "delta": "И"
+      },
+      {
+        "type": "token",
+        "delta": "сп"
+      },
+      {
+        "type": "token",
+        "delta": "рав"
+      },
+      {
+        "type": "token",
+        "delta": "лен"
+      },
+      {
+        "type": "token",
+        "delta": "ный"
+      },
+      {
+        "type": "token",
+        "delta": " код"
+      },
+      {
+        "type": "token",
+        "delta": ":**"
+      },
+      {
+        "type": "token",
+        "delta": "  \n"
+      },
+      {
+        "type": "token",
+        "delta": "```"
+      },
+      {
+        "type": "token",
+        "delta": "python"
+      },
+      {
+        "type": "token",
+        "delta": "\n"
+      },
+      {
+        "type": "token",
+        "delta": "def"
+      },
+      {
+        "type": "token",
+        "delta": " first"
+      },
+      {
+        "type": "token",
+        "delta": "_line"
+      },
+      {
+        "type": "token",
+        "delta": "(path"
+      },
+      {
+        "type": "token",
+        "delta": "):\n"
+      },
+      {
+        "type": "token",
+        "delta": "   "
+      },
+      {
+        "type": "token",
+        "delta": " with"
+      },
+      {
+        "type": "token",
+        "delta": " open"
+      },
+      {
+        "type": "token",
+        "delta": "(path"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " encoding"
+      },
+      {
+        "type": "token",
+        "delta": "=\""
+      },
+      {
+        "type": "token",
+        "delta": "utf"
+      },
+      {
+        "type": "token",
+        "delta": "-"
+      },
+      {
+        "type": "token",
+        "delta": "8"
+      },
+      {
+        "type": "token",
+        "delta": "\")"
+      },
+      {
+        "type": "token",
+        "delta": " as"
+      },
+      {
+        "type": "token",
+        "delta": " stream"
+      },
+      {
+        "type": "token",
+        "delta": ":\n"
+      },
+      {
+        "type": "token",
+        "delta": "       "
+      },
+      {
+        "type": "token",
+        "delta": " return"
+      },
+      {
+        "type": "token",
+        "delta": " stream"
+      },
+      {
+        "type": "token",
+        "delta": ".readline"
+      },
+      {
+        "type": "token",
+        "delta": "()\n"
+      },
+      {
+        "type": "token",
+        "delta": "```"
+      },
+      {
+        "type": "token",
+        "delta": "  \n\n"
+      },
+      {
+        "type": "token",
+        "delta": "И"
+      },
+      {
+        "type": "token",
+        "delta": "сп"
+      },
+      {
+        "type": "token",
+        "delta": "ользов"
+      },
+      {
+        "type": "token",
+        "delta": "ание"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "with"
+      },
+      {
+        "type": "token",
+        "delta": "`"
+      },
+      {
+        "type": "token",
+        "delta": " гаранти"
+      },
+      {
+        "type": "token",
+        "delta": "ру"
+      },
+      {
+        "type": "token",
+        "delta": "ет"
+      },
+      {
+        "type": "token",
+        "delta": " зак"
+      },
+      {
+        "type": "token",
+        "delta": "ры"
+      },
+      {
+        "type": "token",
+        "delta": "ти"
+      },
+      {
+        "type": "token",
+        "delta": "е"
+      },
+      {
+        "type": "token",
+        "delta": " файла"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " даже"
+      },
+      {
+        "type": "token",
+        "delta": " если"
+      },
+      {
+        "type": "token",
+        "delta": " воз"
+      },
+      {
+        "type": "token",
+        "delta": "ник"
+      },
+      {
+        "type": "token",
+        "delta": "нет"
+      },
+      {
+        "type": "token",
+        "delta": " ис"
+      },
+      {
+        "type": "token",
+        "delta": "ключение"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " как"
+      },
+      {
+        "type": "token",
+        "delta": " указан"
+      },
+      {
+        "type": "token",
+        "delta": "о"
+      },
+      {
+        "type": "token",
+        "delta": " в"
+      },
+      {
+        "type": "token",
+        "delta": " пример"
+      },
+      {
+        "type": "token",
+        "delta": "ах"
+      },
+      {
+        "type": "token",
+        "delta": " конт"
+      },
+      {
+        "type": "token",
+        "delta": "ек"
+      },
+      {
+        "type": "token",
+        "delta": "ст"
+      },
+      {
+        "type": "token",
+        "delta": "ных"
+      },
+      {
+        "type": "token",
+        "delta": " мен"
+      },
+      {
+        "type": "token",
+        "delta": "ед"
+      },
+      {
+        "type": "token",
+        "delta": "ж"
+      },
+      {
+        "type": "token",
+        "delta": "ер"
+      },
+      {
+        "type": "token",
+        "delta": "ов"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "done",
+        "sources": [
+          {
+            "id": 3,
+            "page": 1,
+            "score": 0.5301,
+            "snippet": "def sin(x):\n    with localcontext(ExtendedContext):\n        # Rest of sin calculation algorithm\n        # uses the Extended Context from the\n        # General Decimal Arithmetic Specification\n    return +s # Convert result to normal context\n\n\n\nA generic “object-closing” context manager:class closing(object):\n    def __init__(self, obj):\n        self.obj = obj\n    def __enter__(self):\n        return self.obj\n    def __exit__(self, *exc_info):\n        try:\n            close_it = self.obj.close\n        except AttributeError:\n            pass\n        else:\n            close_it()\n\n\nThis can be used to deterministically close anything with a\nclose method, be it file, generator, or something else. It\ncan even be used when the object isn’t guaranteed to require\nclosing (e.g., a function that accepts an arbitrary\niterable):\n# emulate opening():\nwith closing(open(\"argument.txt\")) as contradiction:\n   for line in contradiction:\n       print line",
+            "file_name": "pep-0343-v1.0.html"
+          },
+          {
+            "id": 4,
+            "page": 1,
+            "score": 0.5277,
+            "snippet": "A variant on opened() that also returns an error condition:@contextmanager\ndef opened_w_error(filename, mode=\"r\"):\n    try:\n        f = open(filename, mode)\n    except IOError, err:\n        yield None, err\n    else:\n        try:\n            yield f, None\n        finally:\n            f.close()\n\n\nUsed as follows:\nwith opened_w_error(\"/etc/passwd\", \"a\") as (f, err):\n    if err:\n        print \"IOError:\", err\n    else:\n        f.write(\"guido::0:0::/:/bin/sh\\n\")\n\n\n\nAnother useful example would be an operation that blocks\nsignals.  The use could be like this:import signal\n\nwith signal.blocked():\n    # code executed without worrying about signals\n\n\nAn optional argument might be a list of signals to be blocked;\nby default all signals are blocked.  The implementation is left\nas an exercise to the reader.",
+            "file_name": "pep-0343-v1.0.html"
+          },
+          {
+            "id": 5,
+            "page": 1,
+            "score": 0.5271,
+            "snippet": "Used as follows:\nwith locked(myLock):\n    # Code here executes with myLock held.  The lock is\n    # guaranteed to be released when the block is left (even\n    # if via return or by an uncaught exception).\n\n\n\nA template for opening a file that ensures the file is closed\nwhen the block is left:@contextmanager\ndef opened(filename, mode=\"r\"):\n    f = open(filename, mode)\n    try:\n        yield f\n    finally:\n        f.close()\n\n\nUsed as follows:\nwith opened(\"/etc/passwd\") as f:\n    for line in f:\n        print line.rstrip()\n\n\n\nA template for committing or rolling back a database\ntransaction:@contextmanager\ndef transaction(db):\n    db.begin()\n    try:\n        yield None\n    except:\n        db.rollback()\n        raise\n    else:\n        db.commit()",
+            "file_name": "pep-0343-v1.0.html"
+          }
+        ],
+        "confident": true,
+        "text": "В коде отсутствует гарантия закрытия файла, что нарушает требование. Файл не закрывается, если происходит исключение при чтении. \n\n**Дефект:**  \nФайл не закрывается, даже при исключениях. [3], [4], [5]  \n\n**Исправленный код:**  \n```python\ndef first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n```  \n\nИспользование `with` гарантирует закрытие файла, даже если возникнет исключение, как указано в примерах контекстных менеджеров.",
+        "status": "answered",
+        "message_id": "2831c682-7ec8-4b5f-8257-c580b4048391"
+      }
+    ],
+    "latency_seconds": 13.996632737002074,
+    "started_at": "2026-11-03T09:04:36.964518+00:00",
+    "request_id": "4f7085f4b7e2",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.004261439000402
+      },
+      {
+        "type": "token",
+        "seconds": 13.990241457002412
+      },
+      {
+        "type": "token",
+        "seconds": 13.99027361700064
+      },
+      {
+        "type": "token",
+        "seconds": 13.990402677001839
+      },
+      {
+        "type": "token",
+        "seconds": 13.990422267001122
+      },
+      {
+        "type": "token",
+        "seconds": 13.990438176999305
+      },
+      {
+        "type": "token",
+        "seconds": 13.990452467001887
+      },
+      {
+        "type": "token",
+        "seconds": 13.990465367001889
+      },
+      {
+        "type": "token",
+        "seconds": 13.990535618002468
+      },
+      {
+        "type": "token",
+        "seconds": 13.990551678001793
+      },
+      {
+        "type": "token",
+        "seconds": 13.990565317999426
+      },
+      {
+        "type": "token",
+        "seconds": 13.990706037999189
+      },
+      {
+        "type": "token",
+        "seconds": 13.990733208000165
+      },
+      {
+        "type": "token",
+        "seconds": 13.990752297999279
+      },
+      {
+        "type": "token",
+        "seconds": 13.990863699000329
+      },
+      {
+        "type": "token",
+        "seconds": 13.990883098998893
+      },
+      {
+        "type": "token",
+        "seconds": 13.990899488999275
+      },
+      {
+        "type": "token",
+        "seconds": 13.99091490900173
+      },
+      {
+        "type": "token",
+        "seconds": 13.991000648999034
+      },
+      {
+        "type": "token",
+        "seconds": 13.991015728999628
+      },
+      {
+        "type": "token",
+        "seconds": 13.99103032900166
+      },
+      {
+        "type": "token",
+        "seconds": 13.991044338999927
+      },
+      {
+        "type": "token",
+        "seconds": 13.99111140000241
+      },
+      {
+        "type": "token",
+        "seconds": 13.991126450000593
+      },
+      {
+        "type": "token",
+        "seconds": 13.991140310001356
+      },
+      {
+        "type": "token",
+        "seconds": 13.991209020001406
+      },
+      {
+        "type": "token",
+        "seconds": 13.9912244799998
+      },
+      {
+        "type": "token",
+        "seconds": 13.991285920001246
+      },
+      {
+        "type": "token",
+        "seconds": 13.99130223999964
+      },
+      {
+        "type": "token",
+        "seconds": 13.991361349999352
+      },
+      {
+        "type": "token",
+        "seconds": 13.991369250001298
+      },
+      {
+        "type": "token",
+        "seconds": 13.991399530001217
+      },
+      {
+        "type": "token",
+        "seconds": 13.991430510999635
+      },
+      {
+        "type": "token",
+        "seconds": 13.99146950100112
+      },
+      {
+        "type": "token",
+        "seconds": 13.99149971099905
+      },
+      {
+        "type": "token",
+        "seconds": 13.99155287100075
+      },
+      {
+        "type": "token",
+        "seconds": 13.991583031001937
+      },
+      {
+        "type": "token",
+        "seconds": 13.991637711002113
+      },
+      {
+        "type": "token",
+        "seconds": 13.991669400998944
+      },
+      {
+        "type": "token",
+        "seconds": 13.991723271999945
+      },
+      {
+        "type": "token",
+        "seconds": 13.991754562001006
+      },
+      {
+        "type": "token",
+        "seconds": 13.991805141999066
+      },
+      {
+        "type": "token",
+        "seconds": 13.991834922002454
+      },
+      {
+        "type": "token",
+        "seconds": 13.991888032000134
+      },
+      {
+        "type": "token",
+        "seconds": 13.99191754200001
+      },
+      {
+        "type": "token",
+        "seconds": 13.991970382001455
+      },
+      {
+        "type": "token",
+        "seconds": 13.992005422001967
+      },
+      {
+        "type": "token",
+        "seconds": 13.992069003001234
+      },
+      {
+        "type": "token",
+        "seconds": 13.992099283001153
+      },
+      {
+        "type": "token",
+        "seconds": 13.992151703001582
+      },
+      {
+        "type": "token",
+        "seconds": 13.992181703000824
+      },
+      {
+        "type": "token",
+        "seconds": 13.992235142999562
+      },
+      {
+        "type": "token",
+        "seconds": 13.992270333001215
+      },
+      {
+        "type": "token",
+        "seconds": 13.992321914000058
+      },
+      {
+        "type": "token",
+        "seconds": 13.992353424000612
+      },
+      {
+        "type": "token",
+        "seconds": 13.992406463999941
+      },
+      {
+        "type": "token",
+        "seconds": 13.992439084002399
+      },
+      {
+        "type": "token",
+        "seconds": 13.992492143999698
+      },
+      {
+        "type": "token",
+        "seconds": 13.992521584001224
+      },
+      {
+        "type": "token",
+        "seconds": 13.992574793999665
+      },
+      {
+        "type": "token",
+        "seconds": 13.992605174000346
+      },
+      {
+        "type": "token",
+        "seconds": 13.992656944999908
+      },
+      {
+        "type": "token",
+        "seconds": 13.992687095000292
+      },
+      {
+        "type": "token",
+        "seconds": 13.99273800499941
+      },
+      {
+        "type": "token",
+        "seconds": 13.992769734999456
+      },
+      {
+        "type": "token",
+        "seconds": 13.99282025499997
+      },
+      {
+        "type": "token",
+        "seconds": 13.992850304999592
+      },
+      {
+        "type": "token",
+        "seconds": 13.992900625002221
+      },
+      {
+        "type": "token",
+        "seconds": 13.992931635999412
+      },
+      {
+        "type": "token",
+        "seconds": 13.99298247600018
+      },
+      {
+        "type": "token",
+        "seconds": 13.993015275998914
+      },
+      {
+        "type": "token",
+        "seconds": 13.993067006002093
+      },
+      {
+        "type": "token",
+        "seconds": 13.993095366000489
+      },
+      {
+        "type": "token",
+        "seconds": 13.99314714600041
+      },
+      {
+        "type": "token",
+        "seconds": 13.993176825999399
+      },
+      {
+        "type": "token",
+        "seconds": 13.993226976999722
+      },
+      {
+        "type": "token",
+        "seconds": 13.993258457001502
+      },
+      {
+        "type": "token",
+        "seconds": 13.993310327001382
+      },
+      {
+        "type": "token",
+        "seconds": 13.993339377000666
+      },
+      {
+        "type": "token",
+        "seconds": 13.993391767002322
+      },
+      {
+        "type": "token",
+        "seconds": 13.993421897001099
+      },
+      {
+        "type": "token",
+        "seconds": 13.993473037000513
+      },
+      {
+        "type": "token",
+        "seconds": 13.99350402699929
+      },
+      {
+        "type": "token",
+        "seconds": 13.993554528002278
+      },
+      {
+        "type": "token",
+        "seconds": 13.99358557800224
+      },
+      {
+        "type": "token",
+        "seconds": 13.993635697999707
+      },
+      {
+        "type": "token",
+        "seconds": 13.993666157999542
+      },
+      {
+        "type": "token",
+        "seconds": 13.993717027999082
+      },
+      {
+        "type": "token",
+        "seconds": 13.993747328000609
+      },
+      {
+        "type": "token",
+        "seconds": 13.993798378000065
+      },
+      {
+        "type": "token",
+        "seconds": 13.993827628000872
+      },
+      {
+        "type": "token",
+        "seconds": 13.993878609002422
+      },
+      {
+        "type": "token",
+        "seconds": 13.993908519001707
+      },
+      {
+        "type": "token",
+        "seconds": 13.993960489002347
+      },
+      {
+        "type": "token",
+        "seconds": 13.993991629002267
+      },
+      {
+        "type": "token",
+        "seconds": 13.99404634900202
+      },
+      {
+        "type": "token",
+        "seconds": 13.994075468999654
+      },
+      {
+        "type": "token",
+        "seconds": 13.994126198998856
+      },
+      {
+        "type": "token",
+        "seconds": 13.994155020001926
+      },
+      {
+        "type": "token",
+        "seconds": 13.994207250001637
+      },
+      {
+        "type": "token",
+        "seconds": 13.994237630002317
+      },
+      {
+        "type": "token",
+        "seconds": 13.994288180001604
+      },
+      {
+        "type": "token",
+        "seconds": 13.99431819000165
+      },
+      {
+        "type": "token",
+        "seconds": 13.994370380001783
+      },
+      {
+        "type": "token",
+        "seconds": 13.994399269999121
+      },
+      {
+        "type": "token",
+        "seconds": 13.994450329999381
+      },
+      {
+        "type": "token",
+        "seconds": 13.994480571000167
+      },
+      {
+        "type": "token",
+        "seconds": 13.994533351000428
+      },
+      {
+        "type": "token",
+        "seconds": 13.99456252100208
+      },
+      {
+        "type": "token",
+        "seconds": 13.994616461000987
+      },
+      {
+        "type": "token",
+        "seconds": 13.994648251002218
+      },
+      {
+        "type": "token",
+        "seconds": 13.994702310999855
+      },
+      {
+        "type": "token",
+        "seconds": 13.994734080999478
+      },
+      {
+        "type": "token",
+        "seconds": 13.994787710998935
+      },
+      {
+        "type": "token",
+        "seconds": 13.994818851999298
+      },
+      {
+        "type": "token",
+        "seconds": 13.994873052000912
+      },
+      {
+        "type": "token",
+        "seconds": 13.994902282000112
+      },
+      {
+        "type": "token",
+        "seconds": 13.994954702000541
+      },
+      {
+        "type": "token",
+        "seconds": 13.994984251999995
+      },
+      {
+        "type": "token",
+        "seconds": 13.995039871999325
+      },
+      {
+        "type": "token",
+        "seconds": 13.995068542000809
+      },
+      {
+        "type": "token",
+        "seconds": 13.995121502000984
+      },
+      {
+        "type": "token",
+        "seconds": 13.995151593000628
+      },
+      {
+        "type": "token",
+        "seconds": 13.995203433001734
+      },
+      {
+        "type": "token",
+        "seconds": 13.995233603000088
+      },
+      {
+        "type": "token",
+        "seconds": 13.99528538300001
+      },
+      {
+        "type": "token",
+        "seconds": 13.995313953000732
+      },
+      {
+        "type": "token",
+        "seconds": 13.995366093000484
+      },
+      {
+        "type": "token",
+        "seconds": 13.99539696300053
+      },
+      {
+        "type": "token",
+        "seconds": 13.995449043999542
+      },
+      {
+        "type": "token",
+        "seconds": 13.995478354001534
+      },
+      {
+        "type": "token",
+        "seconds": 13.995530404001329
+      },
+      {
+        "type": "token",
+        "seconds": 13.995559694001713
+      },
+      {
+        "type": "token",
+        "seconds": 13.995611784001085
+      },
+      {
+        "type": "token",
+        "seconds": 13.995640963999904
+      },
+      {
+        "type": "token",
+        "seconds": 13.99569256399991
+      },
+      {
+        "type": "token",
+        "seconds": 13.99572146400169
+      },
+      {
+        "type": "token",
+        "seconds": 13.99577420499918
+      },
+      {
+        "type": "token",
+        "seconds": 13.99580372499986
+      },
+      {
+        "type": "token",
+        "seconds": 13.995855295001093
+      },
+      {
+        "type": "token",
+        "seconds": 13.995884525000292
+      },
+      {
+        "type": "token",
+        "seconds": 13.995937555002456
+      },
+      {
+        "type": "token",
+        "seconds": 13.995966534999752
+      },
+      {
+        "type": "token",
+        "seconds": 13.996022915001959
+      },
+      {
+        "type": "token",
+        "seconds": 13.996108226001525
+      },
+      {
+        "type": "token",
+        "seconds": 13.996175005999248
+      },
+      {
+        "type": "token",
+        "seconds": 13.99620438599959
+      },
+      {
+        "type": "done",
+        "seconds": 13.996440516999428
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 2234,
+          "prompt_tokens": 1539,
+          "completion_tokens": 695
+        }
+      ],
+      "rag_sources": [
+        {
+          "id": 3,
+          "page": 1,
+          "score": 0.5301,
+          "snippet": "def sin(x):\n    with localcontext(ExtendedContext):\n        # Rest of sin calculation algorithm\n        # uses the Extended Context from the\n        # General Decimal Arithmetic Specification\n    return +s # Convert result to normal context\n\n\n\nA generic “object-closing” context manager:class closing(object):\n    def __init__(self, obj):\n        self.obj = obj\n    def __enter__(self):\n        return self.obj\n    def __exit__(self, *exc_info):\n        try:\n            close_it = self.obj.close\n        except AttributeError:\n            pass\n        else:\n            close_it()\n\n\nThis can be used to deterministically close anything with a\nclose method, be it file, generator, or something else. It\ncan even be used when the object isn’t guaranteed to require\nclosing (e.g., a function that accepts an arbitrary\niterable):\n# emulate opening():\nwith closing(open(\"argument.txt\")) as contradiction:\n   for line in contradiction:\n       print line",
+          "file_name": "pep-0343-v1.0.html"
+        },
+        {
+          "id": 4,
+          "page": 1,
+          "score": 0.5277,
+          "snippet": "A variant on opened() that also returns an error condition:@contextmanager\ndef opened_w_error(filename, mode=\"r\"):\n    try:\n        f = open(filename, mode)\n    except IOError, err:\n        yield None, err\n    else:\n        try:\n            yield f, None\n        finally:\n            f.close()\n\n\nUsed as follows:\nwith opened_w_error(\"/etc/passwd\", \"a\") as (f, err):\n    if err:\n        print \"IOError:\", err\n    else:\n        f.write(\"guido::0:0::/:/bin/sh\\n\")\n\n\n\nAnother useful example would be an operation that blocks\nsignals.  The use could be like this:import signal\n\nwith signal.blocked():\n    # code executed without worrying about signals\n\n\nAn optional argument might be a list of signals to be blocked;\nby default all signals are blocked.  The implementation is left\nas an exercise to the reader.",
+          "file_name": "pep-0343-v1.0.html"
+        },
+        {
+          "id": 5,
+          "page": 1,
+          "score": 0.5271,
+          "snippet": "Used as follows:\nwith locked(myLock):\n    # Code here executes with myLock held.  The lock is\n    # guaranteed to be released when the block is left (even\n    # if via return or by an uncaught exception).\n\n\n\nA template for opening a file that ensures the file is closed\nwhen the block is left:@contextmanager\ndef opened(filename, mode=\"r\"):\n    f = open(filename, mode)\n    try:\n        yield f\n    finally:\n        f.close()\n\n\nUsed as follows:\nwith opened(\"/etc/passwd\") as f:\n    for line in f:\n        print line.rstrip()\n\n\n\nA template for committing or rolling back a database\ntransaction:@contextmanager\ndef transaction(db):\n    db.begin()\n    try:\n        yield None\n    except:\n        db.rollback()\n        raise\n    else:\n        db.commit()",
+          "file_name": "pep-0343-v1.0.html"
+        }
+      ],
+      "rag_confident": true,
+      "review_answer": {
+        "text": "В коде отсутствует гарантия закрытия файла, что нарушает требование. Файл не закрывается, если происходит исключение при чтении. \n\n**Дефект:**  \nФайл не закрывается, даже при исключениях. [3], [4], [5]  \n\n**Исправленный код:**  \n```python\ndef first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n```  \n\nИспользование `with` гарантирует закрытие файла, даже если возникнет исключение, как указано в примерах контекстных менеджеров.",
+        "status": "answered",
+        "sources": [
+          {
+            "id": 3,
+            "page": 1,
+            "score": 0.5301,
+            "snippet": "def sin(x):\n    with localcontext(ExtendedContext):\n        # Rest of sin calculation algorithm\n        # uses the Extended Context from the\n        # General Decimal Arithmetic Specification\n    return +s # Convert result to normal context\n\n\n\nA generic “object-closing” context manager:class closing(object):\n    def __init__(self, obj):\n        self.obj = obj\n    def __enter__(self):\n        return self.obj\n    def __exit__(self, *exc_info):\n        try:\n            close_it = self.obj.close\n        except AttributeError:\n            pass\n        else:\n            close_it()\n\n\nThis can be used to deterministically close anything with a\nclose method, be it file, generator, or something else. It\ncan even be used when the object isn’t guaranteed to require\nclosing (e.g., a function that accepts an arbitrary\niterable):\n# emulate opening():\nwith closing(open(\"argument.txt\")) as contradiction:\n   for line in contradiction:\n       print line",
+            "file_name": "pep-0343-v1.0.html"
+          },
+          {
+            "id": 4,
+            "page": 1,
+            "score": 0.5277,
+            "snippet": "A variant on opened() that also returns an error condition:@contextmanager\ndef opened_w_error(filename, mode=\"r\"):\n    try:\n        f = open(filename, mode)\n    except IOError, err:\n        yield None, err\n    else:\n        try:\n            yield f, None\n        finally:\n            f.close()\n\n\nUsed as follows:\nwith opened_w_error(\"/etc/passwd\", \"a\") as (f, err):\n    if err:\n        print \"IOError:\", err\n    else:\n        f.write(\"guido::0:0::/:/bin/sh\\n\")\n\n\n\nAnother useful example would be an operation that blocks\nsignals.  The use could be like this:import signal\n\nwith signal.blocked():\n    # code executed without worrying about signals\n\n\nAn optional argument might be a list of signals to be blocked;\nby default all signals are blocked.  The implementation is left\nas an exercise to the reader.",
+            "file_name": "pep-0343-v1.0.html"
+          },
+          {
+            "id": 5,
+            "page": 1,
+            "score": 0.5271,
+            "snippet": "Used as follows:\nwith locked(myLock):\n    # Code here executes with myLock held.  The lock is\n    # guaranteed to be released when the block is left (even\n    # if via return or by an uncaught exception).\n\n\n\nA template for opening a file that ensures the file is closed\nwhen the block is left:@contextmanager\ndef opened(filename, mode=\"r\"):\n    f = open(filename, mode)\n    try:\n        yield f\n    finally:\n        f.close()\n\n\nUsed as follows:\nwith opened(\"/etc/passwd\") as f:\n    for line in f:\n        print line.rstrip()\n\n\n\nA template for committing or rolling back a database\ntransaction:@contextmanager\ndef transaction(db):\n    db.begin()\n    try:\n        yield None\n    except:\n        db.rollback()\n        raise\n    else:\n        db.commit()",
+            "file_name": "pep-0343-v1.0.html"
+          }
+        ],
+        "confident": true
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [
+      true
+    ],
+    "review": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": true,
+      "notes": "Дефект найден; исправление соответствует эталону. "
+    },
+    "annotation": {
+      "evaluator": "Automated rubric-based inspection against fixed reference and returned sources",
+      "human_review": false,
+      "blind": false
+    }
+  },
+  {
+    "id": "file_handle-fixed",
+    "kind": "fixed",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Файл должен закрываться, в том числе при исключении чтения.",
+    "code": "def first_line(path):\n    with open(path, encoding=\"utf-8\") as stream:\n        return stream.readline()\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+        "status": "refused",
+        "message_id": "e6eb2dbd-168b-491a-91e1-a87cd18fed3b"
+      }
+    ],
+    "latency_seconds": 4.0425905310003145,
+    "started_at": "2026-11-03T09:04:50.989100+00:00",
+    "request_id": "3bf87f3118cb",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 4.0422235499972885
+      },
+      {
+        "type": "done",
+        "seconds": 4.0423808109990205
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "Отказ не засчитывается как успешная проверка корректного кода. "
+    },
+    "annotation": {
+      "evaluator": "Automated rubric-based inspection against fixed reference and returned sources",
+      "human_review": false,
+      "blind": false
+    }
+  },
+  {
+    "id": "file_handle-clean",
+    "kind": "clean",
+    "language": "python",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом.",
+    "code": "from pathlib import Path\n\ndef read_config(path):\n    return Path(path).read_text(encoding=\"utf-8\")\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "message_id": "618b2f53-9069-4340-8331-9e1c931f1b6e"
+      }
+    ],
+    "latency_seconds": 11.013209643002483,
+    "started_at": "2026-11-03T09:04:55.064063+00:00",
+    "request_id": "c1995f5a0bac",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.00390156100184
+      },
+      {
+        "type": "token",
+        "seconds": 11.012884232000943
+      },
+      {
+        "type": "done",
+        "seconds": 11.012989003000257
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1592,
+          "prompt_tokens": 1082,
+          "completion_tokens": 510
+        }
+      ],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "Отказ не засчитывается как успешная проверка корректного кода. "
+    },
+    "annotation": {
+      "evaluator": "Automated rubric-based inspection against fixed reference and returned sources",
+      "human_review": false,
+      "blind": false
+    }
+  },
+  {
+    "id": "ensure_directory-defect",
+    "kind": "defect",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Повторное выполнение должно сохранять состояние без ошибки.",
+    "code": "- name: Create app cache\n  ansible.builtin.shell: mkdir /opt/app-cache\n",
+    "expected_defects": [
+      "non-idempotent-shell"
+    ],
+    "reference_fix": "- name: Create app cache\n  ansible.builtin.file:\n    path: /opt/app-cache\n    state: directory\n    mode: \"0755\"\n",
+    "answer": "В коде нарушается требование идемпотентности повторного выполнения. Команда `mkdir` не проверяет существование директории перед созданием, что может привести к некорректному статусу `changed` при повторном запуске playbook [3]. \n\n**Исправленная версия:**\n```yaml\n- name: Ensure app cache directory exists\n  ansible.builtin.file:\n    path: /opt/app-cache\n    state: directory\n    mode: '0755'\n```\nЭтот код гарантирует, что директория будет создана только при отсутствии, а повторные запуски не изменят состояние системы [3].",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В"
+      },
+      {
+        "type": "token",
+        "delta": " код"
+      },
+      {
+        "type": "token",
+        "delta": "е"
+      },
+      {
+        "type": "token",
+        "delta": " на"
+      },
+      {
+        "type": "token",
+        "delta": "руш"
+      },
+      {
+        "type": "token",
+        "delta": "ается"
+      },
+      {
+        "type": "token",
+        "delta": " треб"
+      },
+      {
+        "type": "token",
+        "delta": "ование"
+      },
+      {
+        "type": "token",
+        "delta": " и"
+      },
+      {
+        "type": "token",
+        "delta": "д"
+      },
+      {
+        "type": "token",
+        "delta": "ем"
+      },
+      {
+        "type": "token",
+        "delta": "пот"
+      },
+      {
+        "type": "token",
+        "delta": "ент"
+      },
+      {
+        "type": "token",
+        "delta": "ности"
+      },
+      {
+        "type": "token",
+        "delta": " повтор"
+      },
+      {
+        "type": "token",
+        "delta": "ного"
+      },
+      {
+        "type": "token",
+        "delta": " выполн"
+      },
+      {
+        "type": "token",
+        "delta": "ения"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": " Ком"
+      },
+      {
+        "type": "token",
+        "delta": "ан"
+      },
+      {
+        "type": "token",
+        "delta": "да"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "mkdir"
+      },
+      {
+        "type": "token",
+        "delta": "`"
+      },
+      {
+        "type": "token",
+        "delta": " не"
+      },
+      {
+        "type": "token",
+        "delta": " провер"
+      },
+      {
+        "type": "token",
+        "delta": "яет"
+      },
+      {
+        "type": "token",
+        "delta": " существ"
+      },
+      {
+        "type": "token",
+        "delta": "ование"
+      },
+      {
+        "type": "token",
+        "delta": " директор"
+      },
+      {
+        "type": "token",
+        "delta": "ии"
+      },
+      {
+        "type": "token",
+        "delta": " перед"
+      },
+      {
+        "type": "token",
+        "delta": " созд"
+      },
+      {
+        "type": "token",
+        "delta": "ани"
+      },
+      {
+        "type": "token",
+        "delta": "ем"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " что"
+      },
+      {
+        "type": "token",
+        "delta": " может"
+      },
+      {
+        "type": "token",
+        "delta": " пр"
+      },
+      {
+        "type": "token",
+        "delta": "ив"
+      },
+      {
+        "type": "token",
+        "delta": "ести"
+      },
+      {
+        "type": "token",
+        "delta": " к"
+      },
+      {
+        "type": "token",
+        "delta": " нек"
+      },
+      {
+        "type": "token",
+        "delta": "ор"
+      },
+      {
+        "type": "token",
+        "delta": "рект"
+      },
+      {
+        "type": "token",
+        "delta": "ному"
+      },
+      {
+        "type": "token",
+        "delta": " ст"
+      },
+      {
+        "type": "token",
+        "delta": "ат"
+      },
+      {
+        "type": "token",
+        "delta": "ус"
+      },
+      {
+        "type": "token",
+        "delta": "у"
+      },
+      {
+        "type": "token",
+        "delta": " `"
+      },
+      {
+        "type": "token",
+        "delta": "changed"
+      },
+      {
+        "type": "token",
+        "delta": "`"
+      },
+      {
+        "type": "token",
+        "delta": " при"
+      },
+      {
+        "type": "token",
+        "delta": " повтор"
+      },
+      {
+        "type": "token",
+        "delta": "ном"
+      },
+      {
+        "type": "token",
+        "delta": " зап"
+      },
+      {
+        "type": "token",
+        "delta": "ус"
+      },
+      {
+        "type": "token",
+        "delta": "ке"
+      },
+      {
+        "type": "token",
+        "delta": " playbook"
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "3"
+      },
+      {
+        "type": "token",
+        "delta": "]."
+      },
+      {
+        "type": "token",
+        "delta": " \n\n"
+      },
+      {
+        "type": "token",
+        "delta": "**"
+      },
+      {
+        "type": "token",
+        "delta": "И"
+      },
+      {
+        "type": "token",
+        "delta": "сп"
+      },
+      {
+        "type": "token",
+        "delta": "рав"
+      },
+      {
+        "type": "token",
+        "delta": "лен"
+      },
+      {
+        "type": "token",
+        "delta": "ная"
+      },
+      {
+        "type": "token",
+        "delta": " вер"
+      },
+      {
+        "type": "token",
+        "delta": "с"
+      },
+      {
+        "type": "token",
+        "delta": "ия"
+      },
+      {
+        "type": "token",
+        "delta": ":"
+      },
+      {
+        "type": "token",
+        "delta": "**\n"
+      },
+      {
+        "type": "token",
+        "delta": "```"
+      },
+      {
+        "type": "token",
+        "delta": "yaml"
+      },
+      {
+        "type": "token",
+        "delta": "\n"
+      },
+      {
+        "type": "token",
+        "delta": "-"
+      },
+      {
+        "type": "token",
+        "delta": " name"
+      },
+      {
+        "type": "token",
+        "delta": ":"
+      },
+      {
+        "type": "token",
+        "delta": " Ensure"
+      },
+      {
+        "type": "token",
+        "delta": " app"
+      },
+      {
+        "type": "token",
+        "delta": " cache"
+      },
+      {
+        "type": "token",
+        "delta": " directory"
+      },
+      {
+        "type": "token",
+        "delta": " exists"
+      },
+      {
+        "type": "token",
+        "delta": "\n"
+      },
+      {
+        "type": "token",
+        "delta": " "
+      },
+      {
+        "type": "token",
+        "delta": " ansible"
+      },
+      {
+        "type": "token",
+        "delta": ".b"
+      },
+      {
+        "type": "token",
+        "delta": "uiltin"
+      },
+      {
+        "type": "token",
+        "delta": ".file"
+      },
+      {
+        "type": "token",
+        "delta": ":\n"
+      },
+      {
+        "type": "token",
+        "delta": "   "
+      },
+      {
+        "type": "token",
+        "delta": " path"
+      },
+      {
+        "type": "token",
+        "delta": ":"
+      },
+      {
+        "type": "token",
+        "delta": " /"
+      },
+      {
+        "type": "token",
+        "delta": "opt"
+      },
+      {
+        "type": "token",
+        "delta": "/app"
+      },
+      {
+        "type": "token",
+        "delta": "-cache"
+      },
+      {
+        "type": "token",
+        "delta": "\n"
+      },
+      {
+        "type": "token",
+        "delta": "   "
+      },
+      {
+        "type": "token",
+        "delta": " state"
+      },
+      {
+        "type": "token",
+        "delta": ":"
+      },
+      {
+        "type": "token",
+        "delta": " directory"
+      },
+      {
+        "type": "token",
+        "delta": "\n"
+      },
+      {
+        "type": "token",
+        "delta": "   "
+      },
+      {
+        "type": "token",
+        "delta": " mode"
+      },
+      {
+        "type": "token",
+        "delta": ":"
+      },
+      {
+        "type": "token",
+        "delta": " '"
+      },
+      {
+        "type": "token",
+        "delta": "0"
+      },
+      {
+        "type": "token",
+        "delta": "7"
+      },
+      {
+        "type": "token",
+        "delta": "5"
+      },
+      {
+        "type": "token",
+        "delta": "5"
+      },
+      {
+        "type": "token",
+        "delta": "'\n"
+      },
+      {
+        "type": "token",
+        "delta": "``"
+      },
+      {
+        "type": "token",
+        "delta": "`\n"
+      },
+      {
+        "type": "token",
+        "delta": "Э"
+      },
+      {
+        "type": "token",
+        "delta": "т"
+      },
+      {
+        "type": "token",
+        "delta": "от"
+      },
+      {
+        "type": "token",
+        "delta": " код"
+      },
+      {
+        "type": "token",
+        "delta": " гаранти"
+      },
+      {
+        "type": "token",
+        "delta": "ру"
+      },
+      {
+        "type": "token",
+        "delta": "ет"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " что"
+      },
+      {
+        "type": "token",
+        "delta": " директор"
+      },
+      {
+        "type": "token",
+        "delta": "ия"
+      },
+      {
+        "type": "token",
+        "delta": " будет"
+      },
+      {
+        "type": "token",
+        "delta": " созд"
+      },
+      {
+        "type": "token",
+        "delta": "ана"
+      },
+      {
+        "type": "token",
+        "delta": " только"
+      },
+      {
+        "type": "token",
+        "delta": " при"
+      },
+      {
+        "type": "token",
+        "delta": " от"
+      },
+      {
+        "type": "token",
+        "delta": "сут"
+      },
+      {
+        "type": "token",
+        "delta": "ств"
+      },
+      {
+        "type": "token",
+        "delta": "ии"
+      },
+      {
+        "type": "token",
+        "delta": ","
+      },
+      {
+        "type": "token",
+        "delta": " а"
+      },
+      {
+        "type": "token",
+        "delta": " повтор"
+      },
+      {
+        "type": "token",
+        "delta": "ные"
+      },
+      {
+        "type": "token",
+        "delta": " зап"
+      },
+      {
+        "type": "token",
+        "delta": "ус"
+      },
+      {
+        "type": "token",
+        "delta": "ки"
+      },
+      {
+        "type": "token",
+        "delta": " не"
+      },
+      {
+        "type": "token",
+        "delta": " измен"
+      },
+      {
+        "type": "token",
+        "delta": "ят"
+      },
+      {
+        "type": "token",
+        "delta": " состояние"
+      },
+      {
+        "type": "token",
+        "delta": " системы"
+      },
+      {
+        "type": "token",
+        "delta": " ["
+      },
+      {
+        "type": "token",
+        "delta": "3"
+      },
+      {
+        "type": "token",
+        "delta": "]."
+      },
+      {
+        "type": "done",
+        "sources": [
+          {
+            "id": 3,
+            "page": 1,
+            "score": 0.5591,
+            "snippet": "Playbook описывает желаемое состояние управляемых узлов. Повторный запуск идемпотентной автоматизации не должен менять итоговое состояние, если входные данные и окружение не изменились. На ревью проверяется не только успешный первый запуск, но и корректный статус `changed` при повторном выполнении.",
+            "file_name": "ansible_playbook_practices.md"
+          }
+        ],
+        "confident": true,
+        "text": "В коде нарушается требование идемпотентности повторного выполнения. Команда `mkdir` не проверяет существование директории перед созданием, что может привести к некорректному статусу `changed` при повторном запуске playbook [3]. \n\n**Исправленная версия:**\n```yaml\n- name: Ensure app cache directory exists\n  ansible.builtin.file:\n    path: /opt/app-cache\n    state: directory\n    mode: '0755'\n```\nЭтот код гарантирует, что директория будет создана только при отсутствии, а повторные запуски не изменят состояние системы [3].",
+        "status": "answered",
+        "message_id": "d9e553ac-532e-4ac0-80f3-cac327c2782b"
+      }
+    ],
+    "latency_seconds": 11.986139751999872,
+    "started_at": "2026-11-03T09:05:06.109642+00:00",
+    "request_id": "33a643c54045",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.003837365999061
+      },
+      {
+        "type": "token",
+        "seconds": 11.979289580001932
+      },
+      {
+        "type": "token",
+        "seconds": 11.9794300700014
+      },
+      {
+        "type": "token",
+        "seconds": 11.979450971000915
+      },
+      {
+        "type": "token",
+        "seconds": 11.979467941000621
+      },
+      {
+        "type": "token",
+        "seconds": 11.979482931001257
+      },
+      {
+        "type": "token",
+        "seconds": 11.979497581000032
+      },
+      {
+        "type": "token",
+        "seconds": 11.979585750999831
+      },
+      {
+        "type": "token",
+        "seconds": 11.979602121002245
+      },
+      {
+        "type": "token",
+        "seconds": 11.979616971002542
+      },
+      {
+        "type": "token",
+        "seconds": 11.979683621000731
+      },
+      {
+        "type": "token",
+        "seconds": 11.979698871000437
+      },
+      {
+        "type": "token",
+        "seconds": 11.979712840999127
+      },
+      {
+        "type": "token",
+        "seconds": 11.97977593199903
+      },
+      {
+        "type": "token",
+        "seconds": 11.979791871999623
+      },
+      {
+        "type": "token",
+        "seconds": 11.979856501999166
+      },
+      {
+        "type": "token",
+        "seconds": 11.979872692001663
+      },
+      {
+        "type": "token",
+        "seconds": 11.979970182001125
+      },
+      {
+        "type": "token",
+        "seconds": 11.980035302000033
+      },
+      {
+        "type": "token",
+        "seconds": 11.980098993000865
+      },
+      {
+        "type": "token",
+        "seconds": 11.98012119300256
+      },
+      {
+        "type": "token",
+        "seconds": 11.980180653001298
+      },
+      {
+        "type": "token",
+        "seconds": 11.980196792999777
+      },
+      {
+        "type": "token",
+        "seconds": 11.98025684300228
+      },
+      {
+        "type": "token",
+        "seconds": 11.980273043001944
+      },
+      {
+        "type": "token",
+        "seconds": 11.980323323001357
+      },
+      {
+        "type": "token",
+        "seconds": 11.980331312999624
+      },
+      {
+        "type": "token",
+        "seconds": 11.980361664001975
+      },
+      {
+        "type": "token",
+        "seconds": 11.980391174001852
+      },
+      {
+        "type": "token",
+        "seconds": 11.98043353400135
+      },
+      {
+        "type": "token",
+        "seconds": 11.980462994000845
+      },
+      {
+        "type": "token",
+        "seconds": 11.980513173999498
+      },
+      {
+        "type": "token",
+        "seconds": 11.980544894002378
+      },
+      {
+        "type": "token",
+        "seconds": 11.98059698400175
+      },
+      {
+        "type": "token",
+        "seconds": 11.980626254000526
+      },
+      {
+        "type": "token",
+        "seconds": 11.980679925000004
+      },
+      {
+        "type": "token",
+        "seconds": 11.980709785002546
+      },
+      {
+        "type": "token",
+        "seconds": 11.980762785002298
+      },
+      {
+        "type": "token",
+        "seconds": 11.980794645001879
+      },
+      {
+        "type": "token",
+        "seconds": 11.9808455650018
+      },
+      {
+        "type": "token",
+        "seconds": 11.980878595000831
+      },
+      {
+        "type": "token",
+        "seconds": 11.98093578499902
+      },
+      {
+        "type": "token",
+        "seconds": 11.980965255999763
+      },
+      {
+        "type": "token",
+        "seconds": 11.981017316000361
+      },
+      {
+        "type": "token",
+        "seconds": 11.981047126002522
+      },
+      {
+        "type": "token",
+        "seconds": 11.981099806002021
+      },
+      {
+        "type": "token",
+        "seconds": 11.981130856001982
+      },
+      {
+        "type": "token",
+        "seconds": 11.981184426000254
+      },
+      {
+        "type": "token",
+        "seconds": 11.981213136001315
+      },
+      {
+        "type": "token",
+        "seconds": 11.981267537001258
+      },
+      {
+        "type": "token",
+        "seconds": 11.981299177001347
+      },
+      {
+        "type": "token",
+        "seconds": 11.981353257000592
+      },
+      {
+        "type": "token",
+        "seconds": 11.981385867002246
+      },
+      {
+        "type": "token",
+        "seconds": 11.981437616999756
+      },
+      {
+        "type": "token",
+        "seconds": 11.981469026999548
+      },
+      {
+        "type": "token",
+        "seconds": 11.981521197001712
+      },
+      {
+        "type": "token",
+        "seconds": 11.981550117001461
+      },
+      {
+        "type": "token",
+        "seconds": 11.981607688001532
+      },
+      {
+        "type": "token",
+        "seconds": 11.981637357999716
+      },
+      {
+        "type": "token",
+        "seconds": 11.981685927999933
+      },
+      {
+        "type": "token",
+        "seconds": 11.981716148002306
+      },
+      {
+        "type": "token",
+        "seconds": 11.981769257999986
+      },
+      {
+        "type": "token",
+        "seconds": 11.981799728000624
+      },
+      {
+        "type": "token",
+        "seconds": 11.981852667999192
+      },
+      {
+        "type": "token",
+        "seconds": 11.981886388999555
+      },
+      {
+        "type": "token",
+        "seconds": 11.98194734900244
+      },
+      {
+        "type": "token",
+        "seconds": 11.98197645899927
+      },
+      {
+        "type": "token",
+        "seconds": 11.98202942900025
+      },
+      {
+        "type": "token",
+        "seconds": 11.982058589001099
+      },
+      {
+        "type": "token",
+        "seconds": 11.982111208999413
+      },
+      {
+        "type": "token",
+        "seconds": 11.982141168999078
+      },
+      {
+        "type": "token",
+        "seconds": 11.982194730000629
+      },
+      {
+        "type": "token",
+        "seconds": 11.982225769999786
+      },
+      {
+        "type": "token",
+        "seconds": 11.982278530002077
+      },
+      {
+        "type": "token",
+        "seconds": 11.982307990001573
+      },
+      {
+        "type": "token",
+        "seconds": 11.982361289999972
+      },
+      {
+        "type": "token",
+        "seconds": 11.98239070999989
+      },
+      {
+        "type": "token",
+        "seconds": 11.982445059999009
+      },
+      {
+        "type": "token",
+        "seconds": 11.982473681000556
+      },
+      {
+        "type": "token",
+        "seconds": 11.982526681000309
+      },
+      {
+        "type": "token",
+        "seconds": 11.98255682099989
+      },
+      {
+        "type": "token",
+        "seconds": 11.982609261001926
+      },
+      {
+        "type": "token",
+        "seconds": 11.982639751000534
+      },
+      {
+        "type": "token",
+        "seconds": 11.982693600999482
+      },
+      {
+        "type": "token",
+        "seconds": 11.982722160999401
+      },
+      {
+        "type": "token",
+        "seconds": 11.982773941999767
+      },
+      {
+        "type": "token",
+        "seconds": 11.982804362000024
+      },
+      {
+        "type": "token",
+        "seconds": 11.982854911999311
+      },
+      {
+        "type": "token",
+        "seconds": 11.982889692000754
+      },
+      {
+        "type": "token",
+        "seconds": 11.98294155199983
+      },
+      {
+        "type": "token",
+        "seconds": 11.982972461999452
+      },
+      {
+        "type": "token",
+        "seconds": 11.983023952001531
+      },
+      {
+        "type": "token",
+        "seconds": 11.983054002001154
+      },
+      {
+        "type": "token",
+        "seconds": 11.983107083000505
+      },
+      {
+        "type": "token",
+        "seconds": 11.983137063001777
+      },
+      {
+        "type": "token",
+        "seconds": 11.983190103001107
+      },
+      {
+        "type": "token",
+        "seconds": 11.98321996300001
+      },
+      {
+        "type": "token",
+        "seconds": 11.983272393001243
+      },
+      {
+        "type": "token",
+        "seconds": 11.98330111299947
+      },
+      {
+        "type": "token",
+        "seconds": 11.983353143001295
+      },
+      {
+        "type": "token",
+        "seconds": 11.983382293001341
+      },
+      {
+        "type": "token",
+        "seconds": 11.98343441399993
+      },
+      {
+        "type": "token",
+        "seconds": 11.983464394001203
+      },
+      {
+        "type": "token",
+        "seconds": 11.983516383999813
+      },
+      {
+        "type": "token",
+        "seconds": 11.983546113999182
+      },
+      {
+        "type": "token",
+        "seconds": 11.983597954000288
+      },
+      {
+        "type": "token",
+        "seconds": 11.983627714002068
+      },
+      {
+        "type": "token",
+        "seconds": 11.98368104399924
+      },
+      {
+        "type": "token",
+        "seconds": 11.983712634002586
+      },
+      {
+        "type": "token",
+        "seconds": 11.983766965000541
+      },
+      {
+        "type": "token",
+        "seconds": 11.983797954999318
+      },
+      {
+        "type": "token",
+        "seconds": 11.983851324999705
+      },
+      {
+        "type": "token",
+        "seconds": 11.983883544999117
+      },
+      {
+        "type": "token",
+        "seconds": 11.98394249500052
+      },
+      {
+        "type": "token",
+        "seconds": 11.983972435002215
+      },
+      {
+        "type": "token",
+        "seconds": 11.98402474500108
+      },
+      {
+        "type": "token",
+        "seconds": 11.984056205001252
+      },
+      {
+        "type": "token",
+        "seconds": 11.98410820600111
+      },
+      {
+        "type": "token",
+        "seconds": 11.98413853600141
+      },
+      {
+        "type": "token",
+        "seconds": 11.984198136000487
+      },
+      {
+        "type": "token",
+        "seconds": 11.984228846002225
+      },
+      {
+        "type": "token",
+        "seconds": 11.984282945999439
+      },
+      {
+        "type": "token",
+        "seconds": 11.98431306600105
+      },
+      {
+        "type": "token",
+        "seconds": 11.984364425999956
+      },
+      {
+        "type": "token",
+        "seconds": 11.984394617000362
+      },
+      {
+        "type": "token",
+        "seconds": 11.98444698700041
+      },
+      {
+        "type": "token",
+        "seconds": 11.98447705700164
+      },
+      {
+        "type": "token",
+        "seconds": 11.98452892700152
+      },
+      {
+        "type": "token",
+        "seconds": 11.984558046999155
+      },
+      {
+        "type": "token",
+        "seconds": 11.984612017000472
+      },
+      {
+        "type": "token",
+        "seconds": 11.984641717001068
+      },
+      {
+        "type": "token",
+        "seconds": 11.9846939880008
+      },
+      {
+        "type": "token",
+        "seconds": 11.984723218
+      },
+      {
+        "type": "token",
+        "seconds": 11.984776468001655
+      },
+      {
+        "type": "token",
+        "seconds": 11.984806767999544
+      },
+      {
+        "type": "token",
+        "seconds": 11.984858497999085
+      },
+      {
+        "type": "token",
+        "seconds": 11.984891618001711
+      },
+      {
+        "type": "token",
+        "seconds": 11.984947037999518
+      },
+      {
+        "type": "token",
+        "seconds": 11.984975249000854
+      },
+      {
+        "type": "token",
+        "seconds": 11.985028728999168
+      },
+      {
+        "type": "token",
+        "seconds": 11.985059229002218
+      },
+      {
+        "type": "token",
+        "seconds": 11.985112079000828
+      },
+      {
+        "type": "token",
+        "seconds": 11.985142949000874
+      },
+      {
+        "type": "token",
+        "seconds": 11.985194149001472
+      },
+      {
+        "type": "token",
+        "seconds": 11.985224759002449
+      },
+      {
+        "type": "token",
+        "seconds": 11.98527771999943
+      },
+      {
+        "type": "token",
+        "seconds": 11.985308960000111
+      },
+      {
+        "type": "token",
+        "seconds": 11.98536199999944
+      },
+      {
+        "type": "token",
+        "seconds": 11.985391959999106
+      },
+      {
+        "type": "token",
+        "seconds": 11.985445820002496
+      },
+      {
+        "type": "token",
+        "seconds": 11.9854767800025
+      },
+      {
+        "type": "token",
+        "seconds": 11.985571010001877
+      },
+      {
+        "type": "token",
+        "seconds": 11.98561433100258
+      },
+      {
+        "type": "token",
+        "seconds": 11.985674981002376
+      },
+      {
+        "type": "done",
+        "seconds": 11.985829541001294
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1660,
+          "prompt_tokens": 1077,
+          "completion_tokens": 583
+        }
+      ],
+      "rag_sources": [
+        {
+          "id": 3,
+          "page": 1,
+          "score": 0.5591,
+          "snippet": "Playbook описывает желаемое состояние управляемых узлов. Повторный запуск идемпотентной автоматизации не должен менять итоговое состояние, если входные данные и окружение не изменились. На ревью проверяется не только успешный первый запуск, но и корректный статус `changed` при повторном выполнении.",
+          "file_name": "ansible_playbook_practices.md"
+        }
+      ],
+      "rag_confident": true,
+      "review_answer": {
+        "text": "В коде нарушается требование идемпотентности повторного выполнения. Команда `mkdir` не проверяет существование директории перед созданием, что может привести к некорректному статусу `changed` при повторном запуске playbook [3]. \n\n**Исправленная версия:**\n```yaml\n- name: Ensure app cache directory exists\n  ansible.builtin.file:\n    path: /opt/app-cache\n    state: directory\n    mode: '0755'\n```\nЭтот код гарантирует, что директория будет создана только при отсутствии, а повторные запуски не изменят состояние системы [3].",
+        "status": "answered",
+        "sources": [
+          {
+            "id": 3,
+            "page": 1,
+            "score": 0.5591,
+            "snippet": "Playbook описывает желаемое состояние управляемых узлов. Повторный запуск идемпотентной автоматизации не должен менять итоговое состояние, если входные данные и окружение не изменились. На ревью проверяется не только успешный первый запуск, но и корректный статус `changed` при повторном выполнении.",
+            "file_name": "ansible_playbook_practices.md"
+          }
+        ],
+        "confident": true
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": true,
+      "notes": "Дефект найден; исправление соответствует эталону. Исправление пригодно по структуре YAML; исходный mkdir при повторе завершается ошибкой, объяснение модели про changed неточно. Ansible не запускался. "
+    },
+    "annotation": {
+      "evaluator": "Automated rubric-based inspection against fixed reference and returned sources",
+      "human_review": false,
+      "blind": false
+    }
+  },
+  {
+    "id": "ensure_directory-fixed",
+    "kind": "fixed",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом. Для дефекта предложи полную исправленную версию. Требование: Повторное выполнение должно сохранять состояние без ошибки.",
+    "code": "- name: Create app cache\n  ansible.builtin.file:\n    path: /opt/app-cache\n    state: directory\n    mode: \"0755\"\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+    "events": [
+      {
+        "type": "progress",
+        "stage": "processing"
+      },
+      {
+        "type": "token",
+        "delta": "В"
+      },
+      {
+        "type": "token",
+        "delta": " баз"
+      },
+      {
+        "type": "token",
+        "delta": "е"
+      },
+      {
+        "type": "token",
+        "delta": " не"
+      },
+      {
+        "type": "token",
+        "delta": " наш"
+      },
+      {
+        "type": "token",
+        "delta": "ё"
+      },
+      {
+        "type": "token",
+        "delta": "л"
+      },
+      {
+        "type": "token",
+        "delta": " достат"
+      },
+      {
+        "type": "token",
+        "delta": "очных"
+      },
+      {
+        "type": "token",
+        "delta": " основ"
+      },
+      {
+        "type": "token",
+        "delta": "ани"
+      },
+      {
+        "type": "token",
+        "delta": "й"
+      },
+      {
+        "type": "token",
+        "delta": " для"
+      },
+      {
+        "type": "token",
+        "delta": " ответ"
+      },
+      {
+        "type": "token",
+        "delta": "а"
+      },
+      {
+        "type": "token",
+        "delta": "."
+      },
+      {
+        "type": "token",
+        "delta": " Можно"
+      },
+      {
+        "type": "token",
+        "delta": " зарегистри"
+      },
+      {
+        "type": "token",
+        "delta": "ров"
+      },
+      {
+        "type": "token",
+        "delta": "ать"
+      },
+      {
+        "type": "token",
+        "delta": " заяв"
+      },
+      {
+        "type": "token",
+        "delta": "ку"
+      },
+      {
+        "type": "token",
+        "delta": ":"
+      },
+      {
+        "type": "token",
+        "delta": " /"
+      },
+      {
+        "type": "token",
+        "delta": "escal"
+      },
+      {
+        "type": "token",
+        "delta": "ate"
+      },
+      {
+        "type": "token",
+        "delta": " <в"
+      },
+      {
+        "type": "token",
+        "delta": "оп"
+      },
+      {
+        "type": "token",
+        "delta": "рос"
+      },
+      {
+        "type": "token",
+        "delta": ">."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "message_id": "11de241e-c51a-4752-94e3-3f31ab14b083"
+      }
+    ],
+    "latency_seconds": 11.005712599002436,
+    "started_at": "2026-11-03T09:05:18.121432+00:00",
+    "request_id": "02b3d5b9d9fc",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "progress",
+        "seconds": 10.004239262001647
+      },
+      {
+        "type": "token",
+        "seconds": 11.003810222999164
+      },
+      {
+        "type": "token",
+        "seconds": 11.003831203001027
+      },
+      {
+        "type": "token",
+        "seconds": 11.003920693001419
+      },
+      {
+        "type": "token",
+        "seconds": 11.003932572999474
+      },
+      {
+        "type": "token",
+        "seconds": 11.00394324300214
+      },
+      {
+        "type": "token",
+        "seconds": 11.003952703002142
+      },
+      {
+        "type": "token",
+        "seconds": 11.004002113000752
+      },
+      {
+        "type": "token",
+        "seconds": 11.004041493000841
+      },
+      {
+        "type": "token",
+        "seconds": 11.004086073000508
+      },
+      {
+        "type": "token",
+        "seconds": 11.004414884999278
+      },
+      {
+        "type": "token",
+        "seconds": 11.004426965002494
+      },
+      {
+        "type": "token",
+        "seconds": 11.004436785002326
+      },
+      {
+        "type": "token",
+        "seconds": 11.004446185001143
+      },
+      {
+        "type": "token",
+        "seconds": 11.004455645001144
+      },
+      {
+        "type": "token",
+        "seconds": 11.004465105001145
+      },
+      {
+        "type": "token",
+        "seconds": 11.004510455000855
+      },
+      {
+        "type": "token",
+        "seconds": 11.004521195001871
+      },
+      {
+        "type": "token",
+        "seconds": 11.004559655000776
+      },
+      {
+        "type": "token",
+        "seconds": 11.004634695000277
+      },
+      {
+        "type": "token",
+        "seconds": 11.004673915002058
+      },
+      {
+        "type": "token",
+        "seconds": 11.004739415999211
+      },
+      {
+        "type": "token",
+        "seconds": 11.004789266000444
+      },
+      {
+        "type": "token",
+        "seconds": 11.004856236002524
+      },
+      {
+        "type": "token",
+        "seconds": 11.00489190600274
+      },
+      {
+        "type": "token",
+        "seconds": 11.004957236000337
+      },
+      {
+        "type": "token",
+        "seconds": 11.004994525999791
+      },
+      {
+        "type": "token",
+        "seconds": 11.005056206999143
+      },
+      {
+        "type": "token",
+        "seconds": 11.005136427000252
+      },
+      {
+        "type": "token",
+        "seconds": 11.005209257000388
+      },
+      {
+        "type": "token",
+        "seconds": 11.005244537002
+      },
+      {
+        "type": "done",
+        "seconds": 11.00548045799951
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [
+        {
+          "total_tokens": 1635,
+          "prompt_tokens": 1093,
+          "completion_tokens": 542
+        }
+      ],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В базе не нашёл достаточных оснований для ответа. Можно зарегистрировать заявку: /escalate <вопрос>.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": true
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "Отказ не засчитывается как успешная проверка корректного кода. "
+    },
+    "annotation": {
+      "evaluator": "Automated rubric-based inspection against fixed reference and returned sources",
+      "human_review": false,
+      "blind": false
+    }
+  },
+  {
+    "id": "ensure_directory-clean",
+    "kind": "clean",
+    "language": "ansible",
+    "task": "Проверь код. Указывай только доказуемые дефекты со ссылками на правила. Если дефектов нет, явно скажи об этом.",
+    "code": "- name: Install package\n  ansible.builtin.package:\n    name: git\n    state: present\n",
+    "expected_defects": [],
+    "reference_fix": null,
+    "answer": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+    "events": [
+      {
+        "type": "token",
+        "delta": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода."
+      },
+      {
+        "type": "done",
+        "sources": [],
+        "confident": false,
+        "text": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+        "status": "refused",
+        "message_id": "d0fdac97-f04e-4da1-bd9d-a334c2526782"
+      }
+    ],
+    "latency_seconds": 3.7862950319977244,
+    "started_at": "2026-11-03T09:05:29.158965+00:00",
+    "request_id": "b79024b4905e",
+    "http_status": 200,
+    "transport_error": null,
+    "event_timings": [
+      {
+        "type": "token",
+        "seconds": 3.7859361400005582
+      },
+      {
+        "type": "done",
+        "seconds": 3.786093680999329
+      }
+    ],
+    "saved_answer_metadata": {
+      "usage": [],
+      "rag_sources": [],
+      "rag_confident": false,
+      "review_answer": {
+        "text": "В найденных документах нет достаточных оснований для ответа на этот вопрос. Уточните, что именно имеется в виду, или пришлите описание и пример кода.",
+        "status": "refused",
+        "sources": [],
+        "confident": false
+      },
+      "usage_available": false
+    },
+    "python_syntax_checks": [],
+    "review": {
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "fix_usable": false,
+      "notes": "Отказ не засчитывается как успешная проверка корректного кода. "
+    },
+    "annotation": {
+      "evaluator": "Automated rubric-based inspection against fixed reference and returned sources",
+      "human_review": false,
+      "blind": false
+    }
+  }
+]

@@ -1,0 +1,234 @@
+{
+  "scope": "native Ollama microbenchmark; no retrieval or application validation",
+  "request": {
+    "model": "qwen3:latest",
+    "stream": false,
+    "keep_alive": "10m",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Проверь Python-код. Вызовы без cache должны возвращать независимые словари. Назови дефект и дай полную исправленную функцию. Ответ до 150 слов.\ndef remember(value, cache={}):\n    cache[value] = True\n    return cache\n"
+      }
+    ],
+    "options": {
+      "num_ctx": 4096,
+      "num_predict": 1024,
+      "temperature": 0,
+      "seed": 42
+    }
+  },
+  "runs": [
+    {
+      "think": false,
+      "repetition": 0,
+      "warmup": true,
+      "started_at": "2026-11-03T10:03:06.925030+00:00",
+      "response": {
+        "model": "qwen3:latest",
+        "created_at": "2026-11-03T10:03:08.611842782Z",
+        "message": {
+          "role": "assistant",
+          "content": "**Дефект:** Использование изменяемого объекта `dict` как значения по умолчанию в параметре `cache` приводит к неожиданному поведению: все вызовы функции `remember` будут использовать один и тот же словарь, что нарушает требование возвращать независимые словари.\n\n**Исправленная функция:**\n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```"
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 1676709482,
+        "load_duration": 1520539,
+        "prompt_eval_count": 89,
+        "prompt_eval_cached_count": 1,
+        "prompt_eval_duration": 52037000,
+        "eval_count": 126,
+        "eval_duration": 1583736000
+      },
+      "prompt_eval_tokens_per_second": 1710.3215020081866,
+      "eval_tokens_per_second": 79.5587143311764,
+      "wall_seconds": 1.6873218250002537
+    },
+    {
+      "think": false,
+      "repetition": 1,
+      "warmup": false,
+      "started_at": "2026-11-03T10:03:08.612683+00:00",
+      "response": {
+        "model": "qwen3:latest",
+        "created_at": "2026-11-03T10:03:09.790364306Z",
+        "message": {
+          "role": "assistant",
+          "content": "**Дефект:** Использование изменяемого объекта `dict` как умолчательного аргумента приводит к неожиданной общей памяти между вызовами.  \n**Исправленная функция:**\n\n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```"
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 1176634653,
+        "load_duration": 1177927,
+        "prompt_eval_count": 89,
+        "prompt_eval_cached_count": 88,
+        "prompt_eval_duration": 12788000,
+        "eval_count": 92,
+        "eval_duration": 1152359000
+      },
+      "prompt_eval_tokens_per_second": 6959.649671567094,
+      "eval_tokens_per_second": 79.83623159102329,
+      "wall_seconds": 1.1780944020028983
+    },
+    {
+      "think": false,
+      "repetition": 2,
+      "warmup": false,
+      "started_at": "2026-11-03T10:03:09.791017+00:00",
+      "response": {
+        "model": "qwen3:latest",
+        "created_at": "2026-11-03T10:03:10.964054801Z",
+        "message": {
+          "role": "assistant",
+          "content": "**Дефект:** Использование изменяемого объекта `dict` как умолчательного аргумента приводит к неожиданной общей памяти между вызовами.  \n**Исправленная функция:**\n\n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```"
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 1172242336,
+        "load_duration": 831215,
+        "prompt_eval_count": 89,
+        "prompt_eval_cached_count": 88,
+        "prompt_eval_duration": 12891000,
+        "eval_count": 92,
+        "eval_duration": 1152940000
+      },
+      "prompt_eval_tokens_per_second": 6904.0415793964785,
+      "eval_tokens_per_second": 79.79599979183652,
+      "wall_seconds": 1.1733492130006198
+    },
+    {
+      "think": false,
+      "repetition": 3,
+      "warmup": false,
+      "started_at": "2026-11-03T10:03:10.964598+00:00",
+      "response": {
+        "model": "qwen3:latest",
+        "created_at": "2026-11-03T10:03:12.133035836Z",
+        "message": {
+          "role": "assistant",
+          "content": "**Дефект:** Использование изменяемого объекта `dict` как умолчательного аргумента приводит к неожиданной общей памяти между вызовами.  \n**Исправленная функция:**\n\n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```"
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 1167748418,
+        "load_duration": 799955,
+        "prompt_eval_count": 89,
+        "prompt_eval_cached_count": 88,
+        "prompt_eval_duration": 13131000,
+        "eval_count": 92,
+        "eval_duration": 1152248000
+      },
+      "prompt_eval_tokens_per_second": 6777.853933439951,
+      "eval_tokens_per_second": 79.84392248890865,
+      "wall_seconds": 1.1688196340001014
+    },
+    {
+      "think": true,
+      "repetition": 0,
+      "warmup": true,
+      "started_at": "2026-11-03T10:03:12.133657+00:00",
+      "response": {
+        "model": "qwen3:latest",
+        "created_at": "2026-11-03T10:03:16.814718856Z",
+        "message": {
+          "role": "assistant",
+          "content": "**Дефект:** Использование изменяемого объекта `cache={}` в качестве значения по умолчанию приводит к общему состоянию между вызовами функции.  \n**Исправленная функция:**  \n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```  \nТеперь каждый вызов без аргумента `cache` получает новый словарь, обеспечивая независимость.",
+          "thinking": "Okay, let's look at this Python function. The user wants to check if calls without cache return independent dictionaries. The function is called 'remember' and takes a value and an optional cache parameter, which defaults to an empty dictionary. \n\nWait, the default parameter is a mutable dictionary. Oh right, in Python, default parameters are evaluated once when the function is defined. So if someone calls remember() without providing cache, it will use the same dictionary every time. That's a problem because modifying the cache in one call will affect all subsequent calls. \n\nSo the defect here is that the default cache is a mutable object, leading to unexpected shared state between function calls. The fix is to use a default value that's immutable or ensure each call gets a new dictionary. The correct approach is to set the default cache as None and then initialize it inside the function. \n\nSo the corrected function should set cache to None by default, then check if it's None, and if so, create a new empty dictionary. That way, each call without a cache argument gets its own dictionary. The return value should be the cache dictionary, which is now independent for each call.\n"
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 4680301132,
+        "load_duration": 946515,
+        "prompt_eval_count": 83,
+        "prompt_eval_cached_count": 77,
+        "prompt_eval_duration": 114094000,
+        "eval_count": 359,
+        "eval_duration": 4563342000
+      },
+      "prompt_eval_tokens_per_second": 727.4703314810595,
+      "eval_tokens_per_second": 78.67041304377362,
+      "wall_seconds": 4.681437579998601
+    },
+    {
+      "think": true,
+      "repetition": 1,
+      "warmup": false,
+      "started_at": "2026-11-03T10:03:16.815363+00:00",
+      "response": {
+        "model": "qwen3:latest",
+        "created_at": "2026-11-03T10:03:21.029580027Z",
+        "message": {
+          "role": "assistant",
+          "content": "**Дефект:** Использование изменяемого значения по умолчанию `cache={}` приводит к тому, что все вызовы без аргумента `cache` делят один и тот же словарь, нарушая требование независимости.  \n\n**Исправленная функция:**  \n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```  \nТеперь каждый вызов без `cache` создаёт новый словарь, обеспечивая независимость.",
+          "thinking": "Okay, let's look at this Python function. The function is called 'remember' and it takes a 'value' and a 'cache' which defaults to an empty dictionary. The problem is that the default argument 'cache' is a mutable object. In Python, default arguments are evaluated once when the function is defined, not each time it's called. So if the function is called multiple times without providing a cache, all calls will share the same dictionary. That means the cache isn't reset between calls, leading to incorrect behavior where subsequent calls might not return independent dictionaries. The defect here is using a mutable default argument, which causes the cache to persist across calls. To fix this, the default cache should be a new dictionary each time the function is called. So, the corrected function should initialize the cache as a new dictionary if it's not provided. That way, each call without a cache argument gets its own separate dictionary.\n"
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 4213519403,
+        "load_duration": 809395,
+        "prompt_eval_count": 83,
+        "prompt_eval_cached_count": 82,
+        "prompt_eval_duration": 14043000,
+        "eval_count": 329,
+        "eval_duration": 4181606000
+      },
+      "prompt_eval_tokens_per_second": 5910.418001851456,
+      "eval_tokens_per_second": 78.67790509196705,
+      "wall_seconds": 4.214607428999443
+    },
+    {
+      "think": true,
+      "repetition": 2,
+      "warmup": false,
+      "started_at": "2026-11-03T10:03:21.030294+00:00",
+      "response": {
+        "model": "qwen3:latest",
+        "created_at": "2026-11-03T10:03:25.234078552Z",
+        "message": {
+          "role": "assistant",
+          "content": "**Дефект:** Использование изменяемого значения по умолчанию `cache={}` приводит к тому, что все вызовы без аргумента `cache` делят один и тот же словарь, нарушая требование независимости.  \n\n**Исправленная функция:**  \n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```  \nТеперь каждый вызов без `cache` создаёт новый словарь, обеспечивая независимость.",
+          "thinking": "Okay, let's look at this Python function. The function is called 'remember' and it takes a 'value' and a 'cache' which defaults to an empty dictionary. The problem is that the default argument 'cache' is a mutable object. In Python, default arguments are evaluated once when the function is defined, not each time it's called. So if the function is called multiple times without providing a cache, all calls will share the same dictionary. That means the cache isn't reset between calls, leading to incorrect behavior where subsequent calls might not return independent dictionaries. The defect here is using a mutable default argument, which causes the cache to persist across calls. To fix this, the default cache should be a new dictionary each time the function is called. So, the corrected function should initialize the cache as a new dictionary if it's not provided. That way, each call without a cache argument gets its own separate dictionary.\n"
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 4203050087,
+        "load_duration": 834945,
+        "prompt_eval_count": 83,
+        "prompt_eval_cached_count": 82,
+        "prompt_eval_duration": 14170000,
+        "eval_count": 329,
+        "eval_duration": 4172321000
+      },
+      "prompt_eval_tokens_per_second": 5857.445306986591,
+      "eval_tokens_per_second": 78.85299333392612,
+      "wall_seconds": 4.204077063001023
+    },
+    {
+      "think": true,
+      "repetition": 3,
+      "warmup": false,
+      "started_at": "2026-11-03T10:03:25.234638+00:00",
+      "response": {
+        "model": "qwen3:latest",
+        "created_at": "2026-11-03T10:03:29.4360391Z",
+        "message": {
+          "role": "assistant",
+          "content": "**Дефект:** Использование изменяемого значения по умолчанию `cache={}` приводит к тому, что все вызовы без аргумента `cache` делят один и тот же словарь, нарушая требование независимости.  \n\n**Исправленная функция:**  \n```python\ndef remember(value, cache=None):\n    if cache is None:\n        cache = {}\n    cache[value] = True\n    return cache\n```  \nТеперь каждый вызов без `cache` создаёт новый словарь, обеспечивая независимость.",
+          "thinking": "Okay, let's look at this Python function. The function is called 'remember' and it takes a 'value' and a 'cache' which defaults to an empty dictionary. The problem is that the default argument 'cache' is a mutable object. In Python, default arguments are evaluated once when the function is defined, not each time it's called. So if the function is called multiple times without providing a cache, all calls will share the same dictionary. That means the cache isn't reset between calls, leading to incorrect behavior where subsequent calls might not return independent dictionaries. The defect here is using a mutable default argument, which causes the cache to persist across calls. To fix this, the default cache should be a new dictionary each time the function is called. So, the corrected function should initialize the cache as a new dictionary if it's not provided. That way, each call without a cache argument gets its own separate dictionary.\n"
+        },
+        "done": true,
+        "done_reason": "stop",
+        "total_duration": 4200919372,
+        "load_duration": 1382928,
+        "prompt_eval_count": 83,
+        "prompt_eval_cached_count": 82,
+        "prompt_eval_duration": 14045000,
+        "eval_count": 329,
+        "eval_duration": 4184020999
+      },
+      "prompt_eval_tokens_per_second": 5909.576361694553,
+      "eval_tokens_per_second": 78.6324925421341,
+      "wall_seconds": 4.201760978001403
+    }
+  ]
+}

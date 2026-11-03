@@ -1,12 +1,5 @@
-.git
-.gitignore
-.github/
-.agents/
-.codex/
-.devcontainer/
-.vscode/
-.idea/
-.DS_Store
+# Keep local tooling, editor state and hidden caches out of the build context.
+.*
 
 .env
 .env.*

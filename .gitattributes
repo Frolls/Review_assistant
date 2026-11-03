@@ -1,0 +1,6 @@
+# Retain measured evidence byte-for-byte, including CSV CRLF.
+docs/verification/*-2026-11-03/** -text
+docs/verification/rag-diagnostics-2026-10-04/** -text
+docs/verification/**/*.csv whitespace=cr-at-eol
+# Original source snapshot retains the EOF recorded by the experiment hash.
+docs/verification/source-snapshots/** -text whitespace=-blank-at-eof

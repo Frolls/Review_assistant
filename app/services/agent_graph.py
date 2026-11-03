@@ -69,18 +69,14 @@ class AgentState(TypedDict):
 
 def _build_model() -> ChatOpenAI:
     settings = get_settings()
-    model_options: dict[str, Any] = {}
-    if "11434" in settings.openai_base_url:
-        # Ollama's Qwen thinking tokens add substantial latency and do not improve
-        # these deterministic tool-routing tasks.
-        model_options["extra_body"] = {"think": False}
+    from app.services.ollama import model_options
     return ChatOpenAI(
         model=settings.default_model,
         temperature=0,
         api_key=settings.openai_api_key,
         base_url=settings.openai_base_url,
         timeout=settings.request_timeout,
-        **model_options,
+        **model_options(settings.openai_base_url),
     )
 
 

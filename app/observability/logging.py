@@ -22,6 +22,7 @@ def setup_logging(level: str | int = "INFO") -> None:
             structlog.processors.TimeStamper(fmt="iso", utc=True),
             structlog.processors.format_exc_info,
             redact_pii_processor,
+            content_privacy_processor,
             structlog.processors.JSONRenderer(ensure_ascii=False),
         ],
         wrapper_class=structlog.make_filtering_bound_logger(level_number),
@@ -56,3 +57,8 @@ def _redact_value(value: Any, redact: Any) -> Any:
 
 def get_logger(name: str | None = None) -> Any:
     return structlog.get_logger(name)
+
+
+def content_privacy_processor(_: Any, __: str, event_dict: dict[str, Any]) -> dict[str, Any]:
+    from app.observability.privacy import safe_attributes
+    return safe_attributes(event_dict)

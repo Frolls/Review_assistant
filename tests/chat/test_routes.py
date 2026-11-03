@@ -13,6 +13,7 @@ from app.chat.routes import router
 
 class FakeChatService:
     def __init__(self) -> None:
+        self.rag_service = object()
         self.chat = Chat(owner_external_id="owner", interface="cli")
         self.messages = [
             ChatMessage(chat_id=self.chat.id, role="user", content="Hello"),
@@ -88,6 +89,7 @@ async def test_stream_message_route(test_app):
 @pytest.mark.asyncio
 async def test_stream_message_route_refuses_entertainment_request(test_app):
     app, service = test_app
+    service.rag_service = None
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             f"/chats/{service.chat.id}/messages",
@@ -102,6 +104,7 @@ async def test_stream_message_route_refuses_entertainment_request(test_app):
 @pytest.mark.asyncio
 async def test_stream_message_route_refuses_general_knowledge_request(test_app):
     app, service = test_app
+    service.rag_service = None
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.post(
             f"/chats/{service.chat.id}/messages",
